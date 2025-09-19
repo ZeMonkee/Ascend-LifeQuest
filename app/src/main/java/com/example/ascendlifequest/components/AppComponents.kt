@@ -19,13 +19,25 @@ import com.example.ascendlifequest.screen.QuestItem
 // Background
 @Composable
 fun AppBackground(content: @Composable () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Image(
-            painter = painterResource(R.drawable.background),
-            contentDescription = "Background",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+            Image(
+                painter = painterResource(R.drawable.background),
+                contentDescription = "Background",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+
+        }
+
         content()
     }
 }
@@ -109,7 +121,7 @@ fun QuestCategory(title: String, color: Color, quests: List<QuestItem>) {
                 .background(color)
                 .padding(8.dp)
         ) {
-            Text(title, color = Color.White, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Text(title, color = Color.White, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(8.dp))

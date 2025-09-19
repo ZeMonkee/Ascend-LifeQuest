@@ -78,6 +78,26 @@ fun QuestScreen(navController: NavHostController) {
                             QuestItem("Préparer ses affaires", 100, done = false),
                         )
                     )
+
+                    QuestCategory(
+                        title = "Etudes",
+                        color = Color(0xFF27AE60),
+                        quests = listOf(
+                            QuestItem("Faire ses devoirs", 350, done = false),
+                            QuestItem("Réviser 30 minutes", 200, done = false),
+                            QuestItem("Préparer ses affaires", 100, done = false),
+                        )
+                    )
+
+                    QuestCategory(
+                        title = "Etudes",
+                        color = Color(0xFF27AE60),
+                        quests = listOf(
+                            QuestItem("Faire ses devoirs", 350, done = false),
+                            QuestItem("Réviser 30 minutes", 200, done = false),
+                            QuestItem("Préparer ses affaires", 100, done = false),
+                        )
+                    )
                 }
             }
         }
