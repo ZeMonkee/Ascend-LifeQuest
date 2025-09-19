@@ -1,6 +1,5 @@
 package com.example.ascendlifequest
 
-import QuestScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.ascendlifequest.screen.LoginOptionScreen
 import com.example.ascendlifequest.screen.LoginScreen
+import com.example.ascendlifequest.screen.QuestScreen
 import com.example.ascendlifequest.ui.theme.AscendLifeQuestTheme
 
 class MainActivity : ComponentActivity() {

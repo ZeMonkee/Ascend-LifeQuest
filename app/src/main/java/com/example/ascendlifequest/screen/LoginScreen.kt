@@ -1,15 +1,10 @@
 package com.example.ascendlifequest.screen
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,21 +17,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
+import com.example.ascendlifequest.components.AppBackground
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Background
-        Image(
-            painter = painterResource(id = R.drawable.background),
-            contentDescription = "background",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-
+    AppBackground {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -66,7 +54,6 @@ fun LoginScreen(navController: NavHostController) {
                     disabledIndicatorColor = Color.Transparent,
                     errorIndicatorColor = Color.Transparent
                 ),
-
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
@@ -91,7 +78,6 @@ fun LoginScreen(navController: NavHostController) {
                     disabledIndicatorColor = Color.Transparent,
                     errorIndicatorColor = Color.Transparent
                 ),
-
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth(0.8f)
@@ -113,14 +99,19 @@ fun LoginScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(25.dp))
 
             Button(
-                onClick = {navController.navigate("quest")},
+                onClick = { navController.navigate("quest") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A1A)),
                 shape = RoundedCornerShape(30.dp),
                 modifier = Modifier
                     .fillMaxWidth(0.75f)
                     .height(55.dp)
             ) {
-                Text("Se connecter", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(
+                    "Se connecter",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
 
             Spacer(modifier = Modifier.height(15.dp))
@@ -134,4 +125,3 @@ fun LoginScreen(navController: NavHostController) {
         }
     }
 }
-

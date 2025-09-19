@@ -20,18 +20,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
+import com.example.ascendlifequest.components.AppBackground
 
 @Composable
 fun LoginOptionScreen(navController: NavHostController) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Background
-        Image(
-            painter = painterResource(id = R.drawable.background),
-            contentDescription = "background",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-
+    AppBackground {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -55,7 +48,12 @@ fun LoginOptionScreen(navController: NavHostController) {
                     .fillMaxWidth(0.75f)
                     .height(55.dp)
             ) {
-                Text("Se connecter", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(
+                    "Se connecter",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
 
             Spacer(modifier = Modifier.height(15.dp))
@@ -81,7 +79,6 @@ fun LoginOptionScreen(navController: NavHostController) {
     }
 }
 
-
 @Composable
 fun SocialLoginButton(iconRes: Int) {
     Box(
@@ -91,6 +88,10 @@ fun SocialLoginButton(iconRes: Int) {
             .clickable { /* TODO */ },
         contentAlignment = Alignment.Center
     ) {
-        Image(painter = painterResource(id = iconRes), contentDescription = "social login")
+        Image(
+            painter = painterResource(id = iconRes),
+            contentDescription = "social login",
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
