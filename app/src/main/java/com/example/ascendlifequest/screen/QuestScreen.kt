@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.example.ascendlifequest.R
 import com.example.ascendlifequest.components.*
 
 data class QuestItem(val title: String, val xp: Int, val done: Boolean)
@@ -48,7 +49,8 @@ fun QuestScreen(navController: NavHostController) {
                             QuestItem("Faire 100 pompes", 400, done = true),
                             QuestItem("Faire 100 squats", 300, done = false),
                             QuestItem("Courir 10 km", 350, done = false),
-                        )
+                        ),
+                        iconRes = R.drawable.icon_sport
                     )
 
                     QuestCategory(
@@ -57,7 +59,8 @@ fun QuestScreen(navController: NavHostController) {
                         quests = listOf(
                             QuestItem("Faire une salade", 150, done = false),
                             QuestItem("Faire un plat italien", 250, done = true),
-                        )
+                        ),
+                        iconRes = R.drawable.icon_cuisine
                     )
 
                     QuestCategory(
@@ -66,7 +69,8 @@ fun QuestScreen(navController: NavHostController) {
                         quests = listOf(
                             QuestItem("Faire une partie classée", 200, done = true),
                             QuestItem("Jouer 30 minutes", 100, done = false),
-                        )
+                        ),
+                        iconRes = R.drawable.icon_jeux_video
                     )
 
                     QuestCategory(
@@ -76,27 +80,8 @@ fun QuestScreen(navController: NavHostController) {
                             QuestItem("Faire ses devoirs", 350, done = false),
                             QuestItem("Réviser 30 minutes", 200, done = false),
                             QuestItem("Préparer ses affaires", 100, done = false),
-                        )
-                    )
-
-                    QuestCategory(
-                        title = "Etudes",
-                        color = Color(0xFF27AE60),
-                        quests = listOf(
-                            QuestItem("Faire ses devoirs", 350, done = false),
-                            QuestItem("Réviser 30 minutes", 200, done = false),
-                            QuestItem("Préparer ses affaires", 100, done = false),
-                        )
-                    )
-
-                    QuestCategory(
-                        title = "Etudes",
-                        color = Color(0xFF27AE60),
-                        quests = listOf(
-                            QuestItem("Faire ses devoirs", 350, done = false),
-                            QuestItem("Réviser 30 minutes", 200, done = false),
-                            QuestItem("Préparer ses affaires", 100, done = false),
-                        )
+                        ),
+                        iconRes = R.drawable.icon_etudes
                     )
                 }
             }

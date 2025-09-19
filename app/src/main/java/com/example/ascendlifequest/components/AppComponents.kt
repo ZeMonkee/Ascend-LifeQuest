@@ -3,6 +3,7 @@ package com.example.ascendlifequest.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -11,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ascendlifequest.R
@@ -106,34 +108,68 @@ fun AppBottomNavBar(
 
 // Catégorie des quêtes
 @Composable
-fun QuestCategory(title: String, color: Color, quests: List<QuestItem>) {
+fun QuestCategory(
+    title: String,
+    color: Color,
+    iconRes: Int,
+    quests: List<QuestItem>
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .background(Color(0xFF1E293B))
-            .padding(12.dp)
+            .background(Color(0xFF0F1E3D), shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp, bottomStart = 12.dp, bottomEnd = 12.dp))
     ) {
-        // Titre catégorie
-        Box(
+        // Header avec icon
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(color)
-                .padding(8.dp)
+                .background(color, shape = RoundedCornerShape(30.dp))
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(title, color = Color.White, fontWeight = FontWeight.Bold)
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Liste des quêtes
-        quests.forEach {
-            val questColor = if (it.done) Color.Gray else Color.White
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+                tint = Color.Black,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "› ${it.title}  ${it.xp} XP",
-                color = questColor,
-                modifier = Modifier.padding(vertical = 4.dp)
+                title,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
             )
         }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Liste des quêtes
+        quests.forEach { quest ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .background(Color(0xFF142850), shape = RoundedCornerShape(8.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "» ${quest.title}",
+                    color = if (quest.done) Color.Gray else Color.White,
+                    fontWeight = if (quest.done) FontWeight.Normal else FontWeight.Medium,
+                    textDecoration = if (quest.done) TextDecoration.LineThrough else TextDecoration.None,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "${quest.xp} XP",
+                    color = if (quest.done) Color.Gray else Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
