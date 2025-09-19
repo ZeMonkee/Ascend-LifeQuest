@@ -6,9 +6,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.components.*
@@ -38,9 +40,25 @@ fun QuestScreen(navController: NavHostController) {
             ) {
                 AppHeader(
                     title = "QUÊTES",
-                    subtitle = "950/2400 XP",
-                    progress = 0.39f
                 )
+                // Barre de progression
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    LinearProgressIndicator(
+                        progress = {
+                            0.6f
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color(0xFF4CAF50),
+                        trackColor = Color.LightGray,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("60%", fontSize = 16.sp, color = Color.Gray)
+                }
 
                 Column(
                     modifier = Modifier

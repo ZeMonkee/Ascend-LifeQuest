@@ -21,7 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
+import com.example.ascendlifequest.components.AppBackground
 import com.example.ascendlifequest.components.AppBottomNavBar
+import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
 import com.example.ascendlifequest.model.RankingUser
 
@@ -41,54 +43,28 @@ fun ClassementScreen(navController: NavHostController) {
         RankingUser(11, "AnthonyBiv", 50516, R.drawable.generic_pfp),
         RankingUser(12, "AnthonyBiv²", 49999, R.drawable.generic_pfp)
     )
-
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Background image
-        Image(
-            painter = painterResource(id = R.drawable.background),
-            contentDescription = "Background",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-
-        Scaffold(
-            containerColor = Color.Transparent,
-            bottomBar = {
-                AppBottomNavBar(current = BottomNavItem.Classement) { selected ->
-                    when (selected) {
-                        BottomNavItem.Quetes -> navController.navigate("quest")
-                        BottomNavItem.Classement -> {} // Déjà sur cet écran
-                        BottomNavItem.Amis -> {}
-                        BottomNavItem.Parametres -> {}
-                    }
+    Scaffold(
+        containerColor = Color.Transparent,
+        bottomBar = {
+            AppBottomNavBar(current = BottomNavItem.Classement) { selected ->
+                when (selected) {
+                    BottomNavItem.Quetes -> navController.navigate("quest")
+                    BottomNavItem.Classement -> {} // Déjà sur cet écran
+                    BottomNavItem.Amis -> {}
+                    BottomNavItem.Parametres -> {}
                 }
             }
-        ) { innerPadding ->
+        }
+    ) { innerPadding ->
+        AppBackground {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                // Status bar spacer (simulating the status bar shown in the images)
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Title
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                ) {
-                    Text(
-                        text = "CLASSEMENT",
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
+                AppHeader(
+                    title = "CLASSEMENTS",
+                )
 
                 // Rankings List
                 LazyColumn(

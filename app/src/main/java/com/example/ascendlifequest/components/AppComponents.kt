@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,63 +22,36 @@ import com.example.ascendlifequest.screen.QuestItem
 // Background
 @Composable
 fun AppBackground(content: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-        ) {
-            Image(
-                painter = painterResource(R.drawable.background),
-                contentDescription = "Background",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
+    Image(
+            painter = painterResource(R.drawable.background),
+            contentDescription = "Background",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
 
-        }
-
-        content()
-    }
+    content()
 }
 
 // Header
 @Composable
 fun AppHeader(
     title: String,
-    subtitle: String? = null,
-    progress: Float? = null,
-    backgroundColor: Color = Color(0xFF1E293B),
-    progressColor: Color = Color(0xFF3B82F6)
 ) {
-    Column(
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(backgroundColor)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(vertical = 16.dp)
     ) {
-        Text(title, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-
-        subtitle?.let {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(it, color = Color.White, fontSize = 14.sp)
-        }
-
-        progress?.let {
-            Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp),
-                color = progressColor,
-                trackColor = Color.Gray,
-            )
-        }
+        Text(
+            text = title,
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.align(Alignment.Center)
+        )
     }
 }
 
@@ -125,7 +99,7 @@ fun QuestCategory(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(color, shape = RoundedCornerShape(30.dp))
-                .padding(8.dp),
+                .padding(5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
 
@@ -133,13 +107,14 @@ fun QuestCategory(
                 painter = painterResource(id = iconRes),
                 contentDescription = null,
                 tint = Color.Black,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(30.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 title,
                 color = Color.Black,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
             )
         }
 
