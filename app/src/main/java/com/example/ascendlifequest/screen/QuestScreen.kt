@@ -25,7 +25,7 @@ fun QuestScreen(navController: NavHostController) {
                 when (selected) {
                     BottomNavItem.Quetes -> {} // Déjà sur cet écran
                     BottomNavItem.Classement -> navController.navigate("classement")
-                    BottomNavItem.Amis -> {}
+                    BottomNavItem.Amis -> navController.navigate("amis")
                     BottomNavItem.Parametres -> {}
                 }
             }

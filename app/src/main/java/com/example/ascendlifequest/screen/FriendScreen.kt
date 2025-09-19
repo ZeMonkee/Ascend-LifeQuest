@@ -1,7 +1,6 @@
 package com.example.ascendlifequest.screen
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -29,8 +27,8 @@ import com.example.ascendlifequest.model.User
 import java.util.Date
 
 @Composable
-fun ClassementScreen(navController: NavHostController) {
-    val rankingUsers = listOf(
+fun FriendScreen(navController: NavHostController) {
+    val friendsUsers = listOf(
         User(accountId = 1, pseudo = "Monkee", photoUrl = R.drawable.generic_pfp, xp = 99999, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 1),
         User(accountId = 2, pseudo = "ArcLeRetour", photoUrl = R.drawable.generic_pfp, xp = 99996, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 2),
         User(accountId = 3, pseudo = "Acno", photoUrl = R.drawable.generic_pfp, xp = 84826, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 3),
@@ -44,14 +42,15 @@ fun ClassementScreen(navController: NavHostController) {
         User(accountId = 11, pseudo = "AnthonyBiv", photoUrl = R.drawable.generic_pfp, xp = 50516, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 11),
         User(accountId = 12, pseudo = "AnthonyBiv²", photoUrl = R.drawable.generic_pfp, xp = 49999, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 12)
     )
+
     Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {
-            AppBottomNavBar(current = BottomNavItem.Classement) { selected ->
+            AppBottomNavBar(current = BottomNavItem.Amis) { selected ->
                 when (selected) {
                     BottomNavItem.Quetes -> navController.navigate("quest")
-                    BottomNavItem.Classement -> {} // Déjà sur cet écran
-                    BottomNavItem.Amis -> navController.navigate("amis")
+                    BottomNavItem.Classement -> navController.navigate("classement") // Navigate to ranking
+                    BottomNavItem.Amis -> {} // Already on this screen
                     BottomNavItem.Parametres -> {}
                 }
             }
@@ -59,22 +58,19 @@ fun ClassementScreen(navController: NavHostController) {
     ) { innerPadding ->
         AppBackground {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
+                modifier = Modifier.fillMaxSize().padding(innerPadding)
             ) {
                 AppHeader(
-                    title = "CLASSEMENTS",
+                    title = "AMIS",
                 )
 
-                // Rankings List
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(rankingUsers) { user ->
-                        RankingItem(user)
+                    items(friendsUsers) { user ->
+                        FriendItem(user)
                     }
                 }
             }
@@ -83,22 +79,8 @@ fun ClassementScreen(navController: NavHostController) {
 }
 
 @Composable
-fun RankingItem(user: User) {
+fun FriendItem(user: User) {
     val backgroundColor = Color(0xFF2E3F78)
-
-    val rankingColor = when (user.rang) {
-        1 -> Color(0xFFFFD700) // Or
-        2 -> Color(0xFFC0C0C0) // Argent
-        3 -> Color(0xFFCD7F32) // Bronze
-        else -> Color.White
-    }
-
-    val rankBackgroundColor = when (user.rang) {
-        1 -> Color(0xFFF39C12) // Fond orange/or pour le premier
-        2 -> Color(0xFF95A5A6) // Fond gris argenté pour le second
-        3 -> Color(0xFFCD7F32) // Fond bronze pour le troisième
-        else -> Color.Transparent
-    }
 
     Card(
         modifier = Modifier
@@ -113,32 +95,15 @@ fun RankingItem(user: User) {
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Position number with special background for top 3
-            if (user.rang <= 3) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(rankBackgroundColor, CircleShape)
-                ) {
-                    Text(
-                        text = user.rang.toString(),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-            } else {
-
-                Text(
-                    text = user.rang.toString(),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = rankingColor,
-                    modifier = Modifier.width(32.dp),
-                    textAlign = TextAlign.Center
-                )
-            }
+            // Avatar - plus grand
+            Image(
+                painter = painterResource(id = user.photoUrl),
+                contentDescription = "Avatar de ${user.pseudo}",
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
 
             // Spacer
             Spacer(modifier = Modifier.width(16.dp))
@@ -160,15 +125,6 @@ fun RankingItem(user: User) {
                 )
             }
 
-            // Avatar - plus grand
-            Image(
-                painter = painterResource(id = user.photoUrl ?: R.drawable.generic_pfp),
-                contentDescription = "Avatar de ${user.pseudo}",
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
         }
     }
 }
