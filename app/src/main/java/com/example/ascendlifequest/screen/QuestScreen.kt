@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.components.*
+import com.example.ascendlifequest.ui.theme.AppColor
 
 data class QuestItem(val title: String, val xp: Int, val done: Boolean)
 
@@ -57,7 +58,7 @@ fun QuestScreen(navController: NavHostController) {
                         trackColor = Color.LightGray,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("60%", fontSize = 16.sp, color = Color.Gray)
+                    Text("60%", fontSize = 16.sp, color = AppColor.MinusTextColor)
                 }
 
                 Column(
@@ -68,7 +69,7 @@ fun QuestScreen(navController: NavHostController) {
                 ) {
                     QuestCategory(
                         title = "Sport",
-                        color = Color(0xFFE74C3C),
+                        color = AppColor.SportColor,
                         quests = listOf(
                             QuestItem("Faire 100 pompes", 400, done = true),
                             QuestItem("Faire 100 squats", 300, done = false),
@@ -79,7 +80,7 @@ fun QuestScreen(navController: NavHostController) {
 
                     QuestCategory(
                         title = "Cuisine",
-                        color = Color(0xFFF39C12),
+                        color = AppColor.CuisineColor,
                         quests = listOf(
                             QuestItem("Faire une salade", 150, done = false),
                             QuestItem("Faire un plat italien", 250, done = true),
@@ -89,7 +90,7 @@ fun QuestScreen(navController: NavHostController) {
 
                     QuestCategory(
                         title = "Jeux Vidéo",
-                        color = Color(0xFF9B59B6),
+                        color = AppColor.JeuxVideoColor,
                         quests = listOf(
                             QuestItem("Faire une partie classée", 200, done = true),
                             QuestItem("Jouer 30 minutes", 100, done = false),
@@ -99,7 +100,7 @@ fun QuestScreen(navController: NavHostController) {
 
                     QuestCategory(
                         title = "Etudes",
-                        color = Color(0xFF27AE60),
+                        color = AppColor.EtudesColor,
                         quests = listOf(
                             QuestItem("Faire ses devoirs", 350, done = false),
                             QuestItem("Réviser 30 minutes", 200, done = false),

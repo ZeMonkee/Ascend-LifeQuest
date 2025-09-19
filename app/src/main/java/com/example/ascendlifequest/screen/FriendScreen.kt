@@ -24,6 +24,7 @@ import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
 import com.example.ascendlifequest.model.User
+import com.example.ascendlifequest.ui.theme.AppColor
 import java.util.Date
 
 @Composable
@@ -80,7 +81,7 @@ fun FriendScreen(navController: NavHostController) {
 
 @Composable
 fun FriendItem(user: User) {
-    val backgroundColor = Color(0xFF2E3F78)
+    val backgroundColor = AppColor.DarkBlueColor
 
     Card(
         modifier = Modifier
@@ -95,7 +96,7 @@ fun FriendItem(user: User) {
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar - plus grand
+            // Avatar
             Image(
                 painter = painterResource(id = user.photoUrl),
                 contentDescription = "Avatar de ${user.pseudo}",
@@ -116,12 +117,12 @@ fun FriendItem(user: User) {
                     text = user.pseudo,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = AppColor.MainTextColor
                 )
                 Text(
                     text = "${user.xp} XP",
                     fontSize = 16.sp,
-                    color = Color(0xFF9EABBE)
+                    color = AppColor.MinusTextColor
                 )
             }
 
