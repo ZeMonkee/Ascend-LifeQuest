@@ -1,5 +1,6 @@
 package com.example.ascendlifequest
 
+import QuestScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,7 +22,9 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = "login_option") {
                     composable("login_option") { LoginOptionScreen(navController) }
                     composable("login") { LoginScreen(navController) }
+                    composable("quest") { QuestScreen(navController) }
                 }
+
             }
         }
     }

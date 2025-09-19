@@ -113,7 +113,7 @@ fun LoginScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(25.dp))
 
             Button(
-                onClick = { /* TODO */ },
+                onClick = {navController.navigate("quest")},
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A1A)),
                 shape = RoundedCornerShape(30.dp),
                 modifier = Modifier

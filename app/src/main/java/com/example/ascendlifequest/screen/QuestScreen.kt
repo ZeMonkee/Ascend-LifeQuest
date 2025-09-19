@@ -11,10 +11,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 
 @Composable
-fun QuestScreen() {
+fun QuestScreen(navController: NavHostController) {
     Scaffold(
         bottomBar = { BottomNavBar() }
     ) { innerPadding ->
