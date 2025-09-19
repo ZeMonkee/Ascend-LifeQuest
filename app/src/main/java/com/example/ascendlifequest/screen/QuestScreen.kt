@@ -19,7 +19,13 @@ data class QuestItem(val title: String, val xp: Int, val done: Boolean)
 fun QuestScreen(navController: NavHostController) {
     Scaffold(
         bottomBar = {
-            AppBottomNavBar(current = BottomNavItem.Quetes) { selected -> /* TODO */
+            AppBottomNavBar(current = BottomNavItem.Quetes) { selected ->
+                when (selected) {
+                    BottomNavItem.Quetes -> {} // Déjà sur cet écran
+                    BottomNavItem.Classement -> navController.navigate("classement")
+                    BottomNavItem.Amis -> {}
+                    BottomNavItem.Parametres -> {}
+                }
             }
         }
     ) { innerPadding ->
