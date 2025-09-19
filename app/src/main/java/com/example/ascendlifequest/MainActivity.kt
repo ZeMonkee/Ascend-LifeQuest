@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.ascendlifequest.screen.ClassementScreen
 import com.example.ascendlifequest.screen.LoginOptionScreen
 import com.example.ascendlifequest.screen.LoginScreen
 import com.example.ascendlifequest.screen.QuestScreen
@@ -23,6 +24,9 @@ class MainActivity : ComponentActivity() {
                     composable("login_option") { LoginOptionScreen(navController) }
                     composable("login") { LoginScreen(navController) }
                     composable("quest") { QuestScreen(navController) }
+                    composable("classement") { ClassementScreen(navController) }
+                    composable("amis") { /* TODO: Créer AmisScreen */ }
+                    composable("parametres") { /* TODO: Créer ParametresScreen */ }
                 }
 
             }
