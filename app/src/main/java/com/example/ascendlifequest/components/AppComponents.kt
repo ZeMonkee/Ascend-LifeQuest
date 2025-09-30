@@ -78,7 +78,7 @@ enum class BottomNavItem(val label: String, val icon: Int) {
     Quetes("Quêtes", R.drawable.icon_quetes),
     Classement("Classement", R.drawable.icon_classement),
     Amis("Amis", R.drawable.icon_amis),
-    Profil("Profil", R.drawable.generic_pfp),
+    Profil("Profil", R.drawable.icon_profil),
     Parametres("Paramètres", R.drawable.icon_parametres)
 }
 
@@ -105,7 +105,8 @@ fun AppBottomNavBar(
                 label = {
                     Text(
                         item.label,
-                        color = if (current == item) AppColor.LightBlueColor else AppColor.MainTextColor
+                        color = if (current == item) AppColor.LightBlueColor else AppColor.MainTextColor,
+                        fontSize = 11.sp,
                     )
                 }
             )
