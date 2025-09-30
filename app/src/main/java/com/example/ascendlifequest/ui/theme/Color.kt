@@ -19,6 +19,7 @@ object AppColor {
     val CuisineColor = Color(0xFFFF8543)
     val JeuxVideoColor = Color(0xFFC443FF)
     val EtudesColor = Color(0xFF42D242)
+    val DessinColor = Color(0xFF009688)
     val Or = Color(0xFFFFD700)
     val Argent = Color(0xFFC0C0C0)
     val Bronze = Color(0xFFCD7F32)

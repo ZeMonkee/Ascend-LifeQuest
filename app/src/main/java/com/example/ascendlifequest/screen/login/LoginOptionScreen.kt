@@ -1,4 +1,4 @@
-package com.example.ascendlifequest.screen
+package com.example.ascendlifequest.screen.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

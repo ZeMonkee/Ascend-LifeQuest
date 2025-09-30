@@ -1,4 +1,4 @@
-package com.example.ascendlifequest.screen
+package com.example.ascendlifequest.screen.main
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -22,6 +22,7 @@ import com.example.ascendlifequest.components.AppBackground
 import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
+import com.example.ascendlifequest.ui.theme.AppColor
 
 @Composable
 fun ProfilScreen(navController: NavHostController) {
@@ -30,7 +31,7 @@ fun ProfilScreen(navController: NavHostController) {
         bottomBar = {
             AppBottomNavBar(current = BottomNavItem.Profil) { selected ->
                 when (selected) {
-                    BottomNavItem.Quetes -> navController.navigate("quest")
+                    BottomNavItem.Quetes -> navController.navigate("quetes")
                     BottomNavItem.Classement -> navController.navigate("classement")
                     BottomNavItem.Amis -> navController.navigate("amis")
                     BottomNavItem.Profil -> {} // Déjà sur cet écran
@@ -54,7 +55,7 @@ fun ProfilScreen(navController: NavHostController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1B263B)),
+                    colors = CardDefaults.cardColors(containerColor = AppColor.DarkBlueColor),
                     shape = RoundedCornerShape(12.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
@@ -68,7 +69,7 @@ fun ProfilScreen(navController: NavHostController) {
                             contentDescription = "Photo de profil",
                             modifier = Modifier
                                 .size(120.dp)
-                                .background(Color.Gray, shape = CircleShape),
+                                .background(AppColor.MinusTextColor, shape = CircleShape),
                             contentScale = ContentScale.Crop
                         )
 
@@ -77,25 +78,25 @@ fun ProfilScreen(navController: NavHostController) {
                         // Nom utilisateur
                         Text(
                             text = "Kohit",
-                            fontSize = 22.sp,
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = AppColor.MainTextColor
                         )
 
                         // ID utilisateur
                         Text(
                             text = "ID #35383773",
-                            fontSize = 14.sp,
-                            color = Color.LightGray
+                            fontSize = 16.sp,
+                            color = AppColor.MinusTextColor
                         )
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
 
                         // Date de membre
                         Text(
                             text = "Membre depuis le 15/09/2025",
-                            fontSize = 13.sp,
-                            color = Color.Gray
+                            fontSize = 14.sp,
+                            color = AppColor.MinusTextColor
                         )
 
                         Spacer(modifier = Modifier.height(20.dp))
@@ -109,7 +110,7 @@ fun ProfilScreen(navController: NavHostController) {
                             StatItem("4ème", "Rang actuel", modifier = Modifier.weight(1f))
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -133,14 +134,14 @@ fun StatItem(value: String, label: String, modifier: Modifier = Modifier) {
     ) {
         Text(
             text = value,
-            fontSize = 18.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = AppColor.MainTextColor
         )
         Text(
             text = label,
-            fontSize = 13.sp,
-            color = Color.LightGray,
+            fontSize = 16.sp,
+            color = AppColor.MinusTextColor,
             textAlign = TextAlign.Center
         )
     }

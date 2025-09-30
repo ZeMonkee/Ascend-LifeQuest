@@ -1,4 +1,4 @@
-package com.example.ascendlifequest.screen
+package com.example.ascendlifequest.screen.login
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -114,7 +114,7 @@ fun LoginScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(25.dp))
 
             Button(
-                onClick = { navController.navigate("quest") },
+                onClick = { navController.navigate("quetes") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A1A)),
                 shape = RoundedCornerShape(30.dp),
                 modifier = Modifier
