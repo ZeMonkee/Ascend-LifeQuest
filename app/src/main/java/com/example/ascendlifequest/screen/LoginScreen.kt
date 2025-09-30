@@ -1,5 +1,6 @@
 package com.example.ascendlifequest.screen
 
+import android.media.MediaPlayer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -38,6 +41,22 @@ import com.example.ascendlifequest.ui.theme.AppColor
 fun LoginScreen(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    // Contexte pour accéder aux ressources
+    val context = LocalContext.current
+
+    // Effet pour gérer la musique de fond
+    DisposableEffect(Unit) {
+        // Création et configuration du MediaPlayer
+        val mediaPlayer = MediaPlayer.create(context, R.raw.music)
+        mediaPlayer.isLooping = true
+        mediaPlayer.start()
+
+        onDispose {
+            mediaPlayer.stop()
+            mediaPlayer.release()
+        }
+    }
 
     AppBackground {
         Column(
