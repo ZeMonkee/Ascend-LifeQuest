@@ -12,6 +12,7 @@ import com.example.ascendlifequest.screen.FriendScreen
 import com.example.ascendlifequest.screen.LoginOptionScreen
 import com.example.ascendlifequest.screen.LoginScreen
 import com.example.ascendlifequest.screen.QuestScreen
+import com.example.ascendlifequest.screen.SettingScreen
 import com.example.ascendlifequest.ui.theme.AscendLifeQuestTheme
 
 class MainActivity : ComponentActivity() {
@@ -27,7 +28,7 @@ class MainActivity : ComponentActivity() {
                     composable("quest") { QuestScreen(navController) }
                     composable("classement") { ClassementScreen(navController) }
                     composable("amis") { FriendScreen(navController)}
-                    composable("parametres") { /* TODO: Créer ParametresScreen */ }
+                    composable("parametres") { SettingScreen(navController) }
                 }
 
             }

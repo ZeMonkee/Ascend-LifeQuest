@@ -2,12 +2,28 @@ package com.example.ascendlifequest.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -17,6 +33,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ascendlifequest.R
+import com.example.ascendlifequest.model.User
 import com.example.ascendlifequest.screen.QuestItem
 import com.example.ascendlifequest.ui.theme.AppColor
 
@@ -24,11 +41,11 @@ import com.example.ascendlifequest.ui.theme.AppColor
 @Composable
 fun AppBackground(content: @Composable () -> Unit) {
     Image(
-            painter = painterResource(R.drawable.background),
-            contentDescription = "Background",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
+        painter = painterResource(R.drawable.background),
+        contentDescription = "Background",
+        contentScale = ContentScale.Crop,
+        modifier = Modifier.fillMaxSize()
+    )
 
     content()
 }
@@ -107,7 +124,15 @@ fun QuestCategory(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .background(AppColor.DarkBlueColor, shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp, bottomStart = 12.dp, bottomEnd = 12.dp))
+            .background(
+                AppColor.DarkBlueColor,
+                shape = RoundedCornerShape(
+                    topStart = 30.dp,
+                    topEnd = 30.dp,
+                    bottomStart = 12.dp,
+                    bottomEnd = 12.dp
+                )
+            )
     ) {
         // Header avec icon
         Row(
@@ -162,4 +187,181 @@ fun QuestCategory(
 
         Spacer(modifier = Modifier.height(12.dp))
     }
+}
+
+@Composable
+fun FriendItem(user: User) {
+    val backgroundColor = AppColor.DarkBlueColor
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Avatar
+            Image(
+                painter = painterResource(id = user.photoUrl),
+                contentDescription = "Avatar de ${user.pseudo}",
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+
+            // Spacer
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // User info
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = user.pseudo,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColor.MainTextColor
+                )
+                Text(
+                    text = "${user.xp} XP",
+                    fontSize = 16.sp,
+                    color = AppColor.MinusTextColor
+                )
+            }
+
+        }
+    }
+}
+
+
+@Composable
+fun RankingItem(user: User) {
+    val backgroundColor = AppColor.DarkBlueColor
+
+    val rankingColor = when (user.rang) {
+        1 -> AppColor.Or // Or
+        2 -> AppColor.Argent // Argent
+        3 -> AppColor.Bronze // Bronze
+        else -> AppColor.MainTextColor
+    }
+
+    val rankBackgroundColor = when (user.rang) {
+        1 -> AppColor.Or // Or
+        2 -> AppColor.Argent // Argent
+        3 -> AppColor.Bronze // Bronze
+        else -> Color.Transparent
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Position number with special background for top 3
+            if (user.rang <= 3) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(rankBackgroundColor, CircleShape)
+                ) {
+                    Text(
+                        text = user.rang.toString(),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColor.MainTextColor
+                    )
+                }
+            } else {
+
+                Text(
+                    text = user.rang.toString(),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = rankingColor,
+                    modifier = Modifier.width(32.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            // Spacer
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // User info
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = user.pseudo,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AppColor.MainTextColor
+                )
+                Text(
+                    text = "${user.xp} XP",
+                    fontSize = 16.sp,
+                    color = AppColor.MinusTextColor
+                )
+            }
+
+            // Avatar - plus grand
+            Image(
+                painter = painterResource(id = user.photoUrl ?: R.drawable.generic_pfp),
+                contentDescription = "Avatar de ${user.pseudo}",
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        }
+    }
+}
+
+
+// Catégorie des quêtes
+@Composable
+fun SettingsItem(
+    title: String,
+    iconRes: Int,
+) {
+    // Item avec icon
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AppColor.DarkBlueColor, shape = RoundedCornerShape(10.dp))
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = AppColor.MainTextColor,
+            modifier = Modifier
+                .size(30.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            title,
+            color = AppColor.MainTextColor,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+        )
+    }
+    Spacer(modifier = Modifier.height(16.dp))
 }

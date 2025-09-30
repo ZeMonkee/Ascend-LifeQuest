@@ -1,10 +1,16 @@
 package com.example.ascendlifequest.screen
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,7 +19,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
-import com.example.ascendlifequest.components.*
+import com.example.ascendlifequest.components.AppBackground
+import com.example.ascendlifequest.components.AppBottomNavBar
+import com.example.ascendlifequest.components.AppHeader
+import com.example.ascendlifequest.components.BottomNavItem
+import com.example.ascendlifequest.components.QuestCategory
 import com.example.ascendlifequest.ui.theme.AppColor
 
 data class QuestItem(val title: String, val xp: Int, val done: Boolean)
@@ -27,7 +37,7 @@ fun QuestScreen(navController: NavHostController) {
                     BottomNavItem.Quetes -> {} // Déjà sur cet écran
                     BottomNavItem.Classement -> navController.navigate("classement")
                     BottomNavItem.Amis -> navController.navigate("amis")
-                    BottomNavItem.Parametres -> {}
+                    BottomNavItem.Parametres -> navController.navigate("parametres")
                 }
             }
         }
