@@ -60,6 +60,7 @@ enum class BottomNavItem(val label: String, val icon: Int) {
     Quetes("Quêtes", R.drawable.icon_quetes),
     Classement("Classement", R.drawable.icon_classement),
     Amis("Amis", R.drawable.icon_amis),
+    Profil("Profil", R.drawable.generic_pfp),
     Parametres("Paramètres", R.drawable.icon_parametres)
 }
 

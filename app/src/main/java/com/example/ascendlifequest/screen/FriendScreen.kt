@@ -49,8 +49,9 @@ fun FriendScreen(navController: NavHostController) {
             AppBottomNavBar(current = BottomNavItem.Amis) { selected ->
                 when (selected) {
                     BottomNavItem.Quetes -> navController.navigate("quest")
-                    BottomNavItem.Classement -> navController.navigate("classement") // Navigate to ranking
+                    BottomNavItem.Classement -> navController.navigate("classement")
                     BottomNavItem.Amis -> {} // Already on this screen
+                    BottomNavItem.Profil -> navController.navigate("profil")
                     BottomNavItem.Parametres -> {}
                 }
             }

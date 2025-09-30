@@ -41,8 +41,8 @@ fun ClassementScreen(navController: NavHostController) {
         User(accountId = 8, pseudo = "CookySensei", photoUrl = R.drawable.generic_pfp, xp = 54641, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 8),
         User(accountId = 9, pseudo = "LesLuong", photoUrl = R.drawable.generic_pfp, xp = 52674, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 9),
         User(accountId = 10, pseudo = "Lippido", photoUrl = R.drawable.generic_pfp, xp = 51234, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 10),
-        User(accountId = 11, pseudo = "AnthonyBiv", photoUrl = R.drawable.generic_pfp, xp = 50516, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 11),
-        User(accountId = 12, pseudo = "AnthonyBiv²", photoUrl = R.drawable.generic_pfp, xp = 49999, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 12)
+        User(accountId = 11, pseudo = "AnthonyBiv", photoUrl = R.drawable.generic_pfp, xp = -50516, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 11),
+        User(accountId = 12, pseudo = "AnthonyBiv²", photoUrl = R.drawable.generic_pfp, xp = -4999999, online = false, quetesRealisees = 0, streak = 0, dateDeCreation = Date(), rang = 12)
     )
     Scaffold(
         containerColor = Color.Transparent,
@@ -52,6 +52,7 @@ fun ClassementScreen(navController: NavHostController) {
                     BottomNavItem.Quetes -> navController.navigate("quest")
                     BottomNavItem.Classement -> {} // Déjà sur cet écran
                     BottomNavItem.Amis -> navController.navigate("amis")
+                    BottomNavItem.Profil -> navController.navigate("profil")
                     BottomNavItem.Parametres -> {}
                 }
             }
