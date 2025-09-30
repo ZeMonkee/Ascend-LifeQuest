@@ -23,12 +23,13 @@ fun SettingScreen(navController: NavHostController) {
     Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {
-            AppBottomNavBar(current = BottomNavItem.Amis) { selected ->
+            AppBottomNavBar(current = BottomNavItem.Parametres) { selected ->
                 when (selected) {
                     BottomNavItem.Quetes -> navController.navigate("quest")
                     BottomNavItem.Classement -> navController.navigate("classement")
                     BottomNavItem.Amis -> navController.navigate("amis")
                     BottomNavItem.Parametres -> {} // Actual
+                    BottomNavItem.Profil -> navController.navigate("profil")
                 }
             }
         }
