@@ -17,25 +17,13 @@ import com.example.ascendlifequest.components.AppBackground
 import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
+import com.example.ascendlifequest.components.MainScaffold
 import com.example.ascendlifequest.components.SettingsItem
 import com.example.ascendlifequest.screen.settings.PreferenceScreen
 
 @Composable
 fun SettingScreen(navController: NavHostController) {
-    Scaffold(
-        containerColor = Color.Transparent,
-        bottomBar = {
-            AppBottomNavBar(current = BottomNavItem.Parametres) { selected ->
-                when (selected) {
-                    BottomNavItem.Quetes -> navController.navigate("quetes")
-                    BottomNavItem.Classement -> navController.navigate("classement")
-                    BottomNavItem.Amis -> navController.navigate("amis")
-                    BottomNavItem.Parametres -> {} // Actual
-                    BottomNavItem.Profil -> navController.navigate("profil")
-                }
-            }
-        }
-    ) { innerPadding ->
+    MainScaffold(navController, BottomNavItem.Parametres) { innerPadding ->
         AppBackground {
             Column(
                 modifier = Modifier

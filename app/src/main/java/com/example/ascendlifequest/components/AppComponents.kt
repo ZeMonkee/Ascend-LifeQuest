@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.model.User
 import com.example.ascendlifequest.screen.main.QuestItem
@@ -123,6 +125,32 @@ fun AppBottomNavBar(
         }
     }
 }
+
+@Composable
+fun MainScaffold(
+    navController: NavHostController,
+    current: BottomNavItem,
+    content: @Composable (PaddingValues) -> Unit
+) {
+    Scaffold(
+        bottomBar = {
+            AppBottomNavBar(current = current) { selected ->
+                if (selected != current) {
+                    when (selected) {
+                        BottomNavItem.Quetes -> navController.navigate("quetes")
+                        BottomNavItem.Classement -> navController.navigate("classement")
+                        BottomNavItem.Amis -> navController.navigate("amis")
+                        BottomNavItem.Parametres -> navController.navigate("parametres")
+                        BottomNavItem.Profil -> navController.navigate("profil")
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        content(innerPadding) // le contenu
+    }
+}
+
 
 // Catégorie des quêtes
 @Composable

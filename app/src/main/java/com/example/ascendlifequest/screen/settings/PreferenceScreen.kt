@@ -20,24 +20,13 @@ import com.example.ascendlifequest.components.AppBackground
 import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
+import com.example.ascendlifequest.components.MainScaffold
 import com.example.ascendlifequest.components.PreferenceQuestion
 import com.example.ascendlifequest.ui.theme.AppColor
 
 @Composable
 fun PreferenceScreen(navController: NavHostController) {
-    Scaffold(
-        bottomBar = {
-            AppBottomNavBar(current = BottomNavItem.Parametres) { selected ->
-                when (selected) {
-                    BottomNavItem.Quetes -> navController.navigate("quetes")
-                    BottomNavItem.Classement -> navController.navigate("classement")
-                    BottomNavItem.Amis -> navController.navigate("amis")
-                    BottomNavItem.Parametres -> navController.navigate("parametres")
-                    BottomNavItem.Profil -> navController.navigate("profil")
-                }
-            }
-        }
-    ) { innerPadding ->
+    MainScaffold(navController, BottomNavItem.Parametres) { innerPadding ->
         AppBackground {
             Column(
                 modifier = Modifier.fillMaxSize().padding(innerPadding)

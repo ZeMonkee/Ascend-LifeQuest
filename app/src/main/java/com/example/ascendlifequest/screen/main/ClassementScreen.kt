@@ -13,6 +13,7 @@ import com.example.ascendlifequest.components.AppBackground
 import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
+import com.example.ascendlifequest.components.MainScaffold
 import com.example.ascendlifequest.components.RankingItem
 import com.example.ascendlifequest.fake_data.F_Users
 
@@ -20,21 +21,7 @@ import com.example.ascendlifequest.fake_data.F_Users
 fun ClassementScreen(navController: NavHostController) {
     // User
     val rankingUsers = F_Users
-
-    Scaffold(
-        containerColor = Color.Transparent,
-        bottomBar = {
-            AppBottomNavBar(current = BottomNavItem.Classement) { selected ->
-                when (selected) {
-                    BottomNavItem.Quetes -> navController.navigate("quetes")
-                    BottomNavItem.Classement -> {} // Déjà sur cet écran
-                    BottomNavItem.Amis -> navController.navigate("amis")
-                    BottomNavItem.Parametres -> navController.navigate("parametres")
-                    BottomNavItem.Profil -> navController.navigate("profil")
-                }
-            }
-        }
-    ) { innerPadding ->
+    MainScaffold(navController, BottomNavItem.Classement) { innerPadding ->
         AppBackground {
             Column(
                 modifier = Modifier

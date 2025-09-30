@@ -14,6 +14,7 @@ import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
 import com.example.ascendlifequest.components.FriendItem
+import com.example.ascendlifequest.components.MainScaffold
 import com.example.ascendlifequest.fake_data.F_Users
 
 @Composable
@@ -21,20 +22,7 @@ fun FriendScreen(navController: NavHostController) {
     // TEST USER
     val friendsUsers = F_Users
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        bottomBar = {
-            AppBottomNavBar(current = BottomNavItem.Amis) { selected ->
-                when (selected) {
-                    BottomNavItem.Quetes -> navController.navigate("quetes")
-                    BottomNavItem.Classement -> navController.navigate("classement")
-                    BottomNavItem.Amis -> {} // Already on this screen
-                    BottomNavItem.Parametres -> navController.navigate("parametres")
-                    BottomNavItem.Profil -> navController.navigate("profil")
-                }
-            }
-        }
-    ) { innerPadding ->
+    MainScaffold(navController, BottomNavItem.Amis) { innerPadding ->
         AppBackground {
             Column(
                 modifier = Modifier.fillMaxSize().padding(innerPadding)
