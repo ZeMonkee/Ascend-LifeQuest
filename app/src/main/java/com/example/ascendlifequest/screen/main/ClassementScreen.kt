@@ -3,25 +3,22 @@ package com.example.ascendlifequest.screen.main
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.components.AppBackground
 import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
-import com.example.ascendlifequest.components.MainScaffold
-import com.example.ascendlifequest.components.RankingItem
+import com.example.ascendlifequest.components.main.RankingItem
 import com.example.ascendlifequest.fake_data.F_Users
 
 @Composable
 fun ClassementScreen(navController: NavHostController) {
     // User
     val rankingUsers = F_Users
-    MainScaffold(navController, BottomNavItem.Classement) { innerPadding ->
+    AppBottomNavBar(navController, BottomNavItem.Classement) { innerPadding ->
         AppBackground {
             Column(
                 modifier = Modifier

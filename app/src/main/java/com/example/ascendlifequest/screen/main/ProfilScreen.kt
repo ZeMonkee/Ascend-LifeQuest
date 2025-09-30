@@ -9,11 +9,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -22,12 +20,12 @@ import com.example.ascendlifequest.components.AppBackground
 import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
-import com.example.ascendlifequest.components.MainScaffold
+import com.example.ascendlifequest.components.main.StatItem
 import com.example.ascendlifequest.ui.theme.AppColor
 
 @Composable
 fun ProfilScreen(navController: NavHostController) {
-    MainScaffold(navController, BottomNavItem.Profil) { innerPadding ->
+    AppBottomNavBar(navController, BottomNavItem.Profil) { innerPadding ->
         AppBackground {
             Column(
                 modifier = Modifier
@@ -111,26 +109,5 @@ fun ProfilScreen(navController: NavHostController) {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun StatItem(value: String, label: String, modifier: Modifier = Modifier) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-    ) {
-        Text(
-            text = value,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = AppColor.MainTextColor
-        )
-        Text(
-            text = label,
-            fontSize = 16.sp,
-            color = AppColor.MinusTextColor,
-            textAlign = TextAlign.Center
-        )
     }
 }

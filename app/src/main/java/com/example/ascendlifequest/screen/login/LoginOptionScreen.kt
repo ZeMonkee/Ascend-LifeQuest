@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.components.AppBackground
+import com.example.ascendlifequest.components.login.SocialLoginButton
 import com.example.ascendlifequest.ui.theme.AppColor
 
 @Composable
@@ -84,22 +85,5 @@ fun LoginOptionScreen(navController: NavHostController) {
                 SocialLoginButton(R.drawable.ic_apple)
             }
         }
-    }
-}
-
-@Composable
-fun SocialLoginButton(iconRes: Int) {
-    Box(
-        modifier = Modifier
-            .size(50.dp)
-            .background(AppColor.MainTextColor, shape = CircleShape)
-            .clickable { /* TODO */ },
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(id = iconRes),
-            contentDescription = "social login",
-            modifier = Modifier.size(24.dp)
-        )
     }
 }

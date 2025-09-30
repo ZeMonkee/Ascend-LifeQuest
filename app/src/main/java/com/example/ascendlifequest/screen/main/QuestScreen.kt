@@ -8,18 +8,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap.Companion.Butt
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.components.*
+import com.example.ascendlifequest.components.main.QuestCategory
 import com.example.ascendlifequest.ui.theme.AppColor
 
 data class QuestItem(val title: String, val xp: Int, val done: Boolean)
 
 @Composable
 fun QuestScreen(navController: NavHostController) {
-    MainScaffold(navController, BottomNavItem.Quetes) { innerPadding ->
+    AppBottomNavBar(navController, BottomNavItem.Quetes) { innerPadding ->
         AppBackground {
             Column(
                 modifier = Modifier
@@ -43,6 +45,8 @@ fun QuestScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxWidth(),
                         color = Color(0xFF4CAF50),
                         trackColor = Color.LightGray,
+                        strokeCap = Butt,
+                        gapSize = 0.dp,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("60%", fontSize = 16.sp, color = AppColor.MinusTextColor)
