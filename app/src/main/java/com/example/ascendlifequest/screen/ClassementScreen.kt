@@ -26,6 +26,7 @@ import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
 import com.example.ascendlifequest.model.User
+import com.example.ascendlifequest.ui.theme.AppColor
 import java.util.Date
 
 @Composable
@@ -85,19 +86,19 @@ fun ClassementScreen(navController: NavHostController) {
 
 @Composable
 fun RankingItem(user: User) {
-    val backgroundColor = Color(0xFF2E3F78)
+    val backgroundColor = AppColor.DarkBlueColor
 
     val rankingColor = when (user.rang) {
-        1 -> Color(0xFFFFD700) // Or
-        2 -> Color(0xFFC0C0C0) // Argent
-        3 -> Color(0xFFCD7F32) // Bronze
-        else -> Color.White
+        1 -> AppColor.Or // Or
+        2 -> AppColor.Argent // Argent
+        3 -> AppColor.Bronze // Bronze
+        else -> AppColor.MainTextColor
     }
 
     val rankBackgroundColor = when (user.rang) {
-        1 -> Color(0xFFF39C12) // Fond orange/or pour le premier
-        2 -> Color(0xFF95A5A6) // Fond gris argenté pour le second
-        3 -> Color(0xFFCD7F32) // Fond bronze pour le troisième
+        1 -> AppColor.Or // Or
+        2 -> AppColor.Argent // Argent
+        3 -> AppColor.Bronze // Bronze
         else -> Color.Transparent
     }
 
@@ -126,7 +127,7 @@ fun RankingItem(user: User) {
                         text = user.rang.toString(),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = AppColor.MainTextColor
                     )
                 }
             } else {
@@ -152,12 +153,12 @@ fun RankingItem(user: User) {
                     text = user.pseudo,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = AppColor.MainTextColor
                 )
                 Text(
                     text = "${user.xp} XP",
                     fontSize = 16.sp,
-                    color = Color(0xFF9EABBE)
+                    color = AppColor.MinusTextColor
                 )
             }
 

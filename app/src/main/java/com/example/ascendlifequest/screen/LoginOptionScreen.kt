@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.components.AppBackground
+import com.example.ascendlifequest.ui.theme.AppColor
 
 @Composable
 fun LoginOptionScreen(navController: NavHostController) {
@@ -42,7 +43,7 @@ fun LoginOptionScreen(navController: NavHostController) {
             // Bouton connexion
             Button(
                 onClick = { navController.navigate("login") },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A1A1A)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
                 shape = RoundedCornerShape(30.dp),
                 modifier = Modifier
                     .fillMaxWidth(0.75f)
@@ -52,7 +53,7 @@ fun LoginOptionScreen(navController: NavHostController) {
                     "Se connecter",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = AppColor.MainTextColor
                 )
             }
 
@@ -60,7 +61,7 @@ fun LoginOptionScreen(navController: NavHostController) {
 
             Text(
                 text = "Pas encore de compte ? S’inscrire",
-                color = Color.White,
+                color = AppColor.MinusTextColor,
                 fontSize = 15.sp,
                 modifier = Modifier.clickable { /* TODO */ }
             )
@@ -84,7 +85,7 @@ fun SocialLoginButton(iconRes: Int) {
     Box(
         modifier = Modifier
             .size(50.dp)
-            .background(Color.White, shape = CircleShape)
+            .background(AppColor.MainTextColor, shape = CircleShape)
             .clickable { /* TODO */ },
         contentAlignment = Alignment.Center
     ) {

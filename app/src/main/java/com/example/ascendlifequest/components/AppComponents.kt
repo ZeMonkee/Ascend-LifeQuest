@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.screen.QuestItem
+import com.example.ascendlifequest.ui.theme.AppColor
 
 // Background
 @Composable
@@ -48,7 +49,7 @@ fun AppHeader(
             text = title,
             fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = AppColor.MainTextColor,
             textAlign = TextAlign.Center,
             modifier = Modifier.align(Alignment.Center)
         )
@@ -69,13 +70,27 @@ fun AppBottomNavBar(
     current: BottomNavItem = BottomNavItem.Quetes,
     onItemSelected: (BottomNavItem) -> Unit = {}
 ) {
-    NavigationBar(containerColor = Color(0xFF1E293B)) {
+    NavigationBar(
+        containerColor = AppColor.DarkBlueColor,
+        contentColor = AppColor.MainTextColor
+    ) {
         BottomNavItem.entries.forEach { item ->
             NavigationBarItem(
                 selected = current == item,
                 onClick = { onItemSelected(item) },
-                icon = { Icon(painter = painterResource(item.icon), contentDescription = item.label) },
-                label = { Text(item.label) }
+                icon = {
+                    Icon(
+                        painter = painterResource(item.icon),
+                        contentDescription = item.label,
+                        tint = if (current == item) AppColor.LightBlueColor else AppColor.MainTextColor
+                    )
+                },
+                label = {
+                    Text(
+                        item.label,
+                        color = if (current == item) AppColor.LightBlueColor else AppColor.MainTextColor
+                    )
+                }
             )
         }
     }
@@ -93,7 +108,7 @@ fun QuestCategory(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .background(Color(0xFF0F1E3D), shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp, bottomStart = 12.dp, bottomEnd = 12.dp))
+            .background(AppColor.DarkBlueColor, shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp, bottomStart = 12.dp, bottomEnd = 12.dp))
     ) {
         // Header avec icon
         Row(
@@ -127,20 +142,20 @@ fun QuestCategory(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 6.dp)
-                    .background(Color(0xFF142850), shape = RoundedCornerShape(8.dp))
+                    .background(AppColor.DarkBlueColor, shape = RoundedCornerShape(8.dp))
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "» ${quest.title}",
-                    color = if (quest.done) Color.Gray else Color.White,
+                    color = if (quest.done) Color.Gray else AppColor.MainTextColor,
                     fontWeight = if (quest.done) FontWeight.Normal else FontWeight.Medium,
                     textDecoration = if (quest.done) TextDecoration.LineThrough else TextDecoration.None,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     text = "${quest.xp} XP",
-                    color = if (quest.done) Color.Gray else Color.White,
+                    color = if (quest.done) Color.Gray else AppColor.MainTextColor,
                     fontWeight = FontWeight.Bold
                 )
             }

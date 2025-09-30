@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.components.AppBackground
+import com.example.ascendlifequest.ui.theme.AppColor
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
@@ -88,7 +89,7 @@ fun LoginScreen(navController: NavHostController) {
 
             Text(
                 text = "Mot de passe oublié",
-                color = Color.White,
+                color = AppColor.MinusTextColor,
                 fontSize = 14.sp,
                 modifier = Modifier
                     .align(Alignment.End)
@@ -110,7 +111,7 @@ fun LoginScreen(navController: NavHostController) {
                     "Se connecter",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = AppColor.MainTextColor
                 )
             }
 
@@ -118,7 +119,7 @@ fun LoginScreen(navController: NavHostController) {
 
             Text(
                 text = "Pas encore de compte ? S’inscrire",
-                color = Color.White,
+                color = AppColor.MinusTextColor,
                 fontSize = 15.sp,
                 modifier = Modifier.clickable { /* TODO */ }
             )

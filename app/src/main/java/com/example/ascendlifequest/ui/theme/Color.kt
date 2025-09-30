@@ -10,5 +10,16 @@ val Purple40 = Color(0xFF6650a4)
 val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
-// APP COLOR
-val DarkColor = Color(0x151D31FF)
+object AppColor {
+    val LightBlueColor = Color(0xFF5682CB)
+    val DarkBlueColor = Color(0xFF151D31)
+    val MainTextColor = Color(0xFFE8EBF3)
+    val MinusTextColor = Color(0xFFBABABA)
+    val SportColor = Color(0xFFFF4343)
+    val CuisineColor = Color(0xFFFF8543)
+    val JeuxVideoColor = Color(0xFFC443FF)
+    val EtudesColor = Color(0xFF42D242)
+    val Or = Color(0xFFFFD700)
+    val Argent = Color(0xFFC0C0C0)
+    val Bronze = Color(0xFFCD7F32)
+}
