@@ -14,12 +14,12 @@ import androidx.compose.ui.unit.dp
 import com.example.ascendlifequest.ui.theme.AppColor
 
 @Composable
-fun SocialLoginButton(iconRes: Int) {
+fun SocialLoginButton(iconRes: Int, onClick: () -> Unit = {}) {
     Box(
         modifier = Modifier
             .size(50.dp)
             .background(AppColor.MainTextColor, shape = CircleShape)
-            .clickable { /* TODO */ },
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Image(

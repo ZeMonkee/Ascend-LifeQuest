@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "215110936631",
+    "project_id": "ascendlifequest-4aa78",
+    "storage_bucket": "ascendlifequest-4aa78.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:215110936631:android:e3fab7d3c8bda5d46237b2",
+        "android_client_info": {
+          "package_name": "com.example.ascendlifequest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "215110936631-pum9ivl9r5mnklg1cgngpjg6olkqgbf2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAsqUYK0ije8Q3eC7uaAKMqE_qGJVPzlc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "215110936631-pum9ivl9r5mnklg1cgngpjg6olkqgbf2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
