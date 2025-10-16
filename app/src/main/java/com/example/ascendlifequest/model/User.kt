@@ -12,6 +12,4 @@ data class User(
     val streak: Int = 0,
     val dateDeCreation: Date = Date(),
     val rang: Int = 1
-) {
-    constructor() : this(0, "", 0, 0, false, 0, 0, Date(), 1)
-}
+)

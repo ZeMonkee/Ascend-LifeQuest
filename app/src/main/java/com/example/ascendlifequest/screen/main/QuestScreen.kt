@@ -1,23 +1,22 @@
 package com.example.ascendlifequest.screen.main
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap.Companion.Butt
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.ascendlifequest.R
 import com.example.ascendlifequest.components.*
 import com.example.ascendlifequest.components.main.QuestCategory
+import com.example.ascendlifequest.fake_data.F_Categorie
+import com.example.ascendlifequest.fake_data.F_Quests
 import com.example.ascendlifequest.ui.theme.AppColor
-
-data class QuestItem(val title: String, val xp: Int, val done: Boolean)
 
 @Composable
 fun QuestScreen(navController: NavHostController) {
@@ -45,60 +44,31 @@ fun QuestScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxWidth(),
                         color = Color(0xFF4CAF50),
                         trackColor = Color.LightGray,
-                        strokeCap = Butt,
-                        gapSize = 0.dp,
+                        strokeCap = StrokeCap.Butt,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("60%", fontSize = 16.sp, color = AppColor.MinusTextColor)
                 }
 
-                Column(
+                // Utilisation de LazyColumn pour une meilleure performance avec les listes
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(12.dp)
+                        .padding(horizontal = 16.dp),
                 ) {
-                    QuestCategory(
-                        title = "Sport",
-                        color = AppColor.SportColor,
-                        quests = listOf(
-                            QuestItem("Faire 100 pompes", 400, done = true),
-                            QuestItem("Faire 100 squats", 300, done = false),
-                            QuestItem("Courir 10 km", 350, done = false),
-                        ),
-                        iconRes = R.drawable.icon_sport
-                    )
+                    // Itération sur la liste des catégories
+                    items(F_Categorie) { categorie ->
+                        // Filtrage des quêtes pour la catégorie actuelle
+                        val questsForCategory = F_Quests.filter { it.categorie == categorie.id }
 
-                    QuestCategory(
-                        title = "Cuisine",
-                        color = AppColor.CuisineColor,
-                        quests = listOf(
-                            QuestItem("Faire une salade", 150, done = false),
-                            QuestItem("Faire un plat italien", 250, done = true),
-                        ),
-                        iconRes = R.drawable.icon_cuisine
-                    )
-
-                    QuestCategory(
-                        title = "Jeux Vidéo",
-                        color = AppColor.JeuxVideoColor,
-                        quests = listOf(
-                            QuestItem("Faire une partie classée", 200, done = true),
-                            QuestItem("Jouer 30 minutes", 100, done = false),
-                        ),
-                        iconRes = R.drawable.icon_jeux_video
-                    )
-
-                    QuestCategory(
-                        title = "Etudes",
-                        color = AppColor.EtudesColor,
-                        quests = listOf(
-                            QuestItem("Faire ses devoirs", 350, done = false),
-                            QuestItem("Réviser 30 minutes", 200, done = false),
-                            QuestItem("Préparer ses affaires", 100, done = false),
-                        ),
-                        iconRes = R.drawable.icon_etudes
-                    )
+                        // Affichage de la catégorie et de ses quêtes si la liste n'est pas vide
+                        if (questsForCategory.isNotEmpty()) {
+                            QuestCategory(
+                                categorie = categorie,
+                                quests = questsForCategory
+                            )
+                        }
+                    }
                 }
             }
         }

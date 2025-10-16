@@ -33,8 +33,7 @@ fun PreferenceScreen(navController: NavHostController) {
                     PreferenceQuestion("A quel point aimez-vous le sport ?", AppColor.SportColor)
                     PreferenceQuestion("A quel point aimez-vous la cuisine ?", AppColor.CuisineColor)
                     PreferenceQuestion("A quel point aimez-vous les jeux vidéo ?", AppColor.JeuxVideoColor)
-                    PreferenceQuestion("A quel point aimez-vous la lecture ?", AppColor.EtudesColor)
-                    PreferenceQuestion("A quel point aimez-vous le dessin ?", AppColor.DessinColor)
+                    PreferenceQuestion("A quel point aimez-vous la lecture ?", AppColor.LectureColor)
                 }
             }
         }
