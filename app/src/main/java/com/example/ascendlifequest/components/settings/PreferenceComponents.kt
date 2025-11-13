@@ -31,19 +31,23 @@ import androidx.compose.ui.graphics.StrokeCap.Companion.Butt
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ascendlifequest.service.AuthService
 import com.example.ascendlifequest.ui.theme.AppColor
 
 // Item des questions de preferences
 @Composable
 fun PreferenceQuestion(question: String, color: Color, context: Context, preferenceKey: String) {
+    // Recuperer userId
+    val authService = remember { AuthService(context) }
+    val userId = authService.getUserId()
     // Lire la préférence sauvegardée
     var selected by remember {
-        mutableIntStateOf(PreferencesHelper.getPreference(context, preferenceKey, 3))
+        mutableIntStateOf(PreferencesHelper.getPreference(context, userId, preferenceKey, 3))
     }
 
     // Sauvegarder la préférence à chaque changement
     LaunchedEffect(selected) {
-        PreferencesHelper.savePreference(context, preferenceKey, selected)
+        PreferencesHelper.savePreference(context, userId, preferenceKey, selected)
     }
 
     Card(

@@ -1,5 +1,6 @@
 package com.example.ascendlifequest.components.main
 
+import android.content.Context
 import androidx.compose.foundation.background
 // Import pour le Modifier.clickable
 import androidx.compose.foundation.clickable
@@ -27,19 +28,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ascendlifequest.helpers.QuestHelper
 import com.example.ascendlifequest.model.Categorie
 import com.example.ascendlifequest.model.Quest
+import com.example.ascendlifequest.service.AuthService
 import com.example.ascendlifequest.ui.theme.AppColor
 
 // Catégorie des quêtes
 @Composable
 fun QuestCategory(
     categorie: Categorie, // Utilise le modèle Categorie
-    quests: List<Quest>    // Utilise la liste de Quest
+    quests: List<Quest>,  // Utilise la liste de Quest
+    context: Context // Passer le contexte pour accéder aux SharedPreferences
 ) {
+    // Recuperer userId
+    val authService = remember { AuthService(context) }
+    val userId = authService.getUserId()
+    // Initialiser les états des quêtes à partir des SharedPreferences
     val questDoneStates = remember {
         mutableStateMapOf<Int, Boolean>().apply {
-            quests.forEach { put(it.id, false) } // Initialise toutes les quêtes à "non terminé"
+            quests.forEach {
+                put(it.id, QuestHelper.getQuestState(context, userId, it.id))
+            }
         }
     }
 
@@ -92,7 +102,12 @@ fun QuestCategory(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        questDoneStates[quest.id] = !isDone
+                        // Inverser l'état de la quête
+                        val newState = !isDone
+                        questDoneStates[quest.id] = newState
+
+                        // Sauvegarder l'état dans SharedPreferences
+                        QuestHelper.saveQuestState(context, userId, quest.id, newState)
                     }
                     .background(AppColor.DarkBlueColor, shape = RoundedCornerShape(8.dp))
                     .padding(16.dp),
@@ -117,3 +132,4 @@ fun QuestCategory(
         Spacer(modifier = Modifier.height(12.dp))
     }
 }
+

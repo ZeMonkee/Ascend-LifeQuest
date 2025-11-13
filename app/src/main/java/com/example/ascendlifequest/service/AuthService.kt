@@ -172,4 +172,13 @@ class AuthService(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    // Récupérer l'ID utilisateur actuel (uid)
+    fun getUserId(): String {
+        return try {
+            auth.currentUser!!.uid
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de la récupération de l'ID utilisateur", e)
+        } as String
+    }
 }

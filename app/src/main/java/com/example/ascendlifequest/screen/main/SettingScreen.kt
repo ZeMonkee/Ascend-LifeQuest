@@ -18,6 +18,7 @@ import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
 import com.example.ascendlifequest.components.main.SettingsItem
+import com.example.ascendlifequest.helpers.QuestHelper
 import com.example.ascendlifequest.service.AuthService
 
 @Composable
@@ -51,7 +52,7 @@ fun SettingScreen(navController: NavHostController) {
                     }
 
                     // Bouton de déconnexion
-                    SettingsItem("Se déconnecter", R.drawable.icon_quetes){
+                    SettingsItem("Se déconnecter", R.drawable.icon_quetes){ context ->
                         authService.signOut()
                         Toast.makeText(context, "Vous avez été déconnecté", Toast.LENGTH_SHORT).show()
                         navController.navigate("login_option") {

@@ -8,5 +8,6 @@ data class Quest(
     val preferenceRequis: Int,
     val xpRapporte: Int,
     val tempsNecessaire: kotlin.time.Duration,
-    val dependantMeteo: Boolean
+    val dependantMeteo: Boolean,
+    val valider: Boolean = false
 )
