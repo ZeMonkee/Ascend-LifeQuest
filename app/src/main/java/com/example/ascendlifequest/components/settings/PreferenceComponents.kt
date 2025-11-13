@@ -1,5 +1,6 @@
 package com.example.ascendlifequest.components.settings
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +19,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,8 +35,16 @@ import com.example.ascendlifequest.ui.theme.AppColor
 
 // Item des questions de preferences
 @Composable
-fun PreferenceQuestion(question: String, color: Color) {
-    var selected by remember { androidx.compose.runtime.mutableIntStateOf(3) } // valeur par défaut au milieu
+fun PreferenceQuestion(question: String, color: Color, context: Context, preferenceKey: String) {
+    // Lire la préférence sauvegardée
+    var selected by remember {
+        mutableIntStateOf(PreferencesHelper.getPreference(context, preferenceKey, 3))
+    }
+
+    // Sauvegarder la préférence à chaque changement
+    LaunchedEffect(selected) {
+        PreferencesHelper.savePreference(context, preferenceKey, selected)
+    }
 
     Card(
         modifier = Modifier
@@ -56,17 +67,16 @@ fun PreferenceQuestion(question: String, color: Color) {
 
             Box(contentAlignment = Alignment.CenterStart) {
                 LinearProgressIndicator(
-                    progress = {
-                        (selected -1) / 4f
-                    },
+                    progress = { (selected - 1) / 4f },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(16.dp),
                     color = color,
                     trackColor = Color.DarkGray,
                     strokeCap = Butt,
-                    gapSize = 0.dp,
+                    gapSize = 0.dp
                 )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -75,11 +85,9 @@ fun PreferenceQuestion(question: String, color: Color) {
                     (1..5).forEach { value ->
                         Button(
                             onClick = { selected = value },
-                            modifier = Modifier
-                                .size(42.dp),
+                            modifier = Modifier.size(42.dp),
                             shape = RoundedCornerShape(50),
                             contentPadding = PaddingValues(0.dp),
-
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (selected >= value) color else Color.DarkGray
                             )
