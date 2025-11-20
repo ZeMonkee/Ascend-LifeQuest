@@ -60,11 +60,11 @@ fun QuestScreen(navController: NavHostController) {
             ) {
                 AppHeader(title = "QUÊTES")
 
-            Box(modifier = Modifier.fillMaxSize()) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     LinearProgressIndicator(
                         progress = { 0.6f },
@@ -120,60 +120,6 @@ fun QuestScreen(navController: NavHostController) {
                             }
                         }
                     }
-                    AppHeader(
-                        title = "QUÊTES",
-                    )
-                    // Barre de progression
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        LinearProgressIndicator(
-                            progress = {
-                                0.6f
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            color = Color(0xFF4CAF50),
-                            trackColor = Color.LightGray,
-                            strokeCap = StrokeCap.Butt,
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("60%", fontSize = 16.sp, color = AppColor.MinusTextColor)
-                    }
-
-                    // Utilisation de LazyColumn pour une meilleure performance avec les listes
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                    ) {
-                        // Itération sur la liste des catégories
-                        items(F_Categorie) { categorie ->
-                            // Filtrage des quêtes pour la catégorie actuelle
-                            val questsForCategory = F_Quests.filter { it.categorie == categorie.id }
-
-                            // Affichage de la catégorie et de ses quêtes si la liste n'est pas vide
-                            if (questsForCategory.isNotEmpty()) {
-                                QuestCategory(
-                                    categorie = categorie,
-                                    quests = questsForCategory,
-                                    context = LocalContext.current
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Weather widget placed top-right
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(12.dp),
-                    contentAlignment = Alignment.TopEnd
-                ) {
-                    WeatherWidget()
                 }
             }
         }
