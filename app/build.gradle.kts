@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.ascendlifequest"
-    compileSdk = 36  // Mise à jour de 34 à 36 pour supporter les dépendances récentes
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.ascendlifequest" // Doit correspondre au package dans google-services.json
@@ -70,6 +70,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation(libs.androidx.compose.material3)
+    implementation(libs.firebase.firestore)
 
     // Testing
     testImplementation(libs.junit)
@@ -79,4 +80,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("com.squareup.okio:okio:3.2.0")
+
 }
