@@ -19,6 +19,8 @@ import com.example.ascendlifequest.screen.main.SettingScreen
 import com.example.ascendlifequest.screen.settings.PreferenceScreen
 import com.example.ascendlifequest.ui.theme.AscendLifeQuestTheme
 import com.google.firebase.FirebaseApp
+import com.example.ascendlifequest.screen.main.AccountScreen
+import com.example.ascendlifequest.components.PermissionRequester
 
 private const val TAG = "MainActivity"
 
@@ -43,6 +45,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             AscendLifeQuestTheme {
                 val navController = rememberNavController()
+                // Request location permission once on app start (first launch will trigger permission prompt)
+                PermissionRequester()
                 NavHost(navController = navController, startDestination = "login_option") {
                     composable("login_option") { LoginOptionScreen(navController) }
                     composable("login") { LoginScreen(navController) }
@@ -51,6 +55,7 @@ class MainActivity : ComponentActivity() {
                     composable("classement") { ClassementScreen(navController) }
                     composable("amis") { FriendScreen(navController) }
                     composable("parametres") { SettingScreen(navController) }
+                    composable("account") { AccountScreen(navController) }
                     composable("profil") { ProfilScreen(navController) }
                     composable("preference") { PreferenceScreen(navController) }
                 }

@@ -18,7 +18,6 @@ import com.example.ascendlifequest.components.AppBottomNavBar
 import com.example.ascendlifequest.components.AppHeader
 import com.example.ascendlifequest.components.BottomNavItem
 import com.example.ascendlifequest.components.main.SettingsItem
-import com.example.ascendlifequest.helpers.QuestHelper
 import com.example.ascendlifequest.service.AuthService
 
 @Composable
@@ -44,7 +43,9 @@ fun SettingScreen(navController: NavHostController) {
                         .padding(12.dp)
                 ) {
                     // Options de paramètres
-                    SettingsItem("Comptes", R.drawable.icon_quetes){}
+                    SettingsItem("Comptes", R.drawable.icon_quetes){
+                        navController.navigate("account")
+                    }
                     SettingsItem("Notifications", R.drawable.icon_quetes){}
                     SettingsItem("Thèmes", R.drawable.icon_quetes){}
                     SettingsItem("Préférences", R.drawable.icon_quetes) {

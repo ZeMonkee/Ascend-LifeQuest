@@ -1,128 +1,117 @@
 package com.example.ascendlifequest.components
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.content.pm.PackageManager
+import android.content.Context
+import android.location.Location
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.net.URL
+import java.util.Locale
+import kotlin.coroutines.resume
+import org.json.JSONObject
 
 private const val TAG = "WeatherWidget"
 
 @Composable
-fun WeatherWidget(modifier: Modifier = Modifier) {
+fun WeatherWidget() {
     val context = LocalContext.current
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    var temperature by remember { mutableStateOf<String?>(null) }
+    var condition by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
 
-    var temperature by remember { mutableStateOf<Double?>(null) }
-    var description by remember { mutableStateOf<String?>(null) }
-    var permissionGranted by remember {
-        mutableStateOf(
-            context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    // Flag to ensure we request permission only once while the composable is active
-    val requestedOnce = remember { mutableStateOf(false) }
-
-    // Launcher to request permission interactively
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        permissionGranted = granted
-        if (granted) {
-            // Once granted, fetch location & weather
-            fetchLocationAndWeather(fusedLocationClient) { lat, lon ->
-                fetchWeather(lat, lon) { temp, desc ->
-                    temperature = temp
-                    description = desc
-                }
-            }
+    LaunchedEffect(Unit) {
+        // request location and fetch weather when entering the Quest screen
+        loading = true
+        val loc = requestRealLocation(context)
+        if (loc != null) {
+            val weather = fetchWeather(loc.latitude, loc.longitude)
+            temperature = weather?.first
+            condition = weather?.second
         }
+        loading = false
     }
 
-    // When the composable enters composition, if permission already granted, fetch;
-    // otherwise request the permission automatically once (no button)
-    LaunchedEffect(permissionGranted) {
-        if (permissionGranted) {
-            fetchLocationAndWeather(fusedLocationClient) { lat, lon ->
-                fetchWeather(lat, lon) { temp, desc ->
-                    temperature = temp
-                    description = desc
-                }
-            }
-        } else {
-            if (!requestedOnce.value) {
-                requestedOnce.value = true
-                // Launch the system permission request dialog
-                launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-        }
-    }
-
-    Card(
-        modifier = modifier
-            .wrapContentSize()
-            .padding(8.dp),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    Box(
+        modifier = Modifier
+            .width(84.dp)
+            .height(72.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .background(Color.White)
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            if (temperature != null && description != null) {
-                Text(text = "${temperature!!.toInt()}°C", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(text = description!!, style = MaterialTheme.typography.bodySmall)
-            } else {
-                if (!permissionGranted) {
-                    // We requested the permission automatically; show a note while waiting for user's decision
-                    Text(text = "Demande d'autorisation en cours...", style = MaterialTheme.typography.bodySmall)
-                } else {
-                    Text(text = "Chargement...", style = MaterialTheme.typography.bodySmall)
-                }
+        if (loading) {
+            CircularProgressIndicator()
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = temperature ?: "--°C", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = condition ?: "--", style = MaterialTheme.typography.bodySmall)
             }
         }
     }
 }
 
 @SuppressLint("MissingPermission")
-private fun fetchLocationAndWeather(
-    fusedLocationClient: FusedLocationProviderClient,
-    onLocation: (lat: Double, lon: Double) -> Unit
-) {
-    Log.d(TAG, "Demande de la localisation actuelle…")
-    val cancellationTokenSource = CancellationTokenSource()
-
-    fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationTokenSource.token)
-        .addOnSuccessListener { location ->
-            if (location != null) {
-                onLocation(location.latitude, location.longitude)
-            } else {
-                Log.w(TAG, "Impossible d'obtenir la localisation (résultat nul).")
+suspend fun requestRealLocation(context: Context): Location? = withContext(Dispatchers.IO) {
+    try {
+        val client = LocationServices.getFusedLocationProviderClient(context)
+        val task = client.lastLocation
+        val loc = suspendCancellableCoroutine<Location?> { cont ->
+            task.addOnSuccessListener { location ->
+                cont.resume(location)
+            }
+            task.addOnFailureListener { ex ->
+                cont.resume(null)
             }
         }
-        .addOnFailureListener { exception ->
-            Log.e(TAG, "Échec de la récupération de la localisation.", exception)
-        }
+        return@withContext loc
+    } catch (ex: Exception) {
+        Log.e(TAG, "Erreur localisation", ex)
+        return@withContext null
+    }
+}
+
+suspend fun fetchWeather(lat: Double, lon: Double): Pair<String, String>? = withContext(Dispatchers.IO) {
+    try {
+        // Open-Meteo API: no API key required
+        val url = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true&temperature_unit=celsius"
+        val json = URL(url).readText()
+        val obj = JSONObject(json)
+        val current = obj.getJSONObject("current_weather")
+        val temp = current.getDouble("temperature")
+        val weatherCode = current.getInt("weathercode")
+        val condition = mapWeatherCodeToText(weatherCode)
+        return@withContext String.format(Locale.US, "%.0f°C", temp) to condition
+    } catch (ex: Exception) {
+        Log.e(TAG, "Erreur fetchWeather", ex)
+        return@withContext null
+    }
+}
+
+fun mapWeatherCodeToText(code: Int): String {
+    return when (code) {
+        0 -> "Dégagé"
+        1, 2, 3 -> "Partiellement nuageux"
+        45, 48 -> "Brouillard"
+        51, 53, 55 -> "Bruine"
+        61, 63, 65 -> "Pluie"
+        71, 73, 75 -> "Neige"
+        80, 81, 82 -> "Averses"
+        else -> "Inconnu"
+    }
 }
