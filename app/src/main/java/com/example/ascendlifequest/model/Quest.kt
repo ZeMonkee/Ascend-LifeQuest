@@ -10,4 +10,6 @@ data class Quest(
     val tempsNecessaire: kotlin.time.Duration,
     val dependantMeteo: Boolean,
     val valider: Boolean = false
-)
+) {
+    fun getTempsNecessaireMinutes(): Long = tempsNecessaire.inWholeMinutes
+}
