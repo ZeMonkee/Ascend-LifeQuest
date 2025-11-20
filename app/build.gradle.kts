@@ -62,6 +62,10 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
@@ -71,6 +75,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation(libs.androidx.compose.material3)
     implementation(libs.firebase.firestore)
+    implementation(libs.play.services.location)
 
     // Testing
     testImplementation(libs.junit)
