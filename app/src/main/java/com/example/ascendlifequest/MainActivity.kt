@@ -23,6 +23,7 @@ import com.google.firebase.FirebaseApp
 private const val TAG = "MainActivity"
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -56,4 +57,5 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }
