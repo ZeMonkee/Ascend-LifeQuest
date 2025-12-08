@@ -26,113 +26,295 @@ fun AccountScreen(navController: NavHostController, vm: AccountViewModel = viewM
     val state by vm.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { vm.loadCurrentUser() }
-
     var showEmailDialog by remember { mutableStateOf(false) }
     var showPasswordDialog by remember { mutableStateOf(false) }
     var newEmail by remember { mutableStateOf("") }
 
+    var pendingEmailVerificationRedirect by remember { mutableStateOf(false) }
+    var pendingPasswordChangeRedirect by remember { mutableStateOf(false) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
+    var passwordSuccessMessage by remember { mutableStateOf<String?>(null) }
+
+    var currentPassword by remember { mutableStateOf("") }
+    var askingNew by remember { mutableStateOf(false) }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmNew by remember { mutableStateOf("") }
+    var reauthTriggerPassword by remember { mutableStateOf<String?>(null) }
+    var reauthLoadingPassword by remember { mutableStateOf(false) }
+    var reauthErrorPassword by remember { mutableStateOf<String?>(null) }
+    var newPasswordError by remember { mutableStateOf<String?>(null) }
+
+    var reauthDialogVisible by remember { mutableStateOf(false) }
+    var reauthCurrentPassword by remember { mutableStateOf("") }
+    var reauthTriggerReauth by remember { mutableStateOf<String?>(null) }
+    var reauthLoadingReauth by remember { mutableStateOf(false) }
+    var reauthErrorReauth by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) { vm.loadCurrentUser() }
+
+    LaunchedEffect(state) {
+        if (state is AccountUiState.ReauthRequired) {
+            reauthDialogVisible = true
+        }
+    }
+
+    LaunchedEffect(showEmailDialog, showPasswordDialog, pendingEmailVerificationRedirect, pendingPasswordChangeRedirect) {
+        while (true) {
+            kotlinx.coroutines.delay(5000)
+            val currentState = state
+            val isReauthRequired = currentState is AccountUiState.ReauthRequired
+            val isShowingMessage = currentState is AccountUiState.Success || currentState is AccountUiState.Error
+
+            if (!showEmailDialog && !showPasswordDialog && !isReauthRequired &&
+                !isShowingMessage && !pendingEmailVerificationRedirect && !pendingPasswordChangeRedirect) {
+                vm.refreshUser()
+            }
+        }
+    }
+
+    LaunchedEffect(pendingEmailVerificationRedirect) {
+        if (pendingEmailVerificationRedirect) {
+            kotlinx.coroutines.delay(10000)
+            vm.signOut()
+            navController.navigate("login_option") {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
+    LaunchedEffect(pendingPasswordChangeRedirect) {
+        if (pendingPasswordChangeRedirect) {
+            kotlinx.coroutines.delay(5000)
+            vm.signOut()
+            navController.navigate("login_option") {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { innerPadding ->
         AppBackground {
             Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(12.dp)) {
-                // Header with back button (chevron text)
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp)) {
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                ) {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        // simple text chevron instead of icon
                         Text(text = "‹", color = AppColor.MainTextColor, fontSize = 24.sp)
                     }
-                    Text(text = "COMPTE", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = AppColor.MainTextColor, modifier = Modifier.fillMaxWidth().padding(start = 8.dp))
+                    Text(
+                        text = "COMPTE",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColor.MainTextColor,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    // Avatar par défaut
                     Image(
                         painter = painterResource(id = R.drawable.generic_pfp),
                         contentDescription = "Avatar",
-                        modifier = Modifier
-                            .size(96.dp)
-                            .clip(CircleShape)
+                        modifier = Modifier.size(96.dp).clip(CircleShape)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
+
+                val displayEmail = when (state) {
+                    is AccountUiState.Loaded -> (state as AccountUiState.Loaded).email
+                    is AccountUiState.Success -> (state as AccountUiState.Success).email
+                    is AccountUiState.Error -> (state as AccountUiState.Error).email
+                    else -> null
+                }
+
+                Text(
+                    text = "Email: ${displayEmail ?: "Chargement..."}",
+                    color = if (displayEmail != null) AppColor.MainTextColor else AppColor.MinusTextColor,
+                    fontWeight = if (displayEmail != null) FontWeight.Medium else FontWeight.Normal,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                if (displayEmail == null) {
+                    LaunchedEffect(Unit) {
+                        kotlinx.coroutines.delay(500)
+                        vm.refreshUser()
+                    }
+                }
 
                 when (state) {
                     is AccountUiState.ReauthRequired -> {
                         val action = (state as AccountUiState.ReauthRequired).action
                         val pending = (state as AccountUiState.ReauthRequired).pendingValue
 
-                        var reauthDialogVisible by remember { mutableStateOf(true) }
-                        var currentPassword by remember { mutableStateOf("") }
-                        var reauthTrigger by remember { mutableStateOf<String?>(null) }
-                        var reauthLoading by remember { mutableStateOf(false) }
-                        var reauthError by remember { mutableStateOf<String?>(null) }
-
                         if (reauthDialogVisible) {
                             AlertDialog(
-                                onDismissRequest = { if (!reauthLoading) reauthDialogVisible = false },
+                                onDismissRequest = {
+                                    if (!reauthLoadingReauth) {
+                                        reauthDialogVisible = false
+                                        reauthCurrentPassword = ""
+                                        reauthErrorReauth = null
+                                    }
+                                },
                                 title = { Text("Ré-authentification requise") },
                                 text = {
                                     Column {
                                         OutlinedTextField(
-                                            value = currentPassword,
-                                            onValueChange = { currentPassword = it; reauthError = null },
+                                            value = reauthCurrentPassword,
+                                            onValueChange = {
+                                                reauthCurrentPassword = it
+                                                reauthErrorReauth = null
+                                            },
                                             label = { Text("Mot de passe actuel") },
                                             visualTransformation = PasswordVisualTransformation()
                                         )
-                                        if (!reauthError.isNullOrEmpty()) {
-                                            Text(text = reauthError ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                                        if (!reauthErrorReauth.isNullOrEmpty()) {
+                                            Text(
+                                                text = reauthErrorReauth ?: "",
+                                                color = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.padding(top = 8.dp)
+                                            )
                                         }
                                     }
                                 },
                                 confirmButton = {
-                                    TextButton(onClick = { if (!reauthLoading) reauthTrigger = currentPassword }) { Text("Valider") }
+                                    TextButton(
+                                        onClick = {
+                                            if (!reauthLoadingReauth) {
+                                                reauthTriggerReauth = reauthCurrentPassword
+                                            }
+                                        }
+                                    ) {
+                                        Text("Valider")
+                                    }
                                 },
-                                dismissButton = { TextButton(onClick = { if (!reauthLoading) reauthDialogVisible = false }) { Text("Annuler") } }
+                                dismissButton = {
+                                    TextButton(
+                                        onClick = {
+                                            if (!reauthLoadingReauth) {
+                                                reauthDialogVisible = false
+                                                reauthCurrentPassword = ""
+                                                reauthErrorReauth = null
+                                            }
+                                        }
+                                    ) {
+                                        Text("Annuler")
+                                    }
+                                }
                             )
                         }
 
-                        LaunchedEffect(reauthTrigger) {
-                            val pw = reauthTrigger
+                        LaunchedEffect(reauthTriggerReauth) {
+                            val pw = reauthTriggerReauth
                             if (!pw.isNullOrEmpty()) {
-                                reauthLoading = true
-                                reauthError = null
+                                reauthLoadingReauth = true
+                                reauthErrorReauth = null
                                 val res = vm.reauthenticate(pw)
                                 if (res.isSuccess) {
-                                    // proceed with pending action
                                     if (action == "email") vm.updateEmail(pending)
                                     if (action == "password") vm.updatePassword(pending)
                                     reauthDialogVisible = false
+                                    reauthCurrentPassword = ""
                                 } else {
-                                    reauthError = res.exceptionOrNull()?.message ?: "Ré-authentification échouée"
+                                    reauthErrorReauth = res.exceptionOrNull()?.message
+                                        ?: "Ré-authentification échouée"
                                 }
-                                reauthLoading = false
-                                reauthTrigger = null
+                                reauthLoadingReauth = false
+                                reauthTriggerReauth = null
                             }
                         }
                     }
-                    is AccountUiState.Loaded -> {
-                        val email = (state as AccountUiState.Loaded).email ?: "Email inconnu"
-                        Text(text = "Email: $email", color = AppColor.MainTextColor, fontWeight = FontWeight.Medium)
-                    }
+
+                    is AccountUiState.Loaded -> {}
                     is AccountUiState.Loading -> CircularProgressIndicator()
                     is AccountUiState.Error -> {
                         val msg = (state as AccountUiState.Error).message
-                        Text(text = msg, color = Color.Red)
+                        successMessage = msg
+                        Text(text = msg, color = Color.Red, modifier = Modifier.padding(8.dp))
                         LaunchedEffect(msg) {
                             snackbarHostState.showSnackbar(msg)
                         }
                     }
+
                     is AccountUiState.Success -> {
                         val msg = (state as AccountUiState.Success).message
-                        Text(text = msg, color = Color.Green)
+
+                        if (msg.contains("e-mail de vérification")) {
+                            successMessage = msg
+                        } else if (msg.contains("Mot de passe mis à jour")) {
+                            passwordSuccessMessage = msg
+                        }
+
+                        Text(text = msg, color = Color.Green, modifier = Modifier.padding(8.dp))
+
                         LaunchedEffect(msg) {
-                            snackbarHostState.showSnackbar(msg)
+                            if (msg.contains("e-mail de vérification") && !pendingEmailVerificationRedirect) {
+                                pendingEmailVerificationRedirect = true
+                            } else if (msg.contains("Mot de passe mis à jour") && !pendingPasswordChangeRedirect) {
+                                pendingPasswordChangeRedirect = true
+                            }
+                            snackbarHostState.showSnackbar(msg, duration = SnackbarDuration.Long)
                         }
                     }
+
                     else -> {}
+                }
+
+                if (pendingPasswordChangeRedirect && passwordSuccessMessage != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = passwordSuccessMessage ?: "",
+                                color = Color(0xFF2E7D32),
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = Color(0xFF4CAF50)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Déconnexion et redirection dans quelques secondes...",
+                                color = Color(0xFF2E7D32),
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+
+                if (pendingEmailVerificationRedirect && successMessage != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = successMessage ?: "",
+                                color = Color(0xFF2E7D32),
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = Color(0xFF4CAF50)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Redirection dans quelques secondes...",
+                                color = Color(0xFF2E7D32),
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -149,108 +331,187 @@ fun AccountScreen(navController: NavHostController, vm: AccountViewModel = viewM
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Button(onClick = {
-                    vm.signOut()
-                    navController.navigate("login_option") {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }, modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = {
+                        vm.signOut()
+                        navController.navigate("login_option") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text("Se déconnecter")
                 }
 
-                // Dialogues
                 if (showEmailDialog) {
                     AlertDialog(
                         onDismissRequest = { showEmailDialog = false },
                         title = { Text("Modifier l'e-mail") },
                         text = {
-                            Column {
-                                OutlinedTextField(value = newEmail, onValueChange = { newEmail = it }, label = { Text("Nouvel e-mail") })
-                            }
+                            OutlinedTextField(
+                                value = newEmail,
+                                onValueChange = { newEmail = it },
+                                label = { Text("Nouvel e-mail") }
+                            )
                         },
                         confirmButton = {
                             TextButton(onClick = {
                                 showEmailDialog = false
                                 vm.updateEmail(newEmail)
-                            }) { Text("Valider") }
+                            }) {
+                                Text("Valider")
+                            }
                         },
-                        dismissButton = { TextButton(onClick = { showEmailDialog = false }) { Text("Annuler") } }
+                        dismissButton = {
+                            TextButton(onClick = { showEmailDialog = false }) {
+                                Text("Annuler")
+                            }
+                        }
                     )
                 }
 
-                // Password change flow: first ask current password, then ask new password
                 if (showPasswordDialog) {
-                    var currentPassword by remember { mutableStateOf("") }
-                    var askingNew by remember { mutableStateOf(false) }
-                    var confirmNew by remember { mutableStateOf("") }
-                    var reauthTrigger by remember { mutableStateOf<String?>(null) }
-                    var reauthLoading by remember { mutableStateOf(false) }
-                    var reauthError by remember { mutableStateOf<String?>(null) }
-                    var newPasswordError by remember { mutableStateOf<String?>(null) }
-
                     if (!askingNew) {
-                        // Dialog to enter current password for re-authentication
                         AlertDialog(
-                            onDismissRequest = { if (!reauthLoading) showPasswordDialog = false },
+                            onDismissRequest = {
+                                if (!reauthLoadingPassword) {
+                                    showPasswordDialog = false
+                                    askingNew = false
+                                    currentPassword = ""
+                                    reauthErrorPassword = null
+                                }
+                            },
                             title = { Text("Vérification") },
                             text = {
                                 Column {
                                     OutlinedTextField(
                                         value = currentPassword,
-                                        onValueChange = { currentPassword = it; reauthError = null },
+                                        onValueChange = {
+                                            currentPassword = it
+                                            reauthErrorPassword = null
+                                        },
                                         label = { Text("Mot de passe actuel") },
                                         visualTransformation = PasswordVisualTransformation()
                                     )
-                                    if (!reauthError.isNullOrEmpty()) Text(text = reauthError ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                                    if (!reauthErrorPassword.isNullOrEmpty()) {
+                                        Text(
+                                            text = reauthErrorPassword ?: "",
+                                            color = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.padding(top = 8.dp)
+                                        )
+                                    }
                                 }
                             },
                             confirmButton = {
-                                TextButton(onClick = { if (!reauthLoading) reauthTrigger = currentPassword }) { Text("Valider") }
+                                TextButton(
+                                    onClick = {
+                                        if (!reauthLoadingPassword) {
+                                            reauthTriggerPassword = currentPassword
+                                        }
+                                    }
+                                ) {
+                                    Text("Valider")
+                                }
                             },
-                            dismissButton = { TextButton(onClick = { if (!reauthLoading) showPasswordDialog = false }) { Text("Annuler") } }
+                            dismissButton = {
+                                TextButton(
+                                    onClick = {
+                                        if (!reauthLoadingPassword) {
+                                            showPasswordDialog = false
+                                            askingNew = false
+                                            currentPassword = ""
+                                            reauthErrorPassword = null
+                                        }
+                                    }
+                                ) {
+                                    Text("Annuler")
+                                }
+                            }
                         )
 
-                        LaunchedEffect(reauthTrigger) {
-                            val pw = reauthTrigger
+                        LaunchedEffect(reauthTriggerPassword) {
+                            val pw = reauthTriggerPassword
                             if (!pw.isNullOrEmpty()) {
-                                reauthLoading = true
-                                reauthError = null
+                                reauthLoadingPassword = true
+                                reauthErrorPassword = null
                                 val res = vm.reauthenticate(pw)
                                 if (res.isSuccess) {
                                     askingNew = true
+                                    currentPassword = ""
                                 } else {
-                                    reauthError = res.exceptionOrNull()?.message ?: "Ré-authentification échouée"
+                                    reauthErrorPassword = res.exceptionOrNull()?.message ?: "Ré-authentification échouée"
                                 }
-                                reauthLoading = false
-                                reauthTrigger = null
+                                reauthLoadingPassword = false
+                                reauthTriggerPassword = null
                             }
                         }
                     } else {
-                        // Now ask for new password + confirmation
-                        var newPassword by remember { mutableStateOf("") }
                         AlertDialog(
-                            onDismissRequest = { showPasswordDialog = false },
+                            onDismissRequest = {
+                                showPasswordDialog = false
+                                askingNew = false
+                                newPassword = ""
+                                confirmNew = ""
+                                newPasswordError = null
+                            },
                             title = { Text("Nouveau mot de passe") },
                             text = {
                                 Column {
-                                    OutlinedTextField(value = newPassword, onValueChange = { newPassword = it; newPasswordError = null }, label = { Text("Nouveau mot de passe") }, visualTransformation = PasswordVisualTransformation())
-                                    OutlinedTextField(value = confirmNew, onValueChange = { confirmNew = it; newPasswordError = null }, label = { Text("Confirmer le mot de passe") }, visualTransformation = PasswordVisualTransformation())
-                                    if (!newPasswordError.isNullOrEmpty()) Text(text = newPasswordError ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                                    OutlinedTextField(
+                                        value = newPassword,
+                                        onValueChange = { newPassword = it; newPasswordError = null },
+                                        label = { Text("Nouveau mot de passe") },
+                                        visualTransformation = PasswordVisualTransformation()
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    OutlinedTextField(
+                                        value = confirmNew,
+                                        onValueChange = { confirmNew = it; newPasswordError = null },
+                                        label = { Text("Confirmer le mot de passe") },
+                                        visualTransformation = PasswordVisualTransformation()
+                                    )
+                                    if (!newPasswordError.isNullOrEmpty()) {
+                                        Text(
+                                            text = newPasswordError ?: "",
+                                            color = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.padding(top = 8.dp)
+                                        )
+                                    }
                                 }
                             },
                             confirmButton = {
                                 TextButton(onClick = {
-                                    if (newPassword.length < 6) {
-                                        newPasswordError = "Le mot de passe doit contenir au moins 6 caractères"
-                                    } else if (newPassword != confirmNew) {
-                                        newPasswordError = "Les mots de passe ne correspondent pas"
-                                    } else {
-                                        showPasswordDialog = false
-                                        vm.updatePassword(newPassword)
+                                    when {
+                                        newPassword.length < 6 -> {
+                                            newPasswordError = "Le mot de passe doit contenir au moins 6 caractères"
+                                        }
+                                        newPassword != confirmNew -> {
+                                            newPasswordError = "Les mots de passe ne correspondent pas"
+                                        }
+                                        else -> {
+                                            showPasswordDialog = false
+                                            askingNew = false
+                                            vm.updatePassword(newPassword)
+                                            newPassword = ""
+                                            confirmNew = ""
+                                            newPasswordError = null
+                                        }
                                     }
-                                }) { Text("Valider") }
+                                }) {
+                                    Text("Valider")
+                                }
                             },
-                            dismissButton = { TextButton(onClick = { showPasswordDialog = false }) { Text("Annuler") } }
+                            dismissButton = {
+                                TextButton(onClick = {
+                                    showPasswordDialog = false
+                                    askingNew = false
+                                    newPassword = ""
+                                    confirmNew = ""
+                                    newPasswordError = null
+                                }) {
+                                    Text("Annuler")
+                                }
+                            }
                         )
                     }
                 }

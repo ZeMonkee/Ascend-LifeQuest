@@ -1,6 +1,7 @@
 package com.example.ascendlifequest.screen.main
 
 import android.util.Patterns
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.EmailAuthProvider
@@ -15,38 +16,70 @@ import kotlin.coroutines.resume
 sealed class AccountUiState {
     object Idle : AccountUiState()
     object Loading : AccountUiState()
-    data class Success(val message: String) : AccountUiState()
-    data class Error(val message: String) : AccountUiState()
+    data class Success(val message: String, val email: String?) : AccountUiState()
+    data class Error(val message: String, val email: String?) : AccountUiState()
     data class ReauthRequired(val action: String, val pendingValue: String) : AccountUiState()
     data class Loaded(val email: String?, val photoUrl: String?) : AccountUiState()
 }
 
 class AccountViewModel : ViewModel() {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-
     private val _uiState = MutableStateFlow<AccountUiState>(AccountUiState.Idle)
     val uiState: StateFlow<AccountUiState> = _uiState
+    private var lastKnownEmail: String? = null
 
     fun loadCurrentUser() {
         val user = auth.currentUser
-        _uiState.value = AccountUiState.Loaded(user?.email, user?.photoUrl?.toString())
+        if (user != null) {
+            val emailOrName = user.email ?: user.displayName ?: "Utilisateur anonyme"
+            lastKnownEmail = user.email
+            _uiState.value = AccountUiState.Loaded(emailOrName, user.photoUrl?.toString())
+        } else {
+            if (lastKnownEmail != null) {
+                _uiState.value = AccountUiState.Loaded(lastKnownEmail, null)
+            } else {
+                _uiState.value = AccountUiState.Error("Utilisateur non connecté", null)
+            }
+        }
+    }
+
+    fun refreshUser() {
+        val currentState = _uiState.value
+        if (currentState is AccountUiState.Success || currentState is AccountUiState.Error) {
+            return
+        }
+
+        val user = auth.currentUser
+        if (user != null) {
+            user.reload().addOnCompleteListener {
+                loadCurrentUser()
+            }
+        } else {
+            if (lastKnownEmail != null) {
+                _uiState.value = AccountUiState.Loaded(lastKnownEmail, null)
+            }
+        }
     }
 
     fun updateEmail(newEmail: String) {
+        val user = auth.currentUser
+
         if (!Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
-            _uiState.value = AccountUiState.Error("Email invalide")
+            _uiState.value = AccountUiState.Error("Email invalide", user?.email)
             return
         }
-        val user = auth.currentUser
         if (user == null) {
-            _uiState.value = AccountUiState.Error("Utilisateur non authentifié")
+            _uiState.value = AccountUiState.Error("Utilisateur non authentifié", null)
             return
         }
 
-        // Vérifier que l'utilisateur a bien un provider Email/Password lié ; sinon l'update peut être impossible
         val hasPasswordProvider = user.providerData.any { it?.providerId == "password" }
         if (!hasPasswordProvider) {
-            _uiState.value = AccountUiState.Error("Impossible de modifier l'e‑mail : votre compte est lié via un fournisseur externe (Google/Facebook). Pour changer l'email, liez d'abord une méthode Email/Password ou modifiez l'adresse depuis votre fournisseur.")
+            _uiState.value = AccountUiState.Error(
+                "Impossible de modifier l'e-mail : votre compte est lié via un fournisseur externe. " +
+                "Pour changer l'email, liez d'abord une méthode Email/Password.",
+                user.email
+            )
             return
         }
 
@@ -54,38 +87,54 @@ class AccountViewModel : ViewModel() {
         viewModelScope.launch {
             user.verifyBeforeUpdateEmail(newEmail)
                 .addOnSuccessListener {
+                    val currentEmail = auth.currentUser?.email ?: lastKnownEmail
                     _uiState.value = AccountUiState.Success(
-                        "Un e-mail de vérification vient d’être envoyé à $newEmail.\n" +
-                                "Clique sur le lien pour confirmer le changement."
+                        "Un e-mail de vérification a été envoyé à $newEmail.\n\n" +
+                        "⚠️ IMPORTANT : Vous allez être déconnecté. Vérifiez votre boîte mail ($newEmail), " +
+                        "cliquez sur le lien de vérification, puis reconnectez-vous avec votre nouveau email.",
+                        currentEmail
                     )
                 }
                 .addOnFailureListener { ex ->
-                    // Si re-auth nécessaire, propager l'erreur spécifique
+                    val currentEmail = auth.currentUser?.email
                     if (ex is com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException) {
                         _uiState.value = AccountUiState.ReauthRequired("email", newEmail)
                     } else if (ex is FirebaseAuthException) {
-                        // Cas où l'opération est interdite côté projet (provider désactivé) ou autre erreur Firebase
                         val code = ex.errorCode
-                        if (code.contains("OPERATION_NOT_ALLOWED", ignoreCase = true) || ex.message?.contains("Please verify the new email", ignoreCase = true) == true) {
-                            _uiState.value = AccountUiState.Error("Opération interdite : activez le provider Email/Password dans la console Firebase ou vérifiez le nouvel e‑mail. Détail: ${ex.message}")
+                        if (code.contains("OPERATION_NOT_ALLOWED", ignoreCase = true) ||
+                            ex.message?.contains("Please verify the new email", ignoreCase = true) == true) {
+                            _uiState.value = AccountUiState.Error(
+                                "Opération interdite : activez le provider Email/Password dans la console Firebase.",
+                                currentEmail
+                            )
                         } else {
-                            _uiState.value = AccountUiState.Error(ex.message ?: "Erreur lors de la mise à jour de l'email")
+                            _uiState.value = AccountUiState.Error(
+                                ex.message ?: "Erreur lors de la mise à jour de l'email",
+                                currentEmail
+                            )
                         }
                     } else {
-                        _uiState.value = AccountUiState.Error(ex.message ?: "Erreur lors de la mise à jour de l'email")
+                        _uiState.value = AccountUiState.Error(
+                            ex.message ?: "Erreur lors de la mise à jour de l'email",
+                            currentEmail
+                        )
                     }
                 }
         }
     }
 
     fun updatePassword(newPassword: String) {
+        val user = auth.currentUser
+
         if (newPassword.length < 6) {
-            _uiState.value = AccountUiState.Error("Le mot de passe doit contenir au moins 6 caractères")
+            _uiState.value = AccountUiState.Error(
+                "Le mot de passe doit contenir au moins 6 caractères",
+                user?.email
+            )
             return
         }
-        val user = auth.currentUser
         if (user == null) {
-            _uiState.value = AccountUiState.Error("Utilisateur non authentifié")
+            _uiState.value = AccountUiState.Error("Utilisateur non authentifié", null)
             return
         }
 
@@ -93,13 +142,23 @@ class AccountViewModel : ViewModel() {
         viewModelScope.launch {
             user.updatePassword(newPassword)
                 .addOnSuccessListener {
-                    _uiState.value = AccountUiState.Success("Mot de passe mis à jour")
+                    val currentEmail = auth.currentUser?.email
+                    _uiState.value = AccountUiState.Success(
+                        "Mot de passe mis à jour avec succès.\n\n" +
+                        "⚠️ IMPORTANT : Vous allez être déconnecté pour des raisons de sécurité. " +
+                        "Reconnectez-vous avec votre nouveau mot de passe.",
+                        currentEmail
+                    )
                 }
                 .addOnFailureListener { ex ->
+                    val currentEmail = auth.currentUser?.email
                     if (ex is com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException) {
                         _uiState.value = AccountUiState.ReauthRequired("password", newPassword)
                     } else {
-                        _uiState.value = AccountUiState.Error(ex.message ?: "Erreur lors de la mise à jour du mot de passe")
+                        _uiState.value = AccountUiState.Error(
+                            ex.message ?: "Erreur lors de la mise à jour du mot de passe",
+                            currentEmail
+                        )
                     }
                 }
         }
