@@ -3,7 +3,6 @@ package com.example.ascendlifequest.components
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,57 +24,86 @@ import java.util.Locale
 import kotlin.coroutines.resume
 import org.json.JSONObject
 
-private const val TAG = "WeatherWidget"
-
 @Composable
 fun WeatherWidget() {
     val context = LocalContext.current
     var temperature by remember { mutableStateOf<String?>(null) }
     var condition by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        // request location and fetch weather when entering the Quest screen
-        loading = true
-        val loc = requestRealLocation(context)
-        if (loc != null) {
-            val weather = fetchWeather(loc.latitude, loc.longitude)
-            temperature = weather?.first
-            condition = weather?.second
+        try {
+            loading = true
+            error = false
+            val loc = requestRealLocation(context)
+            if (loc != null) {
+                val weather = fetchWeather(loc.latitude, loc.longitude)
+                if (weather != null) {
+                    temperature = weather.first
+                    condition = weather.second
+                } else {
+                    error = true
+                }
+            } else {
+                error = true
+            }
+        } catch (ex: Exception) {
+            error = true
+        } finally {
+            loading = false
         }
-        loading = false
     }
 
     Box(
         modifier = Modifier
-            .width(100.dp)
-            .height(80.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
-            .padding(8.dp),
+            .width(120.dp)
+            .height(90.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
+            .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
-        if (loading) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 2.dp
-            )
-        } else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = temperature ?: "--°C",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
+        when {
+            loading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(28.dp),
+                    strokeWidth = 2.5.dp
                 )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = condition ?: "--",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
+            }
+            error -> {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "--°C",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                    Text(
+                        text = "N/A",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                }
+            }
+            else -> {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = temperature ?: "--°C",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = condition ?: "--",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }
@@ -85,25 +113,25 @@ fun WeatherWidget() {
 suspend fun requestRealLocation(context: Context): Location? = withContext(Dispatchers.IO) {
     try {
         val client = LocationServices.getFusedLocationProviderClient(context)
-        val task = client.lastLocation
-        val loc = suspendCancellableCoroutine<Location?> { cont ->
-            task.addOnSuccessListener { location ->
-                cont.resume(location)
-            }
-            task.addOnFailureListener { ex ->
-                cont.resume(null)
+        val loc = kotlinx.coroutines.withTimeoutOrNull(5000L) {
+            suspendCancellableCoroutine<Location?> { cont ->
+                try {
+                    val task = client.lastLocation
+                    task.addOnSuccessListener { location -> cont.resume(location) }
+                    task.addOnFailureListener { cont.resume(null) }
+                } catch (ex: Exception) {
+                    cont.resume(null)
+                }
             }
         }
         return@withContext loc
     } catch (ex: Exception) {
-        Log.e(TAG, "Erreur localisation", ex)
         return@withContext null
     }
 }
 
 suspend fun fetchWeather(lat: Double, lon: Double): Pair<String, String>? = withContext(Dispatchers.IO) {
     try {
-        // Open-Meteo API: no API key required
         val url = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true&temperature_unit=celsius"
         val json = URL(url).readText()
         val obj = JSONObject(json)
@@ -113,7 +141,6 @@ suspend fun fetchWeather(lat: Double, lon: Double): Pair<String, String>? = with
         val condition = mapWeatherCodeToText(weatherCode)
         return@withContext String.format(Locale.US, "%.0f°C", temp) to condition
     } catch (ex: Exception) {
-        Log.e(TAG, "Erreur fetchWeather", ex)
         return@withContext null
     }
 }
