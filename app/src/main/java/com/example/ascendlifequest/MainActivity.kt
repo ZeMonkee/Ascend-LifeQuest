@@ -8,11 +8,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.ascendlifequest.screen.main.ClassementScreen
-import com.example.ascendlifequest.screen.main.FriendScreen
+import com.example.ascendlifequest.components.datastorage.queststorage
 import com.example.ascendlifequest.screen.login.LoginOptionScreen
 import com.example.ascendlifequest.screen.login.LoginScreen
 import com.example.ascendlifequest.screen.login.RegisterScreen
+import com.example.ascendlifequest.screen.main.ClassementScreen
+import com.example.ascendlifequest.screen.main.FriendScreen
 import com.example.ascendlifequest.screen.main.ProfilScreen
 import com.example.ascendlifequest.screen.main.QuestScreen
 import com.example.ascendlifequest.screen.main.SettingScreen
@@ -40,7 +41,7 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors de l'initialisation de Firebase", e)
         }
-
+        queststorage().uploadFakeData()
         enableEdgeToEdge()
         setContent {
             AscendLifeQuestTheme {
