@@ -48,19 +48,34 @@ fun WeatherWidget() {
 
     Box(
         modifier = Modifier
-            .width(84.dp)
-            .height(72.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)),
+            .width(100.dp)
+            .height(80.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+            .padding(8.dp),
         contentAlignment = Alignment.Center
     ) {
         if (loading) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp
+            )
         } else {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = temperature ?: "--°C", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = condition ?: "--", style = MaterialTheme.typography.bodySmall)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = temperature ?: "--°C",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = condition ?: "--",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
             }
         }
     }
