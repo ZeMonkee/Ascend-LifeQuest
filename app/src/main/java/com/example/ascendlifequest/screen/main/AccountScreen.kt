@@ -19,6 +19,7 @@ import com.example.ascendlifequest.components.AppBackground
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.unit.sp
+import com.example.ascendlifequest.ui.theme.AppColor
 
 @Composable
 fun AccountScreen(navController: NavHostController, vm: AccountViewModel = viewModel()) {
@@ -38,9 +39,9 @@ fun AccountScreen(navController: NavHostController, vm: AccountViewModel = viewM
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp)) {
                     IconButton(onClick = { navController.popBackStack() }) {
                         // simple text chevron instead of icon
-                        Text(text = "‹", color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
+                        Text(text = "‹", color = AppColor.MainTextColor, fontSize = 24.sp)
                     }
-                    Text(text = "COMPTE", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.fillMaxWidth().padding(start = 8.dp))
+                    Text(text = "COMPTE", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = AppColor.MainTextColor, modifier = Modifier.fillMaxWidth().padding(start = 8.dp))
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -114,7 +115,7 @@ fun AccountScreen(navController: NavHostController, vm: AccountViewModel = viewM
                     }
                     is AccountUiState.Loaded -> {
                         val email = (state as AccountUiState.Loaded).email ?: "Email inconnu"
-                        Text(text = "Email: $email", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Medium)
+                        Text(text = "Email: $email", color = AppColor.MainTextColor, fontWeight = FontWeight.Medium)
                     }
                     is AccountUiState.Loading -> CircularProgressIndicator()
                     is AccountUiState.Error -> {
