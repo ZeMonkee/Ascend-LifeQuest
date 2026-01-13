@@ -8,20 +8,20 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.ascendlifequest.components.datastorage.queststorage
-import com.example.ascendlifequest.screen.login.LoginOptionScreen
-import com.example.ascendlifequest.screen.login.LoginScreen
-import com.example.ascendlifequest.screen.login.RegisterScreen
-import com.example.ascendlifequest.screen.main.ClassementScreen
-import com.example.ascendlifequest.screen.main.FriendScreen
-import com.example.ascendlifequest.screen.main.ProfilScreen
-import com.example.ascendlifequest.screen.main.QuestScreen
-import com.example.ascendlifequest.screen.main.SettingScreen
-import com.example.ascendlifequest.screen.settings.PreferenceScreen
+import com.example.ascendlifequest.data.local.queststorage
+import com.example.ascendlifequest.ui.features.auth.LoginOptionScreen
+import com.example.ascendlifequest.ui.features.auth.LoginScreen
+import com.example.ascendlifequest.ui.features.auth.RegisterScreen
+import com.example.ascendlifequest.ui.features.leaderboard.ClassementScreen
+import com.example.ascendlifequest.ui.features.friends.FriendScreen
+import com.example.ascendlifequest.ui.features.profile.ProfilScreen
+import com.example.ascendlifequest.ui.features.quest.QuestScreen
+import com.example.ascendlifequest.ui.features.settings.SettingScreen
+import com.example.ascendlifequest.ui.features.settings.PreferenceScreen
 import com.example.ascendlifequest.ui.theme.AscendLifeQuestTheme
 import com.google.firebase.FirebaseApp
-import com.example.ascendlifequest.screen.main.AccountScreen
-import com.example.ascendlifequest.components.PermissionRequester
+import com.example.ascendlifequest.ui.components.PermissionRequester
+import com.example.ascendlifequest.ui.features.profile.AccountScreen
 
 private const val TAG = "MainActivity"
 
