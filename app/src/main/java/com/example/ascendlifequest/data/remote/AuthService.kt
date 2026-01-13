@@ -3,51 +3,47 @@ package com.example.ascendlifequest.data.remote
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.result.ActivityResultLauncher
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.tasks.await
 import java.util.concurrent.TimeoutException
 
-class AuthService(private val context: Context) {
+class AuthService() {
     private val TAG = "AuthService"
     private val auth = FirebaseAuth.getInstance()
 
     // Le webClientId doit correspondre au client_id dans le fichier google-services.json
     // Dans l'objet oauth_client avec client_type 3
     private val webClientId = "215110936631-pum9ivl9r5mnklg1cgngpjg6olkqgbf2.apps.googleusercontent.com"
-    // Configuration pour l'authentification Google
-    private val googleSignInClient: GoogleSignInClient by lazy {
-        try {
-            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(webClientId)
-                .requestEmail()
-                .build()
 
-            Log.d(TAG, "Initialisation de GoogleSignInClient avec webClientId: $webClientId")
-            GoogleSignIn.getClient(context, gso)
-        } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors de la création du client Google Sign-In", e)
-            throw e
-        }
+    // NOTE : Cette classe a été refactorée pour être une source de données pure.
+    // - Elle ne doit pas dépendre d'un Context pour les opérations "backend" (connexion, reset, etc).
+    // - Les appels liés à l'UI (lancement d'Intent Google Sign-In, affichage de Toast) doivent rester dans la View.
+
+    // Fournit l'Intent pour lancer Google Sign-In depuis la View (Activity/Composable).
+    fun getGoogleSignInIntent(context: Context): Intent {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(webClientId)
+            .requestEmail()
+            .build()
+
+        Log.d(TAG, "Création de l'Intent GoogleSignIn avec webClientId: $webClientId")
+        return GoogleSignIn.getClient(context, gso).signInIntent
     }
 
     // Vérifier si un utilisateur est connecté
     fun isUserLoggedIn(): Boolean {
         val user = auth.currentUser
-        Log.d(TAG, "État de connexion: ${user != null}, User: ${user?.email}")
+        Log.d(TAG, "État de connexion: ${'$'}{user != null}, User: ${'$'}{user?.email}")
         return user != null
     }
 
@@ -61,7 +57,7 @@ class AuthService(private val context: Context) {
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
             result.user?.let {
-                Log.d(TAG, "Connexion par email réussie: ${it.email}")
+                Log.d(TAG, "Connexion par email réussie: ${'$'}{it.email}")
                 Result.success(it)
             } ?: Result.failure(Exception("Échec de connexion"))
         } catch (e: Exception) {
@@ -75,7 +71,7 @@ class AuthService(private val context: Context) {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             result.user?.let {
-                Log.d(TAG, "Inscription réussie: ${it.email}")
+                Log.d(TAG, "Inscription réussie: ${'$'}{it.email}")
                 Result.success(it)
             } ?: Result.failure(Exception("Échec d'inscription"))
         } catch (e: Exception) {
@@ -84,27 +80,17 @@ class AuthService(private val context: Context) {
         }
     }
 
-    // Déconnexion
+    // Déconnexion Firebase (ne gère pas la déconnexion Google côté UI)
     fun signOut() {
-        auth.signOut()
-        googleSignInClient.signOut()
-        Log.d(TAG, "Utilisateur déconnecté")
-    }
-
-    // Lancer la connexion Google - MÉTHODE CORRIGÉE
-    fun signInWithGoogle(activity: ComponentActivity, launcher: ActivityResultLauncher<Intent>) {
         try {
-            Log.d(TAG, "Lancement de la connexion Google avec le client existant")
-            // Utiliser directement l'instance lazy au lieu d'en créer une nouvelle
-            launcher.launch(googleSignInClient.signInIntent)
+            auth.signOut()
+            Log.d(TAG, "Utilisateur Firebase déconnecté")
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors du lancement de Google Sign-In", e)
-            Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
-            throw e
+            Log.e(TAG, "Erreur lors de la déconnexion Firebase", e)
         }
     }
 
-    // Traiter le résultat de la connexion Google - MÉTHODE CORRIGÉE
+    // Traiter le résultat de la connexion Google (méthode suspend, testable)
     suspend fun handleGoogleSignInResult(data: Intent?): Result<FirebaseUser> {
         return withContext(Dispatchers.IO) {
             try {
@@ -118,10 +104,9 @@ class AuthService(private val context: Context) {
                 val task = GoogleSignIn.getSignedInAccountFromIntent(data)
 
                 try {
-                    // Utiliser withTimeout correctement - comme une fonction englobante
                     withTimeout(20000L) {
                         val account = task.getResult(ApiException::class.java)
-                        Log.d(TAG, "Google Sign In réussi, compte: ${account.email}")
+                        Log.d(TAG, "Google Sign In réussi, compte: ${'$'}{account.email}")
 
                         if (account.idToken == null) {
                             Log.e(TAG, "ID Token null, vérifiez la configuration OAuth")
@@ -152,6 +137,7 @@ class AuthService(private val context: Context) {
             }
         }
     }
+
     // Fonction utilitaire pour traduire les codes d'erreur Google Sign-In
     private fun getGoogleSignInErrorDetails(e: ApiException): String {
         return when (e.statusCode) {
@@ -160,9 +146,10 @@ class AuthService(private val context: Context) {
             GoogleSignInStatusCodes.SIGN_IN_FAILED -> "Échec de l'authentification"
             GoogleSignInStatusCodes.SIGN_IN_REQUIRED -> "Authentification requise"
             GoogleSignInStatusCodes.TIMEOUT -> "Délai d'attente dépassé"
-            else -> "Erreur code: ${e.statusCode}"
+            else -> "Erreur code: ${'$'}{e.statusCode}"
         }
     }
+
     // Réinitialisation du mot de passe
     suspend fun resetPassword(email: String): Result<Unit> {
         return try {
