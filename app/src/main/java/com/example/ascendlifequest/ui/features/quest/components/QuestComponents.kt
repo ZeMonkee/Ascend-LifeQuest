@@ -38,6 +38,8 @@ fun QuestCategory(
     quests: List<Quest>,  // Utilise la liste de Quest
     getQuestState: (Int) -> Boolean,
     onToggleQuestState: (Int, Boolean) -> Unit
+    context: Context, // Passer le contexte pour accéder aux SharedPreferences
+    onQuestStateChanged: (questId: Int, isDone: Boolean) -> Unit = { _, _ -> } // Callback pour notifier le changement
 ) {
     // Cette composable est désormais stateless pour la persistance; elle reçoit des callbacks
     val questDoneStates = remember {
@@ -100,6 +102,13 @@ fun QuestCategory(
                         // Inverser l'état de la quête et déléguer la persistance
                         val newState = !isDone
                         questDoneStates[quest.id] = newState
+
+                        // Sauvegarder l'état dans SharedPreferences
+                        QuestHelper.saveQuestState(context, userId, quest.id, newState)
+
+                        // Notifier le parent du changement
+                        onQuestStateChanged(quest.id, newState)
+                    }
                         onToggleQuestState(quest.id, newState)
                      }
                     .background(AppColor.DarkBlueColor, shape = RoundedCornerShape(8.dp))

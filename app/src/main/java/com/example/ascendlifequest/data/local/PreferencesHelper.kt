@@ -11,6 +11,32 @@ object PreferencesHelper {
     const val KEY_JEUX_VIDEO = "jeux_video_preference"
     const val KEY_LECTURE = "lecture_preference"
 
+    // Mapping entre les IDs de catégorie et les clés de préférences
+    private val categoryToPreferenceKey = mapOf(
+        1 to KEY_SPORT,       // Sport
+        2 to KEY_CUISINE,     // Cuisine
+        3 to KEY_JEUX_VIDEO,  // Jeux Vidéo
+        4 to KEY_LECTURE      // Lecture
+    )
+
+    /**
+     * Récupère la préférence pour une catégorie donnée (par son ID)
+     * @return valeur de 1 (n'aime pas) à 5 (adore), par défaut 3
+     */
+    fun getPreferenceForCategory(context: Context, userId: String, categoryId: Int): Int {
+        val key = categoryToPreferenceKey[categoryId] ?: return 3
+        return getPreference(context, userId, key, 3)
+    }
+
+    /**
+     * Récupère toutes les préférences utilisateur sous forme de Map (categoryId -> preference)
+     */
+    fun getAllPreferences(context: Context, userId: String): Map<Int, Int> {
+        return categoryToPreferenceKey.mapValues { (categoryId, _) ->
+            getPreferenceForCategory(context, userId, categoryId)
+        }
+    }
+
     private fun getSharedPreferences(context: Context, userId: String): SharedPreferences {
         // Créer un nom de préférence unique par utilisateur
         val prefsName = "PREFS_NAME_$userId"
