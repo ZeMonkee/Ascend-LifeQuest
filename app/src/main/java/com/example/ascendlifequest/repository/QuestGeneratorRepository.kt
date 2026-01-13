@@ -16,7 +16,7 @@ import org.json.JSONObject
 import kotlin.time.Duration.Companion.minutes
 
 // ⚠️ REMPLACEZ PAR UNE NOUVELLE CLÉ (L'ancienne est compromise)
-private const val API_KEY = "AIzaSyAxWwqD25H54tLdhNx-H8ioxsnViBJ8-BU"
+private const val API_KEY = "AIzaSyDYo073tAQ8OSRkxnn9dP3rM8Zu4EyAw0Y"
 private const val MODEL = "gemini-2.5-flash"
 
 // 🔥 Fonction pour récupérer le prochain ID disponible depuis Room

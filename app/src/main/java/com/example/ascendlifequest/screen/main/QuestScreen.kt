@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.components.*
 import com.example.ascendlifequest.components.main.QuestCategory
+import com.example.ascendlifequest.helpers.CategorySelector
 import com.example.ascendlifequest.helpers.QuestHelper
 import com.example.ascendlifequest.model.Categorie
 import com.example.ascendlifequest.model.Quest
@@ -88,10 +89,11 @@ fun QuestScreen(navController: NavHostController) {
         categories = loadedCategories
 
         while (QuestHelper.getQuestCounter(context) < maxQuests) {
-            val randomCategory = loadedCategories.randomOrNull() ?: break
+            // 🔥 Sélection pondérée basée sur les préférences utilisateur
+            val selectedCategory = CategorySelector.selectWeightedCategory(context, userId, loadedCategories) ?: break
 
             try {
-                val newQuest = generateQuestForCategory(context, randomCategory)
+                val newQuest = generateQuestForCategory(context, selectedCategory)
                 if (newQuest != null) {
                     QuestHelper.incrementQuestCounter(context)
                     generationProgress = QuestHelper.getQuestCounter(context)
@@ -190,9 +192,10 @@ fun QuestScreen(navController: NavHostController) {
                                 showMaxQuestsDialog = true
                             } else {
                                 scope.launch {
-                                    val randomCategory = categories.randomOrNull()
-                                    if (randomCategory != null) {
-                                        val newQuest = generateQuestForCategory(context, randomCategory)
+                                    // 🔥 Sélection pondérée basée sur les préférences utilisateur
+                                    val selectedCategory = CategorySelector.selectWeightedCategory(context, userId, categories)
+                                    if (selectedCategory != null) {
+                                        val newQuest = generateQuestForCategory(context, selectedCategory)
                                         if (newQuest != null) {
                                             QuestHelper.incrementQuestCounter(context)
                                             questCounter = QuestHelper.getQuestCounter(context)
