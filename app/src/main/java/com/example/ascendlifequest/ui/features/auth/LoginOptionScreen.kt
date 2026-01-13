@@ -39,12 +39,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.ui.components.AppBackground
 import com.example.ascendlifequest.ui.features.auth.components.SocialLoginButton
 import com.example.ascendlifequest.data.remote.AuthService
 import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.di.AppViewModelFactory
 import kotlinx.coroutines.launch
 
 private const val TAG = "LoginOptionScreen"
@@ -52,13 +54,15 @@ private const val TAG = "LoginOptionScreen"
 @Composable
 fun LoginOptionScreen(navController: NavHostController) {
     val context = LocalContext.current
-    val authService = remember { AuthService(context) }
+    val authService = AuthService()
+    val factory = AppViewModelFactory(com.example.ascendlifequest.data.auth.AuthRepositoryImpl(authService))
+    val viewModel: LoginOptionViewModel = viewModel(factory = factory)
     val scope = rememberCoroutineScope()
     var isGoogleLoading by remember { mutableStateOf(false) }
 
     // Vérifier si l'utilisateur est déjà connecté
     LaunchedEffect(key1 = true) {
-        if (authService.isUserLoggedIn()) {
+        if (viewModel.isUserLoggedIn()) {
             Log.d(TAG, "Utilisateur déjà connecté, redirection vers les quêtes")
             navigateToQuests(navController)
         }
@@ -68,41 +72,46 @@ fun LoginOptionScreen(navController: NavHostController) {
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        Log.d(TAG, "Résultat Google Sign In reçu: ${result.resultCode}")
+         Log.d(TAG, "Résultat Google Sign In reçu: ${result.resultCode}")
 
-        if (result.resultCode == Activity.RESULT_OK) {
-            isGoogleLoading = true
-            scope.launch {
-                try {
-                    Log.d(TAG, "Traitement du résultat Google Sign In")
-                    val signInResult = authService.handleGoogleSignInResult(result.data)
+         if (result.resultCode == Activity.RESULT_OK) {
+             isGoogleLoading = true
+             scope.launch {
+                 try {
+                     Log.d(TAG, "Traitement du résultat Google Sign In")
+                    // Déléguer le traitement du résultat au ViewModel
+                     viewModel.handleGoogleSignInResult(result.data)
+                    // Observer un événement via viewModel.events dans un LaunchedEffect séparé pour la navigation/toasts
+                 } catch (e: Exception) {
+                     Log.e(TAG, "Exception lors du traitement de connexion Google", e)
+                     Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_LONG).show()
+                 } finally {
+                     isGoogleLoading = false
+                 }
+             }
+         } else {
+             isGoogleLoading = false
+             if (result.resultCode == Activity.RESULT_CANCELED) {
+                 Log.w(TAG, "Connexion Google annulée par l'utilisateur")
+                 Toast.makeText(context, "Connexion Google annulée", Toast.LENGTH_SHORT).show()
+             } else {
+                 Log.w(TAG, "Résultat inattendu de connexion Google: ${result.resultCode}")
+                 Toast.makeText(context, "La connexion Google a échoué", Toast.LENGTH_SHORT).show()
+             }
+         }
+     }
 
-                    signInResult.fold(
-                        onSuccess = {
-                            Log.d(TAG, "Connexion Google réussie: ${it.email}")
-                            Toast.makeText(context, "Connexion réussie avec ${it.email}", Toast.LENGTH_LONG).show()
-                            navigateToQuests(navController)
-                        },
-                        onFailure = { exception ->
-                            Log.e(TAG, "Échec de connexion Google", exception)
-                            Toast.makeText(context, "Échec: ${exception.message}", Toast.LENGTH_LONG).show()
-                        }
-                    )
-                } catch (e: Exception) {
-                    Log.e(TAG, "Exception lors du traitement de connexion Google", e)
-                    Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_LONG).show()
-                } finally {
-                    isGoogleLoading = false
+    // Observing events from ViewModel (Google login success/failure)
+    LaunchedEffect(key1 = viewModel.events) {
+        viewModel.events.collect { ev ->
+            when {
+                ev.startsWith("GOOGLE_LOGIN_SUCCESS") -> {
+                    Toast.makeText(context, "Connexion Google réussie", Toast.LENGTH_SHORT).show()
+                    navigateToQuests(navController)
                 }
-            }
-        } else {
-            isGoogleLoading = false
-            if (result.resultCode == Activity.RESULT_CANCELED) {
-                Log.w(TAG, "Connexion Google annulée par l'utilisateur")
-                Toast.makeText(context, "Connexion Google annulée", Toast.LENGTH_SHORT).show()
-            } else {
-                Log.w(TAG, "Résultat inattendu de connexion Google: ${result.resultCode}")
-                Toast.makeText(context, "La connexion Google a échoué", Toast.LENGTH_SHORT).show()
+                ev.startsWith("GOOGLE_LOGIN_FAILED") -> {
+                    Toast.makeText(context, ev.removePrefix("GOOGLE_LOGIN_FAILED: "), Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
@@ -170,49 +179,57 @@ fun LoginOptionScreen(navController: NavHostController) {
                                 try {
                                     val activity = context as? ComponentActivity
                                     if (activity != null) {
-                                        authService.signInWithGoogle(activity, googleSignInLauncher)
+                                        // Launch the Google SignIn intent from AuthService (UI action) - AuthService provides getGoogleSignInIntent
+                                        try {
+                                            val intent = authService.getGoogleSignInIntent(activity)
+                                            googleSignInLauncher.launch(intent)
+                                        } catch (e: Exception) {
+                                            isGoogleLoading = false
+                                            Log.e(TAG, "Erreur création Intent Google Sign-In", e)
+                                            Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        }
                                     } else {
                                         isGoogleLoading = false
                                         Log.e(TAG, "Contexte invalide pour Google Sign-In")
                                         Toast.makeText(context, "Erreur: Contexte invalide", Toast.LENGTH_SHORT).show()
                                     }
-                                } catch (e: Exception) {
-                                    isGoogleLoading = false
-                                    Log.e(TAG, "Erreur lors du lancement de la connexion Google", e)
-                                    Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_LONG).show()
-                                }
-                            } else {
-                                Log.d(TAG, "Connexion Google déjà en cours, ignorer")
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isGoogleLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.Black,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_google),
-                            contentDescription = "Google login",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
+                                 } catch (e: Exception) {
+                                     isGoogleLoading = false
+                                     Log.e(TAG, "Erreur lors du lancement de la connexion Google", e)
+                                     Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_LONG).show()
+                                 }
+                             } else {
+                                 Log.d(TAG, "Connexion Google déjà en cours, ignorer")
+                             }
+                         },
+                     contentAlignment = Alignment.Center
+                 ) {
+                     if (isGoogleLoading) {
+                         CircularProgressIndicator(
+                             modifier = Modifier.size(24.dp),
+                             color = Color.Black,
+                             strokeWidth = 2.dp
+                         )
+                     } else {
+                         Image(
+                             painter = painterResource(id = R.drawable.ic_google),
+                             contentDescription = "Google login",
+                             modifier = Modifier.size(24.dp)
+                         )
+                     }
+                 }
 
-                SocialLoginButton(R.drawable.ic_apple) {
-                    Toast.makeText(context, "Connexion Apple non implémentée", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-}
+                 SocialLoginButton(R.drawable.ic_apple) {
+                     Toast.makeText(context, "Connexion Apple non implémentée", Toast.LENGTH_SHORT).show()
+                 }
+             }
+         }
+     }
+ }
 
-// Fonction utilitaire pour la navigation
-private fun navigateToQuests(navController: NavHostController) {
-    navController.navigate("quetes") {
-        popUpTo("login_option") { inclusive = true }
-    }
-}
+ // Fonction utilitaire pour la navigation
+ private fun navigateToQuests(navController: NavHostController) {
+     navController.navigate("quetes") {
+         popUpTo("login_option") { inclusive = true }
+     }
+ }

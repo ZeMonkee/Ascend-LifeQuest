@@ -23,7 +23,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,14 +33,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.ui.components.AppBackground
 import com.example.ascendlifequest.data.remote.AuthService
 import com.example.ascendlifequest.ui.theme.AppColor
-import kotlinx.coroutines.launch
-
-private const val TAG = "LoginScreen"
+import com.example.ascendlifequest.di.AppViewModelFactory
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
@@ -50,14 +48,37 @@ fun LoginScreen(navController: NavHostController) {
     var isLoading by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val authService = remember { AuthService(context) }
-    val scope = rememberCoroutineScope()
+    // ViewModel instantiation en utilisant la factory simple
+    val authService = AuthService()
+    val factory = AppViewModelFactory(com.example.ascendlifequest.data.auth.AuthRepositoryImpl(authService))
+    val viewModel: LoginViewModel = viewModel(factory = factory)
 
     // Vérifier si l'utilisateur est déjà connecté
     LaunchedEffect(key1 = true) {
-        if (authService.isUserLoggedIn()) {
+        if (viewModel.isUserLoggedIn()) {
             navController.navigate("quetes") {
                 popUpTo("login") { inclusive = true }
+            }
+        }
+    }
+
+    // Observing events from ViewModel
+    LaunchedEffect(key1 = viewModel.events) {
+        viewModel.events.collect { ev ->
+            when {
+                ev.startsWith("LOGIN_SUCCESS") -> {
+                    Toast.makeText(context, "Connexion réussie", Toast.LENGTH_SHORT).show()
+                    navController.navigate("quetes") { popUpTo("login") { inclusive = true } }
+                }
+                ev.startsWith("LOGIN_FAILED") -> {
+                    Toast.makeText(context, ev.removePrefix("LOGIN_FAILED: "), Toast.LENGTH_SHORT).show()
+                }
+                ev.startsWith("RESET_EMAIL_SENT") -> {
+                    Toast.makeText(context, "Instructions de réinitialisation envoyées à votre email", Toast.LENGTH_LONG).show()
+                }
+                ev.startsWith("RESET_FAILED") -> {
+                    Toast.makeText(context, ev.removePrefix("RESET_FAILED: "), Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -133,20 +154,7 @@ fun LoginScreen(navController: NavHostController) {
                     .padding(end = 40.dp)
                     .clickable {
                         if (email.isNotEmpty()) {
-                            scope.launch {
-                                authService.resetPassword(email).fold(
-                                    onSuccess = {
-                                        Toast.makeText(
-                                            context,
-                                            "Instructions de réinitialisation envoyées à votre email",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                    },
-                                    onFailure = { e ->
-                                        Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                                )
-                            }
+                            viewModel.resetPassword(email)
                         } else {
                             Toast.makeText(context, "Veuillez saisir votre email", Toast.LENGTH_SHORT).show()
                         }
@@ -159,20 +167,7 @@ fun LoginScreen(navController: NavHostController) {
                 onClick = {
                     if (email.isNotEmpty() && password.isNotEmpty()) {
                         isLoading = true
-                        scope.launch {
-                            val result = authService.signInWithEmailPassword(email, password)
-                            isLoading = false
-                            result.fold(
-                                onSuccess = {
-                                    navController.navigate("quetes") {
-                                        popUpTo("login") { inclusive = true }
-                                    }
-                                },
-                                onFailure = { e ->
-                                    Toast.makeText(context, "Échec de connexion: ${e.message}", Toast.LENGTH_SHORT).show()
-                                }
-                            )
-                        }
+                        viewModel.login(email, password)
                     } else {
                         Toast.makeText(context, "Veuillez remplir tous les champs", Toast.LENGTH_SHORT).show()
                     }
@@ -184,6 +179,7 @@ fun LoginScreen(navController: NavHostController) {
                     .height(55.dp),
                 enabled = !isLoading
             ) {
+                // UI loading state derived from viewModel.uiState could be used; for simplicity toggling local isLoading
                 if (isLoading) {
                     CircularProgressIndicator(
                         color = AppColor.MainTextColor,

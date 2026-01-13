@@ -18,10 +18,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,12 +32,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.ui.components.AppBackground
 import com.example.ascendlifequest.data.remote.AuthService
 import com.example.ascendlifequest.ui.theme.AppColor
-import kotlinx.coroutines.launch
+import com.example.ascendlifequest.di.AppViewModelFactory
 
 @Composable
 fun RegisterScreen(navController: NavHostController) {
@@ -47,8 +48,24 @@ fun RegisterScreen(navController: NavHostController) {
     var isLoading by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val authService = remember { AuthService(context) }
-    val scope = rememberCoroutineScope()
+    val authService = AuthService()
+    val factory = AppViewModelFactory(com.example.ascendlifequest.data.auth.AuthRepositoryImpl(authService))
+    val viewModel: RegisterViewModel = viewModel(factory = factory)
+
+    // Observing events from ViewModel in a Compose coroutine
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { ev ->
+            when {
+                ev.startsWith("REGISTER_SUCCESS") -> {
+                    Toast.makeText(context, "Inscription réussie", Toast.LENGTH_SHORT).show()
+                    navController.navigate("quetes") { popUpTo("register") { inclusive = true } }
+                }
+                ev.startsWith("REGISTER_FAILED") -> {
+                    Toast.makeText(context, ev.removePrefix("REGISTER_FAILED: "), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     AppBackground {
         Column(
@@ -141,21 +158,7 @@ fun RegisterScreen(navController: NavHostController) {
                     if (email.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty()) {
                         if (password == confirmPassword) {
                             isLoading = true
-                            scope.launch {
-                                val result = authService.registerWithEmailPassword(email, password)
-                                isLoading = false
-                                result.fold(
-                                    onSuccess = {
-                                        Toast.makeText(context, "Inscription réussie", Toast.LENGTH_SHORT).show()
-                                        navController.navigate("quetes") {
-                                            popUpTo("register") { inclusive = true }
-                                        }
-                                    },
-                                    onFailure = { e ->
-                                        Toast.makeText(context, "Échec d'inscription: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                                )
-                            }
+                            viewModel.register(email, password)
                         } else {
                             Toast.makeText(context, "Les mots de passe ne correspondent pas", Toast.LENGTH_SHORT).show()
                         }
@@ -197,4 +200,3 @@ fun RegisterScreen(navController: NavHostController) {
         }
     }
 }
-
