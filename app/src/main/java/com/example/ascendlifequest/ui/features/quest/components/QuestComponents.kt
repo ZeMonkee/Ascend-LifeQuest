@@ -1,6 +1,5 @@
 package com.example.ascendlifequest.ui.features.quest.components
 
-import android.content.Context
 import androidx.compose.foundation.background
 // Import pour le Modifier.clickable
 import androidx.compose.foundation.clickable
@@ -28,10 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ascendlifequest.util.QuestHelper
 import com.example.ascendlifequest.data.model.Categorie
 import com.example.ascendlifequest.data.model.Quest
-import com.example.ascendlifequest.data.remote.AuthService
 import com.example.ascendlifequest.ui.theme.AppColor
 
 // Catégorie des quêtes
@@ -39,16 +36,14 @@ import com.example.ascendlifequest.ui.theme.AppColor
 fun QuestCategory(
     categorie: Categorie, // Utilise le modèle Categorie
     quests: List<Quest>,  // Utilise la liste de Quest
-    context: Context // Passer le contexte pour accéder aux SharedPreferences
+    getQuestState: (Int) -> Boolean,
+    onToggleQuestState: (Int, Boolean) -> Unit
 ) {
-    // Recuperer userId
-    val authService = remember { AuthService(context) }
-    val userId = authService.getUserId()
-    // Initialiser les états des quêtes à partir des SharedPreferences
+    // Cette composable est désormais stateless pour la persistance; elle reçoit des callbacks
     val questDoneStates = remember {
         mutableStateMapOf<Int, Boolean>().apply {
             quests.forEach {
-                put(it.id, QuestHelper.getQuestState(context, userId, it.id))
+                put(it.id, getQuestState(it.id))
             }
         }
     }
@@ -102,13 +97,11 @@ fun QuestCategory(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        // Inverser l'état de la quête
+                        // Inverser l'état de la quête et déléguer la persistance
                         val newState = !isDone
                         questDoneStates[quest.id] = newState
-
-                        // Sauvegarder l'état dans SharedPreferences
-                        QuestHelper.saveQuestState(context, userId, quest.id, newState)
-                    }
+                        onToggleQuestState(quest.id, newState)
+                     }
                     .background(AppColor.DarkBlueColor, shape = RoundedCornerShape(8.dp))
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -132,4 +125,3 @@ fun QuestCategory(
         Spacer(modifier = Modifier.height(12.dp))
     }
 }
-

@@ -15,42 +15,31 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.ui.features.quest.components.QuestCategory
-import com.example.ascendlifequest.data.model.Categorie
-import com.example.ascendlifequest.data.model.Quest
 import com.example.ascendlifequest.data.repository.QuestRepository
-import com.example.ascendlifequest.data.repository.generateQuestForCategory
 import com.example.ascendlifequest.ui.components.AppBackground
 import com.example.ascendlifequest.ui.components.AppBottomNavBar
 import com.example.ascendlifequest.ui.components.AppHeader
 import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.theme.AppColor
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.ascendlifequest.di.AppViewModelFactory
+import com.example.ascendlifequest.data.remote.AuthService
+import com.example.ascendlifequest.data.auth.AuthRepositoryImpl
 import kotlinx.coroutines.launch
 
 @Composable
 fun QuestScreen(navController: NavHostController) {
-    val repository = remember { QuestRepository() }
-    var categories by remember { mutableStateOf<List<Categorie>>(emptyList()) }
-    var quests by remember { mutableStateOf<List<Quest>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    val repository = QuestRepository()
+    val factory = AppViewModelFactory(questRepository = repository)
+    val viewModel: QuestViewModel = viewModel(factory = factory)
+    val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
 
-    fun refreshData() {
-        scope.launch {
-            isLoading = true
-            val loadedCategories = repository.getCategories()
-            val loadedQuests = repository.getQuests()
-
-            categories = loadedCategories.map { cat ->
-                val restoredColor = Color(cat.couleur.value)
-                cat.copy(couleur = restoredColor)
-            }
-            quests = loadedQuests
-            isLoading = false
-        }
-    }
+    val authService = remember { AuthService() }
+    val authRepository = AuthRepositoryImpl(authService)
 
     LaunchedEffect(Unit) {
-        refreshData()
+        viewModel.refreshData()
     }
 
     AppBottomNavBar(navController, BottomNavItem.Quetes) { innerPadding ->
@@ -83,15 +72,11 @@ fun QuestScreen(navController: NavHostController) {
                     Button(
                         onClick = {
                             scope.launch {
-                                val randomCategory = categories.randomOrNull()
-                                if (randomCategory != null) {
-                                    val newQuest = generateQuestForCategory(randomCategory)
-                                    if (newQuest != null) {
-                                        Log.d("QuestScreen", "✅ Quête générée : ${newQuest.nom}")
-                                        refreshData()
-                                    } else {
-                                        Log.e("QuestScreen", "❌ Échec génération quête")
-                                    }
+                                val ok = viewModel.generateQuestForRandomCategory()
+                                if (ok) {
+                                    viewModel.refreshData()
+                                } else {
+                                    Log.e("QuestScreen", "❌ Échec génération quête")
                                 }
                             }
                         }
@@ -100,25 +85,35 @@ fun QuestScreen(navController: NavHostController) {
                     }
                 }
 
-                if (isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                when (uiState) {
+                    is QuestUiState.Loading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
                     }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        items(categories) { categorie ->
-                            val questsForCategory = quests.filter { it.categorie == categorie.id }
+                    is QuestUiState.Error -> {
+                        Text((uiState as QuestUiState.Error).message)
+                    }
+                    is QuestUiState.Success -> {
+                        val data = uiState as QuestUiState.Success
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp)
+                        ) {
+                            items(data.categories) { categorie ->
+                                val questsForCategory = data.quests.filter { it.categorie == categorie.id }
 
-                            if (questsForCategory.isNotEmpty()) {
-                                QuestCategory(
-                                    categorie = categorie,
-                                    quests = questsForCategory,
-                                    context = LocalContext.current
-                                )
+                                if (questsForCategory.isNotEmpty()) {
+                                    val ctx = LocalContext.current
+                                    val uid = authRepository.getCurrentUserId()
+                                    QuestCategory(
+                                        categorie = categorie,
+                                        quests = questsForCategory,
+                                        getQuestState = { questId -> viewModel.getQuestState(ctx, uid, questId) },
+                                        onToggleQuestState = { questId, newState -> viewModel.saveQuestState(ctx, uid, questId, newState) }
+                                    )
+                                }
                             }
                         }
                     }
