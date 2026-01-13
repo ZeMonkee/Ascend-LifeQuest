@@ -1,12 +1,12 @@
 package com.example.ascendlifequest.repository
 
+import android.content.Context
 import android.util.Log
+import com.example.ascendlifequest.database.AppDatabase
+import com.example.ascendlifequest.database.QuestEntity
 import com.example.ascendlifequest.model.Categorie
 import com.example.ascendlifequest.model.Quest
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -16,35 +16,22 @@ import org.json.JSONObject
 import kotlin.time.Duration.Companion.minutes
 
 // ⚠️ REMPLACEZ PAR UNE NOUVELLE CLÉ (L'ancienne est compromise)
-private const val API_KEY = "AIzaSyARvmR5zEArUGycAApsmh-Xx1h0F_3YS1Q"
+private const val API_KEY = "AIzaSyAxWwqD25H54tLdhNx-H8ioxsnViBJ8-BU"
 private const val MODEL = "gemini-2.5-flash"
 
-// 🔥 Fonction pour récupérer le prochain ID disponible dans Firestore
-suspend fun getNextQuestId(db: FirebaseFirestore): Int {
+// 🔥 Fonction pour récupérer le prochain ID disponible depuis Room
+suspend fun getNextQuestIdFromRoom(context: Context): Int {
     return try {
-        // On cherche la quête avec l'ID le plus élevé
-        val snapshot = db.collection("quest")
-            .orderBy("id", Query.Direction.DESCENDING) // Trie du plus grand au plus petit
-            .limit(1) // On en prend juste un
-            .get()
-            .await() // Nécessite l'import kotlinx.coroutines.tasks.await
-
-        if (!snapshot.isEmpty) {
-            // Si on trouve une quête, on prend son ID et on ajoute 1
-            val lastId = snapshot.documents[0].getLong("id")?.toInt() ?: 1000
-            lastId + 1
-        } else {
-            // Si la base est vide, on commence à 1000
-            1000
-        }
+        val questDao = AppDatabase.getDatabase(context).questDao()
+        val maxId = questDao.getMaxId() ?: 999
+        maxId + 1
     } catch (e: Exception) {
-        Log.e("QuestRepository", "Erreur lors de la récupération de l'ID", e)
-        // En cas d'erreur (ex: index manquant), on génère un ID basé sur le temps pour éviter le crash
+        Log.e("QuestRepository", "Erreur lors de la récupération de l'ID depuis Room", e)
         (System.currentTimeMillis() / 1000).toInt()
     }
 }
 
-suspend fun generateQuestForCategory(category: Categorie): Quest? = withContext(Dispatchers.IO) {
+suspend fun generateQuestForCategory(context: Context, category: Categorie): Quest? = withContext(Dispatchers.IO) {
     try {
         val promptText = """
             Génère une quête pour la catégorie « ${category.nom} ». 
@@ -104,14 +91,11 @@ suspend fun generateQuestForCategory(category: Categorie): Quest? = withContext(
         val xpString = parts.getOrNull(3)?.replace("4️⃣", "") ?: "100"
         val meteoString = parts.getOrNull(4) ?: "non"
 
-        // Initialisation Firestore
-        val db = FirebaseFirestore.getInstance()
-
-        // 🔥 RÉCUPÉRATION DE L'ID DYNAMIQUE
-        val newId = getNextQuestId(db)
+        // 🔥 RÉCUPÉRATION DE L'ID DEPUIS ROOM
+        val newId = getNextQuestIdFromRoom(context)
 
         val quest = Quest(
-            id = newId, // On utilise l'ID calculé
+            id = newId,
             categorie = category.id,
             nom = nomGenere,
             description = descGenere,
@@ -121,21 +105,10 @@ suspend fun generateQuestForCategory(category: Categorie): Quest? = withContext(
             dependantMeteo = meteoString.contains("oui", ignoreCase = true)
         )
 
-        // Firestore Save
-        db.collection("quest")
-            .document("quest_${quest.id}")
-            .set(mapOf(
-                "id" to quest.id,
-                "categorie" to quest.categorie,
-                "nom" to quest.nom,
-                "description" to quest.description,
-                "preferenceRequis" to quest.preferenceRequis,
-                "xpRapporte" to quest.xpRapporte,
-                "tempsNecessaire" to quest.tempsNecessaire.inWholeMinutes,
-                "dependantMeteo" to quest.dependantMeteo
-            ))
-            .addOnSuccessListener { Log.d("QuestRepository", "✅ Saved Quest ID: ${quest.id}") }
-            .addOnFailureListener { Log.e("QuestRepository", "❌ Firestore failed", it) }
+        // 🔥 SAUVEGARDE DANS ROOM (local - source principale)
+        val questDao = AppDatabase.getDatabase(context).questDao()
+        questDao.insertQuest(QuestEntity.fromQuest(quest))
+        Log.d("QuestRepository", "✅ Saved Quest in Room ID: ${quest.id}")
 
         return@withContext quest
 

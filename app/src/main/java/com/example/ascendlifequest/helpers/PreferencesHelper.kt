@@ -1,3 +1,5 @@
+package com.example.ascendlifequest.helpers
+
 import android.content.Context
 import android.content.SharedPreferences
 
@@ -33,4 +35,3 @@ object PreferencesHelper {
         prefs.edit().clear().apply() // Efface les données de cet utilisateur
     }
 }
-

@@ -39,7 +39,8 @@ import com.example.ascendlifequest.ui.theme.AppColor
 fun QuestCategory(
     categorie: Categorie, // Utilise le modèle Categorie
     quests: List<Quest>,  // Utilise la liste de Quest
-    context: Context // Passer le contexte pour accéder aux SharedPreferences
+    context: Context, // Passer le contexte pour accéder aux SharedPreferences
+    onQuestStateChanged: (questId: Int, isDone: Boolean) -> Unit = { _, _ -> } // Callback pour notifier le changement
 ) {
     // Recuperer userId
     val authService = remember { AuthService(context) }
@@ -108,6 +109,9 @@ fun QuestCategory(
 
                         // Sauvegarder l'état dans SharedPreferences
                         QuestHelper.saveQuestState(context, userId, quest.id, newState)
+
+                        // Notifier le parent du changement
+                        onQuestStateChanged(quest.id, newState)
                     }
                     .background(AppColor.DarkBlueColor, shape = RoundedCornerShape(8.dp))
                     .padding(16.dp),

@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.StrokeCap.Companion.Butt
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ascendlifequest.helpers.PreferencesHelper
 import com.example.ascendlifequest.service.AuthService
 import com.example.ascendlifequest.ui.theme.AppColor
 
