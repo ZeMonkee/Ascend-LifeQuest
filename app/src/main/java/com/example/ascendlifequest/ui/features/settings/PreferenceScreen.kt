@@ -15,9 +15,15 @@ import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.features.settings.components.PreferenceQuestion
 import com.example.ascendlifequest.data.local.PreferencesHelper
 import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.data.remote.AuthService
 
 @Composable
 fun PreferenceScreen(navController: NavHostController) {
+    val context = LocalContext.current
+    val authService = remember { AuthService() }
+    val userId = authService.getUserId()
+    val prefsVm = remember { PreferencesViewModel(context, userId) }
+
     AppBottomNavBar(navController, BottomNavItem.Parametres) { innerPadding ->
         AppBackground {
             Column(
@@ -32,32 +38,36 @@ fun PreferenceScreen(navController: NavHostController) {
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                 ) {
+                    val sport by prefsVm.getPreferenceFlow(PreferencesHelper.KEY_SPORT).collectAsState()
                     PreferenceQuestion(
                         question = "A quel point aimez-vous le sport ?",
                         color = AppColor.SportColor,
-                        context = LocalContext.current,
-                        preferenceKey = PreferencesHelper.KEY_SPORT
+                        selected = sport,
+                        onSelectedChange = { prefsVm.savePreference(PreferencesHelper.KEY_SPORT, it) }
                     )
 
+                    val cuisine by prefsVm.getPreferenceFlow(PreferencesHelper.KEY_CUISINE).collectAsState()
                     PreferenceQuestion(
                         question = "A quel point aimez-vous la cuisine ?",
                         color = AppColor.CuisineColor,
-                        context = LocalContext.current,
-                        preferenceKey = PreferencesHelper.KEY_CUISINE
+                        selected = cuisine,
+                        onSelectedChange = { prefsVm.savePreference(PreferencesHelper.KEY_CUISINE, it) }
                     )
 
+                    val jeux by prefsVm.getPreferenceFlow(PreferencesHelper.KEY_JEUX_VIDEO).collectAsState()
                     PreferenceQuestion(
                         question = "A quel point aimez-vous les jeux vidéo ?",
                         color = AppColor.JeuxVideoColor,
-                        context = LocalContext.current,
-                        preferenceKey = PreferencesHelper.KEY_JEUX_VIDEO
+                        selected = jeux,
+                        onSelectedChange = { prefsVm.savePreference(PreferencesHelper.KEY_JEUX_VIDEO, it) }
                     )
 
+                    val lecture by prefsVm.getPreferenceFlow(PreferencesHelper.KEY_LECTURE).collectAsState()
                     PreferenceQuestion(
                         question = "A quel point aimez-vous la lecture ?",
                         color = AppColor.LectureColor,
-                        context = LocalContext.current,
-                        preferenceKey = PreferencesHelper.KEY_LECTURE
+                        selected = lecture,
+                        onSelectedChange = { prefsVm.savePreference(PreferencesHelper.KEY_LECTURE, it) }
                     )
                 }
             }

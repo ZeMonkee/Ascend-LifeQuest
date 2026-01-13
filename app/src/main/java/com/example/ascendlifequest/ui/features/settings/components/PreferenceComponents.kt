@@ -1,6 +1,6 @@
 package com.example.ascendlifequest.ui.features.settings.components
 
-import android.content.Context
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,11 +19,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,26 +26,16 @@ import androidx.compose.ui.graphics.StrokeCap.Companion.Butt
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ascendlifequest.data.local.PreferencesHelper
-import com.example.ascendlifequest.data.remote.AuthService
 import com.example.ascendlifequest.ui.theme.AppColor
 
-// Item des questions de preferences
+// Item des questions de preferences (STATELESS)
 @Composable
-fun PreferenceQuestion(question: String, color: Color, context: Context, preferenceKey: String) {
-    // Recuperer userId
-    val authService = remember { AuthService(context) }
-    val userId = authService.getUserId()
-    // Lire la préférence sauvegardée
-    var selected by remember {
-        mutableIntStateOf(PreferencesHelper.getPreference(context, userId, preferenceKey, 3))
-    }
-
-    // Sauvegarder la préférence à chaque changement
-    LaunchedEffect(selected) {
-        PreferencesHelper.savePreference(context, userId, preferenceKey, selected)
-    }
-
+fun PreferenceQuestion(
+    question: String,
+    color: Color,
+    selected: Int,
+    onSelectedChange: (Int) -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -89,7 +74,7 @@ fun PreferenceQuestion(question: String, color: Color, context: Context, prefere
                 ) {
                     (1..5).forEach { value ->
                         Button(
-                            onClick = { selected = value },
+                            onClick = { onSelectedChange(value) },
                             modifier = Modifier.size(42.dp),
                             shape = RoundedCornerShape(50),
                             contentPadding = PaddingValues(0.dp),
@@ -101,7 +86,7 @@ fun PreferenceQuestion(question: String, color: Color, context: Context, prefere
                                 text = value.toString(),
                                 color = AppColor.MainTextColor,
                                 fontSize = 24.sp,
-                                modifier = Modifier.align(Alignment.CenterVertically)
+                                modifier = Modifier
                             )
                         }
                     }
