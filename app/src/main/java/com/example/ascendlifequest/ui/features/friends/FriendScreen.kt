@@ -31,6 +31,7 @@ import com.example.ascendlifequest.ui.components.AppHeader
 import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.features.friends.components.FriendItem
 import com.example.ascendlifequest.ui.features.friends.components.FriendRequestItem
+import com.example.ascendlifequest.ui.features.friends.components.NotificationItem
 import com.example.ascendlifequest.ui.features.friends.components.SearchUserItem
 import com.example.ascendlifequest.ui.theme.AppColor
 
@@ -45,7 +46,7 @@ fun FriendScreen(
     val showPendingRequestsDialog by viewModel.showPendingRequestsDialog.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchState by viewModel.searchState.collectAsState()
-    val isAddingFriend by viewModel.isAddingFriend.collectAsState()
+    val addingFriendId by viewModel.addingFriendId.collectAsState()
     val requestSentMessage by viewModel.requestSentMessage.collectAsState()
     val pendingRequestsCount by viewModel.pendingRequestsCount.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
@@ -69,7 +70,7 @@ fun FriendScreen(
         AddFriendDialog(
             searchQuery = searchQuery,
             searchState = searchState,
-            isAddingFriend = isAddingFriend,
+            addingFriendId = addingFriendId,
             requestSentMessage = requestSentMessage,
             onSearchQueryChange = { viewModel.updateSearchQuery(it) },
             onSendFriendRequest = { viewModel.sendFriendRequest(it) },
@@ -77,14 +78,16 @@ fun FriendScreen(
         )
     }
 
-    // Dialogue des demandes d'amis en attente
+    // Dialogue des demandes d'amis en attente et notifications
     if (showPendingRequestsDialog) {
         val state = uiState
         if (state is FriendsUiState.Success) {
             PendingRequestsDialog(
                 pendingRequests = state.pendingRequests,
+                notifications = state.notifications,
                 onAcceptRequest = { viewModel.acceptFriendRequest(it) },
                 onDeclineRequest = { viewModel.declineFriendRequest(it) },
+                onDeleteNotification = { viewModel.deleteNotification(it) },
                 onDismiss = { viewModel.closePendingRequestsDialog() }
             )
         }
@@ -288,7 +291,7 @@ private fun EmptyFriendsContent() {
 private fun AddFriendDialog(
     searchQuery: String,
     searchState: SearchUiState,
-    isAddingFriend: Boolean,
+    addingFriendId: String?,
     requestSentMessage: String?,
     onSearchQueryChange: (String) -> Unit,
     onSendFriendRequest: (UserProfile) -> Unit,
@@ -421,7 +424,7 @@ private fun AddFriendDialog(
                                         SearchUserItem(
                                             user = user,
                                             onAddClick = { onSendFriendRequest(user) },
-                                            isAdding = isAddingFriend
+                                            isAdding = addingFriendId == user.uid
                                         )
                                     }
                                 }
@@ -449,10 +452,14 @@ private fun AddFriendDialog(
 @Composable
 private fun PendingRequestsDialog(
     pendingRequests: List<UserProfile>,
+    notifications: List<com.example.ascendlifequest.data.model.Notification>,
     onAcceptRequest: (UserProfile) -> Unit,
     onDeclineRequest: (UserProfile) -> Unit,
+    onDeleteNotification: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val totalCount = pendingRequests.size + notifications.size
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -476,7 +483,7 @@ private fun PendingRequestsDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Demandes d'amis (${pendingRequests.size})",
+                        text = "Notifications ($totalCount)",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = AppColor.MainTextColor
@@ -492,8 +499,8 @@ private fun PendingRequestsDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Liste des demandes
-                if (pendingRequests.isEmpty()) {
+                // Liste des demandes et notifications
+                if (pendingRequests.isEmpty() && notifications.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -507,7 +514,7 @@ private fun PendingRequestsDialog(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "Aucune demande en attente",
+                                text = "Aucune notification",
                                 color = AppColor.MinusTextColor,
                                 textAlign = TextAlign.Center,
                                 fontSize = 16.sp
@@ -518,12 +525,44 @@ private fun PendingRequestsDialog(
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(pendingRequests) { request ->
-                            FriendRequestItem(
-                                user = request,
-                                onAccept = { onAcceptRequest(request) },
-                                onDecline = { onDeclineRequest(request) }
-                            )
+                        // Notifications (demandes refusées, etc.)
+                        if (notifications.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = "Notifications",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColor.MinusTextColor,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
+                            items(notifications) { notification ->
+                                NotificationItem(
+                                    message = notification.message,
+                                    fromUserPseudo = notification.fromUserPseudo,
+                                    onDismiss = { onDeleteNotification(notification.id) }
+                                )
+                            }
+                        }
+
+                        // Demandes d'amis en attente
+                        if (pendingRequests.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = "Demandes d'amis",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AppColor.MinusTextColor,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
+                            items(pendingRequests) { request ->
+                                FriendRequestItem(
+                                    user = request,
+                                    onAccept = { onAcceptRequest(request) },
+                                    onDecline = { onDeclineRequest(request) }
+                                )
+                            }
                         }
                     }
                 }
