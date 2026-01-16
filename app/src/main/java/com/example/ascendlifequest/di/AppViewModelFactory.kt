@@ -4,6 +4,8 @@ package com.example.ascendlifequest.di
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.ascendlifequest.data.auth.AuthRepository
+import com.example.ascendlifequest.data.auth.AuthRepositoryImpl
+import com.example.ascendlifequest.data.remote.AuthService
 import com.example.ascendlifequest.data.repository.QuestRepository
 import com.example.ascendlifequest.ui.features.auth.LoginViewModel
 import com.example.ascendlifequest.ui.features.auth.RegisterViewModel
@@ -18,13 +20,16 @@ class AppViewModelFactory(
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        // Fournir un AuthRepository par défaut si non fourni
+        val providedAuthRepo = authRepository ?: AuthRepositoryImpl(AuthService())
+
         return when {
-            modelClass.isAssignableFrom(LoginViewModel::class.java) -> modelClass.cast(LoginViewModel(authRepository!!))
-            modelClass.isAssignableFrom(RegisterViewModel::class.java) -> modelClass.cast(RegisterViewModel(authRepository!!))
-            modelClass.isAssignableFrom(LoginOptionViewModel::class.java) -> modelClass.cast(LoginOptionViewModel(authRepository!!))
-            modelClass.isAssignableFrom(QuestViewModel::class.java) -> modelClass.cast(QuestViewModel(questRepository!!))
-            modelClass.isAssignableFrom(SettingsViewModel::class.java) -> modelClass.cast(SettingsViewModel(authRepository!!))
-            modelClass.isAssignableFrom(AccountViewModel::class.java) -> modelClass.cast(AccountViewModel())
+            modelClass.isAssignableFrom(LoginViewModel::class.java) -> modelClass.cast(LoginViewModel(providedAuthRepo))
+            modelClass.isAssignableFrom(RegisterViewModel::class.java) -> modelClass.cast(RegisterViewModel(providedAuthRepo))
+            modelClass.isAssignableFrom(LoginOptionViewModel::class.java) -> modelClass.cast(LoginOptionViewModel(providedAuthRepo))
+            modelClass.isAssignableFrom(QuestViewModel::class.java) -> modelClass.cast(QuestViewModel(questRepository!!, providedAuthRepo))
+            modelClass.isAssignableFrom(SettingsViewModel::class.java) -> modelClass.cast(SettingsViewModel(providedAuthRepo))
+            modelClass.isAssignableFrom(AccountViewModel::class.java) -> modelClass.cast(AccountViewModel(providedAuthRepo))
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${'$'}{modelClass.name}")
         }
     }
