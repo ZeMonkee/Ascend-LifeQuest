@@ -13,8 +13,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.ascendlifequest.data.remote.AuthService
-import com.example.ascendlifequest.data.auth.AuthRepositoryImpl
 import com.example.ascendlifequest.di.AppViewModelFactory
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
@@ -27,8 +25,7 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun AccountScreen(navController: NavHostController) {
-    val authService = remember { AuthService() }
-    val factory = AppViewModelFactory(authRepository = AuthRepositoryImpl(authService))
+    val factory = AppViewModelFactory()
     val vm: AccountViewModel = viewModel(factory = factory)
     val state by vm.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -233,6 +230,7 @@ fun AccountScreen(navController: NavHostController) {
                                 reauthTriggerReauth = null
                             }
                         }
+
                     }
 
                     is AccountUiState.Loaded -> {}
