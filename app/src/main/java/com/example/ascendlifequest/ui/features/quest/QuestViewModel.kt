@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.ascendlifequest.data.auth.AuthRepository
 import com.example.ascendlifequest.data.model.Categorie
 import com.example.ascendlifequest.data.model.Quest
+import com.example.ascendlifequest.data.repository.ProfileRepository
 import com.example.ascendlifequest.data.repository.QuestRepository
 import com.example.ascendlifequest.data.repository.generateQuestForCategory
 import com.example.ascendlifequest.util.CategorySelector
@@ -21,7 +22,8 @@ import kotlinx.coroutines.launch
 
 class QuestViewModel(
     private val questRepository: QuestRepository,
-    private val authRepository: AuthRepository? = null
+    private val authRepository: AuthRepository? = null,
+    private val profileRepository: ProfileRepository? = null
 ) : ViewModel() {
 
     // Exposer l'id utilisateur courant via le ViewModel afin d'éviter la création de services dans la View
@@ -105,7 +107,17 @@ class QuestViewModel(
 
             val loadedCategories = _categories.value
 
+            // Compteur d'échecs consécutifs - arrête après 5 échecs
+            var consecutiveFailures = 0
+            val maxConsecutiveFailures = 5
+
             while (QuestHelper.getQuestCounter(context) < maxQuests) {
+                // Vérifier si on a atteint le maximum d'échecs consécutifs
+                if (consecutiveFailures >= maxConsecutiveFailures) {
+                    Log.w("QuestViewModel", "⚠️ Arrêt après $maxConsecutiveFailures échecs consécutifs. Affichage des quêtes générées.")
+                    break
+                }
+
                 val selectedCategory =
                     CategorySelector.selectWeightedCategory(context, userId, loadedCategories)
                         ?: break
@@ -113,6 +125,9 @@ class QuestViewModel(
                 try {
                     val newQuest = generateQuestForCategory(context, selectedCategory)
                     if (newQuest != null) {
+                        // Réinitialiser le compteur d'échecs en cas de succès
+                        consecutiveFailures = 0
+
                         QuestHelper.incrementQuestCounter(context)
                         _generationProgress.value = QuestHelper.getQuestCounter(context)
                         Log.d(
@@ -123,18 +138,28 @@ class QuestViewModel(
                         // Refresh quests locally
                         _quests.value = questRepository.getQuests()
                     } else {
-                        Log.w("QuestViewModel", "⚠️ Échec génération, retry dans 10s...")
-                        delay(10000)
+                        consecutiveFailures++
+                        Log.w("QuestViewModel", "⚠️ Échec génération ($consecutiveFailures/$maxConsecutiveFailures), retry dans 5s...")
+                        delay(5000)
                     }
                 } catch (e: Exception) {
-                    Log.e("QuestViewModel", "❌ Erreur génération, retry dans 10s...", e)
-                    delay(10000)
+                    consecutiveFailures++
+                    Log.e("QuestViewModel", "❌ Erreur génération ($consecutiveFailures/$maxConsecutiveFailures), retry dans 5s...", e)
+                    delay(5000)
                 }
             }
 
             _questCounter.value = QuestHelper.getQuestCounter(context)
             _isGenerating.value = false
             _isLoading.value = false
+
+            // Log du résultat final
+            val generatedCount = _quests.value.size
+            if (consecutiveFailures >= maxConsecutiveFailures) {
+                Log.w("QuestViewModel", "⚠️ Génération arrêtée après $maxConsecutiveFailures échecs. $generatedCount quêtes affichées.")
+            } else {
+                Log.d("QuestViewModel", "✅ Génération terminée. $generatedCount quêtes générées.")
+            }
         }
     }
 
@@ -178,11 +203,50 @@ class QuestViewModel(
         _showMaxQuestsDialog.value = false
     }
 
-    fun updateQuestState(isDone: Boolean) {
-        if (isDone) {
-            _completedQuestsCount.value += 1
-        } else {
-            _completedQuestsCount.value = (_completedQuestsCount.value - 1).coerceAtLeast(0)
+    /**
+     * Met à jour l'état d'une quête et synchronise avec Firebase
+     * @param isDone true si la quête vient d'être complétée
+     * @param xpAmount quantité d'XP gagnée (positive si complétée, négative si annulée)
+     */
+    fun updateQuestState(isDone: Boolean, xpAmount: Int = 0) {
+        viewModelScope.launch {
+            if (isDone) {
+                _completedQuestsCount.value += 1
+
+                // Mettre à jour le profil Firebase si disponible
+                val userId = _currentUserId.value
+                if (userId.isNotEmpty() && profileRepository != null) {
+                    try {
+                        // Ajouter l'XP
+                        if (xpAmount > 0) {
+                            profileRepository.updateXp(userId, xpAmount.toLong())
+                            Log.d("QuestViewModel", "✅ XP ajoutée au profil Firebase: +$xpAmount")
+                        }
+
+                        // Incrémenter le compteur de quêtes réalisées
+                        profileRepository.incrementQuestsCompleted(userId)
+                        Log.d("QuestViewModel", "✅ Quêtes réalisées incrémentées dans Firebase")
+                    } catch (e: Exception) {
+                        Log.e("QuestViewModel", "❌ Erreur mise à jour profil Firebase", e)
+                    }
+                }
+            } else {
+                _completedQuestsCount.value = (_completedQuestsCount.value - 1).coerceAtLeast(0)
+
+                // Note: On ne retire pas l'XP ni les quêtes si on annule (optionnel)
+                // Si vous voulez retirer l'XP lors de l'annulation, décommentez ci-dessous:
+                /*
+                val userId = _currentUserId.value
+                if (userId.isNotEmpty() && profileRepository != null && xpAmount > 0) {
+                    try {
+                        profileRepository.updateXp(userId, -xpAmount.toLong())
+                        // Note: Il faudrait aussi décrémenter le compteur de quêtes
+                    } catch (e: Exception) {
+                        Log.e("QuestViewModel", "❌ Erreur retrait XP Firebase", e)
+                    }
+                }
+                */
+            }
         }
     }
 }
