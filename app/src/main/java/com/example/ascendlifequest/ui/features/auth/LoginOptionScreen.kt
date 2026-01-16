@@ -54,8 +54,9 @@ private const val TAG = "LoginOptionScreen"
 @Composable
 fun LoginOptionScreen(navController: NavHostController) {
     val context = LocalContext.current
+    // Instance locale d'AuthService uniquement pour l'Intent Google Sign-In (UI)
     val authService = AuthService()
-    val factory = AppViewModelFactory(com.example.ascendlifequest.data.auth.AuthRepositoryImpl(authService))
+    val factory = AppViewModelFactory()
     val viewModel: LoginOptionViewModel = viewModel(factory = factory)
     val scope = rememberCoroutineScope()
     var isGoogleLoading by remember { mutableStateOf(false) }
@@ -72,7 +73,7 @@ fun LoginOptionScreen(navController: NavHostController) {
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-         Log.d(TAG, "Résultat Google Sign In reçu: ${result.resultCode}")
+         Log.d(TAG, "Résultat Google Sign In reçu: ${'$'}{result.resultCode}")
 
          if (result.resultCode == Activity.RESULT_OK) {
              isGoogleLoading = true
@@ -84,7 +85,7 @@ fun LoginOptionScreen(navController: NavHostController) {
                     // Observer un événement via viewModel.events dans un LaunchedEffect séparé pour la navigation/toasts
                  } catch (e: Exception) {
                      Log.e(TAG, "Exception lors du traitement de connexion Google", e)
-                     Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_LONG).show()
+                     Toast.makeText(context, "Erreur: ${'$'}{e.message}", Toast.LENGTH_LONG).show()
                  } finally {
                      isGoogleLoading = false
                  }
@@ -95,7 +96,7 @@ fun LoginOptionScreen(navController: NavHostController) {
                  Log.w(TAG, "Connexion Google annulée par l'utilisateur")
                  Toast.makeText(context, "Connexion Google annulée", Toast.LENGTH_SHORT).show()
              } else {
-                 Log.w(TAG, "Résultat inattendu de connexion Google: ${result.resultCode}")
+                 Log.w(TAG, "Résultat inattendu de connexion Google: ${'$'}{result.resultCode}")
                  Toast.makeText(context, "La connexion Google a échoué", Toast.LENGTH_SHORT).show()
              }
          }
@@ -186,7 +187,7 @@ fun LoginOptionScreen(navController: NavHostController) {
                                         } catch (e: Exception) {
                                             isGoogleLoading = false
                                             Log.e(TAG, "Erreur création Intent Google Sign-In", e)
-                                            Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Erreur: ${'$'}{e.message}", Toast.LENGTH_SHORT).show()
                                         }
                                     } else {
                                         isGoogleLoading = false
@@ -196,7 +197,7 @@ fun LoginOptionScreen(navController: NavHostController) {
                                  } catch (e: Exception) {
                                      isGoogleLoading = false
                                      Log.e(TAG, "Erreur lors du lancement de la connexion Google", e)
-                                     Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_LONG).show()
+                                     Toast.makeText(context, "Erreur: ${'$'}{e.message}", Toast.LENGTH_LONG).show()
                                  }
                              } else {
                                  Log.d(TAG, "Connexion Google déjà en cours, ignorer")
