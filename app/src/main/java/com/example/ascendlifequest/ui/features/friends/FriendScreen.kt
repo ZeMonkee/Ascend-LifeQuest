@@ -48,10 +48,20 @@ fun FriendScreen(
     val isAddingFriend by viewModel.isAddingFriend.collectAsState()
     val requestSentMessage by viewModel.requestSentMessage.collectAsState()
     val pendingRequestsCount by viewModel.pendingRequestsCount.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+
+    // Compteur pour forcer le rechargement à chaque fois qu'on revient sur l'écran
+    var refreshKey by remember { mutableIntStateOf(0) }
 
     // Recharger les données à chaque affichage de l'écran
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshKey) {
         viewModel.loadFriendsAndRequests()
+    }
+
+    // Incrémenter le compteur quand l'écran devient visible
+    DisposableEffect(Unit) {
+        refreshKey++
+        onDispose { }
     }
 
     // Dialogue d'ajout d'ami
@@ -99,6 +109,15 @@ fun FriendScreen(
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    // Indicateur de refresh en haut
+                    if (isRefreshing && uiState is FriendsUiState.Success) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = AppColor.LightBlueColor,
+                            trackColor = AppColor.DarkBlueColor
+                        )
+                    }
+
                     // Header avec bouton des demandes
                     Row(
                         modifier = Modifier
