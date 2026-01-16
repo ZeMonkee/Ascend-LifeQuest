@@ -229,13 +229,8 @@ fun QuestScreen(
                                     quests = questsForCategory,
                                     context = context,
                                     userId = userId,
-                                    onQuestStateChanged = {
-                                        _,
-                                        isDone ->
-                                        viewModel
-                                            .updateQuestState(
-                                                isDone
-                                            )
+                                    onQuestStateChanged = { _: Int, isDone: Boolean, xpAmount: Int ->
+                                        viewModel.updateQuestState(isDone, xpAmount)
                                     }
                                 )
                             }
