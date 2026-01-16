@@ -37,7 +37,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.ui.components.AppBackground
-import com.example.ascendlifequest.data.remote.AuthService
 import com.example.ascendlifequest.ui.theme.AppColor
 import com.example.ascendlifequest.di.AppViewModelFactory
 
@@ -49,8 +48,7 @@ fun LoginScreen(navController: NavHostController) {
 
     val context = LocalContext.current
     // ViewModel instantiation en utilisant la factory simple
-    val authService = AuthService()
-    val factory = AppViewModelFactory(com.example.ascendlifequest.data.auth.AuthRepositoryImpl(authService))
+    val factory = AppViewModelFactory()
     val viewModel: LoginViewModel = viewModel(factory = factory)
 
     // Vérifier si l'utilisateur est déjà connecté
