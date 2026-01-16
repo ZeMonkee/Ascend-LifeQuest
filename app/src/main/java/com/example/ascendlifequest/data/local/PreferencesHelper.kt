@@ -1,7 +1,9 @@
 package com.example.ascendlifequest.data.local
 
 import android.content.Context
-import android.content.SharedPreferences
+import com.example.ascendlifequest.database.AppDatabase
+import com.example.ascendlifequest.database.CategoryPreferenceEntity
+import kotlinx.coroutines.runBlocking
 
 object PreferencesHelper {
     private const val PREFS_NAME = "user_preferences"
@@ -19,45 +21,44 @@ object PreferencesHelper {
         4 to KEY_LECTURE      // Lecture
     )
 
-    /**
-     * Récupère la préférence pour une catégorie donnée (par son ID)
-     * @return valeur de 1 (n'aime pas) à 5 (adore), par défaut 3
-     */
-    fun getPreferenceForCategory(context: Context, userId: String, categoryId: Int): Int {
-        val key = categoryToPreferenceKey[categoryId] ?: return 3
-        return getPreference(context, userId, key, 3)
+    fun savePreference(context: Context, userId: String, key: String, value: Int) {
+        val db = AppDatabase.getDatabase(context)
+        val categoryId = categoryToPreferenceKey.entries.firstOrNull { it.value == key }?.key ?: -1
+        runBlocking {
+            db.categoryPreferenceDao().upsert(CategoryPreferenceEntity(userId = userId, categoryId = categoryId, preference = value))
+        }
+    }
+
+    fun getPreference(context: Context, userId: String, key: String, defaultValue: Int): Int {
+        val db = AppDatabase.getDatabase(context)
+        val categoryId = categoryToPreferenceKey.entries.firstOrNull { it.value == key }?.key
+        if (categoryId != null) {
+            val roomVal = runBlocking { db.categoryPreferenceDao().getPreferenceForCategory(userId, categoryId) }
+            return roomVal ?: defaultValue
+        }
+        return defaultValue
     }
 
     /**
      * Récupère toutes les préférences utilisateur sous forme de Map (categoryId -> preference)
      */
     fun getAllPreferences(context: Context, userId: String): Map<Int, Int> {
-        return categoryToPreferenceKey.mapValues { (categoryId, _) ->
-            getPreferenceForCategory(context, userId, categoryId)
+        val db = AppDatabase.getDatabase(context)
+        val list = runBlocking { db.categoryPreferenceDao().getAllPreferencesForUser(userId) }
+        if (list.isEmpty()) {
+            // Default values
+            return mapOf(
+                1 to 3,
+                2 to 3,
+                3 to 3,
+                4 to 3
+            )
         }
-    }
-
-    private fun getSharedPreferences(context: Context, userId: String): SharedPreferences {
-        // Créer un nom de préférence unique par utilisateur
-        val prefsName = "PREFS_NAME_$userId"
-        return context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
-    }
-
-    fun savePreference(context: Context, userId: String, key: String, value: Int) {
-        val prefs = getSharedPreferences(context, userId)
-        with(prefs.edit()) {
-            putInt(key, value)
-            apply()
-        }
-    }
-
-    fun getPreference(context: Context, userId: String, key: String, defaultValue: Int): Int {
-        val prefs = getSharedPreferences(context, userId)
-        return prefs.getInt(key, defaultValue)
+        return list.associate { it.categoryId to it.preference }
     }
 
     fun clearPreferences(context: Context, userId: String) {
-        val prefs = getSharedPreferences(context, userId)
-        prefs.edit().clear().apply() // Efface les données de cet utilisateur
+        val db = AppDatabase.getDatabase(context)
+        runBlocking { db.categoryPreferenceDao().clearPreferencesForUser(userId) }
     }
 }
