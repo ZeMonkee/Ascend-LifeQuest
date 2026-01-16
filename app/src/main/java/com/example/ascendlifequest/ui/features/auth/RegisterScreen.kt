@@ -56,7 +56,8 @@ fun RegisterScreen(navController: NavHostController) {
             when {
                 ev.startsWith("REGISTER_SUCCESS") -> {
                     Toast.makeText(context, "Inscription réussie", Toast.LENGTH_SHORT).show()
-                    navController.navigate("quetes") { popUpTo("register") { inclusive = true } }
+                    // Après création du compte, on redirige d'abord vers les préférences
+                    navController.navigate("preference") { popUpTo("register") { inclusive = true } }
                 }
                 ev.startsWith("REGISTER_FAILED") -> {
                     Toast.makeText(context, ev.removePrefix("REGISTER_FAILED: "), Toast.LENGTH_SHORT).show()
