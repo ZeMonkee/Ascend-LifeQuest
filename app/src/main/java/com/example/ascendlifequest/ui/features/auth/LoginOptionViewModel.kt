@@ -1,8 +1,11 @@
 package com.example.ascendlifequest.ui.features.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ascendlifequest.data.auth.AuthRepository
+import com.example.ascendlifequest.data.repository.ProfileRepository
+import com.example.ascendlifequest.data.repository.ProfileRepositoryImpl
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,8 +21,13 @@ sealed class LoginOptionUiState {
 }
 
 class LoginOptionViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val profileRepository: ProfileRepository = ProfileRepositoryImpl(authRepository)
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "LoginOptionViewModel"
+    }
 
     private val _uiState = MutableStateFlow<LoginOptionUiState>(LoginOptionUiState.Idle)
     val uiState: StateFlow<LoginOptionUiState> = _uiState
@@ -33,6 +41,10 @@ class LoginOptionViewModel(
             val result = authRepository.handleGoogleSignInResult(data)
             if (result.isSuccess) {
                 val user = result.getOrNull()!!
+
+                // Vérifier/créer le profil si nécessaire
+                ensureProfileExists(user)
+
                 _uiState.value = LoginOptionUiState.Success(user)
                 _events.emit("GOOGLE_LOGIN_SUCCESS")
             } else {
@@ -40,6 +52,22 @@ class LoginOptionViewModel(
                 _uiState.value = LoginOptionUiState.Error(err)
                 _events.emit("GOOGLE_LOGIN_FAILED: $err")
             }
+        }
+    }
+
+    /**
+     * S'assure que le profil existe dans Firestore, le crée si nécessaire
+     */
+    private suspend fun ensureProfileExists(user: FirebaseUser) {
+        try {
+            val existingProfile = profileRepository.getProfileById(user.uid).getOrNull()
+            if (existingProfile == null) {
+                val email = user.email ?: user.displayName ?: "user@unknown.com"
+                profileRepository.createProfileForNewUser(user.uid, email)
+                Log.d(TAG, "Profil créé pour utilisateur Google: ${user.uid}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de la vérification/création du profil", e)
         }
     }
 
