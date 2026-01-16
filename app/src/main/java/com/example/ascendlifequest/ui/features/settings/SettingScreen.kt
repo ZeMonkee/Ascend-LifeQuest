@@ -7,11 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -23,21 +19,16 @@ import com.example.ascendlifequest.ui.components.AppBottomNavBar
 import com.example.ascendlifequest.ui.components.AppHeader
 import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.features.settings.components.SettingsItem
-import com.example.ascendlifequest.data.remote.AuthService
-import com.example.ascendlifequest.data.auth.AuthRepositoryImpl
 import com.example.ascendlifequest.di.AppViewModelFactory
 
 @Composable
 fun SettingScreen(navController: NavHostController) {
     val context = LocalContext.current
-    val authService = remember { AuthService() }
-    val factory = AppViewModelFactory(authRepository = AuthRepositoryImpl(authService))
+    val factory = AppViewModelFactory()
     val viewModel: SettingsViewModel = viewModel(factory = factory)
-    val scope = rememberCoroutineScope()
-    val events = viewModel.events
 
     LaunchedEffect(Unit) {
-        events.collect { ev ->
+        viewModel.events.collect { ev ->
             when {
                 ev == "SIGNED_OUT" -> {
                     Toast.makeText(context, "Vous avez été déconnecté", Toast.LENGTH_SHORT).show()
