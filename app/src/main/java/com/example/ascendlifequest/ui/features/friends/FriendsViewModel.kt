@@ -84,11 +84,14 @@ class FriendsViewModel(
 
     fun loadFriendsAndRequests() {
         viewModelScope.launch {
-            Log.d(TAG, "=== Début loadFriendsAndRequests ===")
+            Log.d(TAG, "╔════════════════════════════════════════")
+            Log.d(TAG, "║ Début loadFriendsAndRequests")
+            Log.d(TAG, "╠════════════════════════════════════════")
 
             // Si déjà en cours de chargement, on ne fait rien
             if (_isRefreshing.value) {
-                Log.d(TAG, "Déjà en cours de chargement, ignoré")
+                Log.d(TAG, "║ ⚠️ Déjà en cours de chargement, ignoré")
+                Log.d(TAG, "╚════════════════════════════════════════")
                 return@launch
             }
 
@@ -101,11 +104,14 @@ class FriendsViewModel(
             }
 
             val userId = authRepository.getCurrentUserId()
-            Log.d(TAG, "UserId actuel: $userId")
+            Log.d(TAG, "║ 👤 UserId connecté: $userId")
+            Log.d(TAG, "║ (C'est cet utilisateur qui cherche les demandes reçues)")
 
             if (userId.isEmpty()) {
                 _uiState.value = FriendsUiState.Error("Utilisateur non connecté")
                 _isRefreshing.value = false
+                Log.d(TAG, "║ ❌ Aucun utilisateur connecté")
+                Log.d(TAG, "╚════════════════════════════════════════")
                 return@launch
             }
 
@@ -113,32 +119,37 @@ class FriendsViewModel(
 
             try {
                 // Charger les amis
-                Log.d(TAG, "Chargement des amis...")
+                Log.d(TAG, "║ 📋 Chargement des amis...")
                 val friendsResult = friendRepository.getFriends(userId)
                 val friends = friendsResult.getOrNull() ?: emptyList()
-                Log.d(TAG, "Amis chargés: ${friends.size}")
+                Log.d(TAG, "║ ✓ Amis chargés: ${friends.size}")
 
                 // Charger les demandes en attente
-                Log.d(TAG, "Chargement des demandes en attente...")
+                Log.d(TAG, "║ 📬 Chargement des demandes en attente...")
+                Log.d(TAG, "║ (Recherche où friendId = $userId)")
                 val pendingResult = friendRepository.getPendingFriendRequests(userId)
                 val pendingRequests = pendingResult.getOrNull() ?: emptyList()
-                Log.d(TAG, "Demandes en attente chargées: ${pendingRequests.size}")
+                Log.d(TAG, "║ ✓ Demandes en attente: ${pendingRequests.size}")
+
+                pendingRequests.forEach { profile ->
+                    Log.d(TAG, "║   - ${profile.pseudo} (uid: ${profile.uid})")
+                }
 
                 // Mettre à jour le compteur de demandes
                 _pendingRequestsCount.value = pendingRequests.size
-                Log.d(TAG, "Compteur mis à jour: ${_pendingRequestsCount.value}")
+                Log.d(TAG, "║ 🔢 Compteur badge: ${_pendingRequestsCount.value}")
 
                 _uiState.value = FriendsUiState.Success(
                     friends = friends,
                     pendingRequests = pendingRequests
                 )
-                Log.d(TAG, "✅ État mis à jour avec ${friends.size} amis et ${pendingRequests.size} demandes")
+                Log.d(TAG, "║ ✅ État mis à jour")
             } catch (e: Exception) {
                 _uiState.value = FriendsUiState.Error(e.message ?: "Erreur inconnue")
-                Log.e(TAG, "❌ Erreur chargement", e)
+                Log.e(TAG, "║ ❌ Erreur: ${e.message}", e)
             } finally {
                 _isRefreshing.value = false
-                Log.d(TAG, "=== Fin loadFriendsAndRequests ===")
+                Log.d(TAG, "╚════════════════════════════════════════")
             }
         }
     }
