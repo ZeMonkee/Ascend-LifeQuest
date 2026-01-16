@@ -1,6 +1,7 @@
 package com.example.ascendlifequest.data.repository
 
 import com.example.ascendlifequest.data.model.Friendship
+import com.example.ascendlifequest.data.model.Notification
 import com.example.ascendlifequest.data.model.UserProfile
 import kotlinx.coroutines.flow.Flow
 
@@ -21,9 +22,9 @@ interface FriendRepository {
     suspend fun acceptFriendRequest(currentUserId: String, friendId: String): Result<Unit>
 
     /**
-     * Refuse une demande d'ami
+     * Refuse une demande d'ami et envoie une notification
      */
-    suspend fun declineFriendRequest(currentUserId: String, friendId: String): Result<Unit>
+    suspend fun declineFriendRequest(currentUserId: String, friendId: String, currentUserPseudo: String): Result<Unit>
 
     /**
      * Récupère les demandes d'amis en attente (reçues)
@@ -64,5 +65,20 @@ interface FriendRepository {
      * Récupère un profil par son ID
      */
     suspend fun getProfileById(userId: String): Result<UserProfile?>
+
+    /**
+     * Récupère les notifications d'un utilisateur
+     */
+    suspend fun getNotifications(userId: String): Result<List<Notification>>
+
+    /**
+     * Marque une notification comme lue
+     */
+    suspend fun markNotificationAsRead(notificationId: String): Result<Unit>
+
+    /**
+     * Supprime une notification
+     */
+    suspend fun deleteNotification(notificationId: String): Result<Unit>
 }
 
