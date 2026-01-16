@@ -1,5 +1,6 @@
 package com.example.ascendlifequest.ui.features.friends
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,11 +9,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -39,10 +42,17 @@ fun FriendScreen(
     val uiState by viewModel.uiState.collectAsState()
     val showAddFriendDialog by viewModel.showAddFriendDialog.collectAsState()
     val showDeleteConfirmDialog by viewModel.showDeleteConfirmDialog.collectAsState()
+    val showPendingRequestsDialog by viewModel.showPendingRequestsDialog.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchState by viewModel.searchState.collectAsState()
     val isAddingFriend by viewModel.isAddingFriend.collectAsState()
     val requestSentMessage by viewModel.requestSentMessage.collectAsState()
+    val pendingRequestsCount by viewModel.pendingRequestsCount.collectAsState()
+
+    // Recharger les données à chaque affichage de l'écran
+    LaunchedEffect(Unit) {
+        viewModel.loadFriendsAndRequests()
+    }
 
     // Dialogue d'ajout d'ami
     if (showAddFriendDialog) {
@@ -55,6 +65,19 @@ fun FriendScreen(
             onSendFriendRequest = { viewModel.sendFriendRequest(it) },
             onDismiss = { viewModel.closeAddFriendDialog() }
         )
+    }
+
+    // Dialogue des demandes d'amis en attente
+    if (showPendingRequestsDialog) {
+        val state = uiState
+        if (state is FriendsUiState.Success) {
+            PendingRequestsDialog(
+                pendingRequests = state.pendingRequests,
+                onAcceptRequest = { viewModel.acceptFriendRequest(it) },
+                onDeclineRequest = { viewModel.declineFriendRequest(it) },
+                onDismiss = { viewModel.closePendingRequestsDialog() }
+            )
+        }
     }
 
     // Dialogue de confirmation de suppression
@@ -76,7 +99,55 @@ fun FriendScreen(
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    AppHeader(title = "AMIS")
+                    // Header avec bouton des demandes
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "AMIS",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColor.MainTextColor
+                        )
+
+                        // Bouton des demandes d'amis avec badge
+                        Box {
+                            IconButton(
+                                onClick = { viewModel.openPendingRequestsDialog() }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Demandes d'amis",
+                                    tint = if (pendingRequestsCount > 0) AppColor.CuisineColor else AppColor.MinusTextColor,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+
+                            // Badge avec le nombre de demandes
+                            if (pendingRequestsCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = (-4).dp, y = 4.dp)
+                                        .size(20.dp)
+                                        .clip(CircleShape)
+                                        .background(AppColor.SportColor),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (pendingRequestsCount > 9) "9+" else pendingRequestsCount.toString(),
+                                        color = AppColor.MainTextColor,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     when (val state = uiState) {
                         is FriendsUiState.Loading -> {
@@ -90,10 +161,7 @@ fun FriendScreen(
                         is FriendsUiState.Success -> {
                             FriendsContent(
                                 friends = state.friends,
-                                pendingRequests = state.pendingRequests,
                                 navController = navController,
-                                onAcceptRequest = { viewModel.acceptFriendRequest(it) },
-                                onDeclineRequest = { viewModel.declineFriendRequest(it) },
                                 onDeleteFriend = { viewModel.showDeleteConfirmation(it) }
                             )
                         }
@@ -136,13 +204,10 @@ fun FriendScreen(
 @Composable
 private fun FriendsContent(
     friends: List<UserProfile>,
-    pendingRequests: List<UserProfile>,
     navController: NavHostController,
-    onAcceptRequest: (UserProfile) -> Unit,
-    onDeclineRequest: (UserProfile) -> Unit,
     onDeleteFriend: (UserProfile) -> Unit
 ) {
-    if (friends.isEmpty() && pendingRequests.isEmpty()) {
+    if (friends.isEmpty()) {
         EmptyFriendsContent()
     } else {
         LazyColumn(
@@ -150,58 +215,16 @@ private fun FriendsContent(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Section des demandes en attente
-            if (pendingRequests.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Demandes d'amis (${pendingRequests.size})",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColor.MainTextColor,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-
-                items(pendingRequests) { request ->
-                    FriendRequestItem(
-                        user = request,
-                        onAccept = { onAcceptRequest(request) },
-                        onDecline = { onDeclineRequest(request) }
-                    )
-                }
-
-                // Séparateur
-                item {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        color = AppColor.MinusTextColor.copy(alpha = 0.3f)
-                    )
-                }
-            }
-
-            // Section des amis
-            if (friends.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Mes amis (${friends.size})",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AppColor.MainTextColor,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-
-                items(friends) { friend ->
-                    FriendItem(
-                        user = friend,
-                        onMessageClick = {
-                            navController.navigate("chat/${friend.uid}")
-                        },
-                        onLongPress = {
-                            onDeleteFriend(friend)
-                        }
-                    )
-                }
+            items(friends) { friend ->
+                FriendItem(
+                    user = friend,
+                    onMessageClick = {
+                        navController.navigate("chat/${friend.uid}")
+                    },
+                    onLongPress = {
+                        onDeleteFriend(friend)
+                    }
+                )
             }
         }
     }
@@ -394,6 +417,92 @@ private fun AddFriendDialog(
                                     textAlign = TextAlign.Center
                                 )
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PendingRequestsDialog(
+    pendingRequests: List<UserProfile>,
+    onAcceptRequest: (UserProfile) -> Unit,
+    onDeclineRequest: (UserProfile) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .fillMaxHeight(0.6f),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = AppColor.DarkBlueColor)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Demandes d'amis (${pendingRequests.size})",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColor.MainTextColor
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Fermer",
+                            tint = AppColor.MinusTextColor
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Liste des demandes
+                if (pendingRequests.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "📭",
+                                fontSize = 48.sp
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Aucune demande en attente",
+                                color = AppColor.MinusTextColor,
+                                textAlign = TextAlign.Center,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(pendingRequests) { request ->
+                            FriendRequestItem(
+                                user = request,
+                                onAccept = { onAcceptRequest(request) },
+                                onDecline = { onDeclineRequest(request) }
+                            )
                         }
                     }
                 }
