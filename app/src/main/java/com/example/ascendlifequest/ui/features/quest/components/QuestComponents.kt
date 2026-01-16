@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
@@ -37,6 +39,7 @@ fun QuestCategory(
     quests: List<Quest>,
     context: Context,
     userId: String,
+    isWeatherBad: Boolean = false,
     onQuestStateChanged: (questId: Int, isDone: Boolean, xpAmount: Int) -> Unit = { _, _, _ -> }
 ) {
     // État local pour les quêtes terminées
@@ -142,6 +145,16 @@ fun QuestCategory(
                     else TextDecoration.None,
                     modifier = Modifier.weight(1f)
                 )
+                // Indicateur météo (si la quête dépend de la météo)
+                if (quest.dependantMeteo && isWeatherBad) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Météo défavorable",
+                        tint = AppColor.Or,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
                 Text(
                     text = "${quest.xpRapporte} XP",
                     color =
