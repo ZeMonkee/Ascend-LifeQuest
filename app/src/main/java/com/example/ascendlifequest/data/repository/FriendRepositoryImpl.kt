@@ -141,11 +141,20 @@ class FriendRepositoryImpl(
 
     override suspend fun declineFriendRequest(currentUserId: String, friendId: String, currentUserPseudo: String): Result<Unit> {
         return try {
+            Log.d(TAG, "╔════════════════════════════════════════")
+            Log.d(TAG, "║ declineFriendRequest")
+            Log.d(TAG, "║ currentUserId: $currentUserId")
+            Log.d(TAG, "║ friendId: $friendId")
+            Log.d(TAG, "║ currentUserPseudo: $currentUserPseudo")
+            Log.d(TAG, "╠════════════════════════════════════════")
+
             // La demande a été envoyée par friendId vers currentUserId
             val requestDocId = "${friendId}_${currentUserId}"
+            Log.d(TAG, "║ Suppression du document: $requestDocId")
 
             // Supprimer la demande
             friendshipsCollection.document(requestDocId).delete().await()
+            Log.d(TAG, "║ ✓ Document supprimé")
 
             // Créer une notification pour informer l'utilisateur que sa demande a été refusée
             val notificationData = hashMapOf(
@@ -158,12 +167,15 @@ class FriendRepositoryImpl(
                 "read" to false
             )
 
-            notificationCollection.add(notificationData).await()
+            Log.d(TAG, "║ Création notification: $notificationData")
 
-            Log.d(TAG, "Demande d'ami refusée: $currentUserId a refusé $friendId - Notification envoyée")
+            val notifRef = notificationCollection.add(notificationData).await()
+            Log.d(TAG, "║ ✓ Notification créée avec ID: ${notifRef.id}")
+            Log.d(TAG, "╚════════════════════════════════════════")
+
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors du refus de la demande d'ami", e)
+            Log.e(TAG, "❌ Erreur lors du refus de la demande d'ami: ${e.message}", e)
             Result.failure(e)
         }
     }
