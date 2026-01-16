@@ -15,7 +15,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.time.Duration.Companion.minutes
 
-private const val API_KEY = "AIzaSyAh017-nxA99l6Taxc7hSjHkQTguyL-63Y"
+private const val API_KEY = "AIzaSyAlGS3pbnrKEv5lz0GUrcGjoNc2Az_6cV0"
 private const val MODEL = "gemini-2.5-flash"
 
 suspend fun getNextQuestIdFromRoom(context: Context): Int {
