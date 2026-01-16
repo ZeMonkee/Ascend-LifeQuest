@@ -287,17 +287,32 @@ class FriendsViewModel(
     fun declineFriendRequest(friend: UserProfile) {
         viewModelScope.launch {
             val userId = _currentUserId.value
-            val userPseudo = _currentUserPseudo.value
-            if (userId.isEmpty()) return@launch
+            var userPseudo = _currentUserPseudo.value
+
+            Log.d(TAG, "declineFriendRequest: userId=$userId, userPseudo=$userPseudo, friendUid=${friend.uid}")
+
+            if (userId.isEmpty()) {
+                Log.e(TAG, "declineFriendRequest: userId est vide!")
+                return@launch
+            }
+
+            // Si le pseudo est vide, on le charge depuis le profil
+            if (userPseudo.isEmpty()) {
+                Log.d(TAG, "declineFriendRequest: pseudo vide, chargement depuis le profil...")
+                val profileResult = friendRepository.getProfileById(userId)
+                userPseudo = profileResult.getOrNull()?.pseudo ?: "Utilisateur"
+                _currentUserPseudo.value = userPseudo
+                Log.d(TAG, "declineFriendRequest: pseudo chargé = $userPseudo")
+            }
 
             val result = friendRepository.declineFriendRequest(userId, friend.uid, userPseudo)
             result.fold(
                 onSuccess = {
-                    Log.d(TAG, "Demande refusée de: ${friend.pseudo} - Notification envoyée")
+                    Log.d(TAG, "✅ Demande refusée de: ${friend.pseudo} - Notification envoyée à ${friend.uid}")
                     loadFriendsAndRequests()
                 },
                 onFailure = { error ->
-                    Log.e(TAG, "Erreur refus demande", error)
+                    Log.e(TAG, "❌ Erreur refus demande: ${error.message}", error)
                 }
             )
         }
