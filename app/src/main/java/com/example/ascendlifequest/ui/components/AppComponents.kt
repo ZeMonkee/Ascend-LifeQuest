@@ -43,13 +43,14 @@ fun AppBackground(content: @Composable () -> Unit) {
 @Composable
 fun AppHeader(
     title: String,
+    trailing: (@Composable () -> Unit)? = null
 ) {
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(8.dp))
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
+            .padding(vertical = 8.dp)
     ) {
         Text(
             text = title,
@@ -59,6 +60,13 @@ fun AppHeader(
             textAlign = TextAlign.Center,
             modifier = Modifier.align(Alignment.Center)
         )
+
+        // Slot trailing aligné à droite sur la même ligne
+        if (trailing != null) {
+            Box(modifier = Modifier.align(Alignment.CenterEnd).padding(end = 12.dp)) {
+                trailing()
+            }
+        }
     }
 }
 
