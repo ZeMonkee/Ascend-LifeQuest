@@ -57,6 +57,8 @@ class FriendRepositoryImpl(
 
     override suspend fun sendFriendRequest(currentUserId: String, friendId: String): Result<Unit> {
         return try {
+            Log.d(TAG, "Envoi demande d'ami: $currentUserId -> $friendId")
+
             // Vérifier si déjà amis
             if (areFriends(currentUserId, friendId)) {
                 Log.d(TAG, "Déjà amis: $currentUserId et $friendId")
@@ -69,23 +71,26 @@ class FriendRepositoryImpl(
                 return Result.failure(Exception("Une demande est déjà en attente"))
             }
 
-            // Créer la demande d'ami (un seul document, pas bidirectionnel pour les pending)
-            val friendRequest = Friendship(
-                userId = currentUserId,
-                friendId = friendId,
-                createdAt = Timestamp.now(),
-                status = Friendship.STATUS_PENDING
+            // Créer la demande d'ami
+            val docId = "${currentUserId}_${friendId}"
+            val friendRequestData = hashMapOf(
+                "userId" to currentUserId,
+                "friendId" to friendId,
+                "createdAt" to Timestamp.now(),
+                "status" to Friendship.STATUS_PENDING
             )
 
+            Log.d(TAG, "Création document: $docId avec data: $friendRequestData")
+
             friendshipsCollection
-                .document("${currentUserId}_${friendId}")
-                .set(friendRequest)
+                .document(docId)
+                .set(friendRequestData)
                 .await()
 
-            Log.d(TAG, "Demande d'ami envoyée de $currentUserId à $friendId")
+            Log.d(TAG, "✅ Demande d'ami envoyée avec succès de $currentUserId à $friendId (docId: $docId)")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors de l'envoi de la demande d'ami", e)
+            Log.e(TAG, "❌ Erreur lors de l'envoi de la demande d'ami", e)
             Result.failure(e)
         }
     }
@@ -151,6 +156,8 @@ class FriendRepositoryImpl(
 
     override suspend fun getPendingFriendRequests(userId: String): Result<List<UserProfile>> {
         return try {
+            Log.d(TAG, "Recherche des demandes d'amis en attente pour userId: $userId")
+
             // Récupérer les demandes où l'utilisateur est le destinataire (friendId) et statut pending
             val requests = friendshipsCollection
                 .whereEqualTo("friendId", userId)
@@ -158,11 +165,18 @@ class FriendRepositoryImpl(
                 .get()
                 .await()
 
+            Log.d(TAG, "Nombre de documents trouvés: ${requests.documents.size}")
+
             val senderIds = requests.documents.mapNotNull { doc ->
-                doc.toObject(Friendship::class.java)?.userId
+                val friendship = doc.toObject(Friendship::class.java)
+                Log.d(TAG, "Document: ${doc.id}, userId: ${friendship?.userId}, friendId: ${friendship?.friendId}, status: ${friendship?.status}")
+                friendship?.userId
             }
 
+            Log.d(TAG, "SenderIds extraits: $senderIds")
+
             if (senderIds.isEmpty()) {
+                Log.d(TAG, "Aucune demande d'ami en attente")
                 return Result.success(emptyList())
             }
 
@@ -174,6 +188,8 @@ class FriendRepositoryImpl(
                     .get()
                     .await()
 
+                Log.d(TAG, "Profils trouvés pour chunk $chunk: ${profileDocs.documents.size}")
+
                 profileDocs.documents.mapNotNullTo(profiles) { doc ->
                     doc.toObject(UserProfile::class.java)
                 }
@@ -182,7 +198,11 @@ class FriendRepositoryImpl(
             Log.d(TAG, "Récupéré ${profiles.size} demandes d'amis en attente pour $userId")
             Result.success(profiles)
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors de la récupération des demandes d'amis", e)
+            Log.e(TAG, "Erreur lors de la récupération des demandes d'amis: ${e.message}", e)
+            // Si c'est une erreur d'index, on log le message pour aider au débogage
+            if (e.message?.contains("index") == true) {
+                Log.e(TAG, "⚠️ Un index Firebase est peut-être nécessaire. Vérifiez la console Firebase.")
+            }
             Result.failure(e)
         }
     }
