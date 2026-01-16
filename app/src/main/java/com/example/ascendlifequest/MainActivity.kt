@@ -8,20 +8,19 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.ascendlifequest.data.local.queststorage
+import com.example.ascendlifequest.ui.components.PermissionRequester
 import com.example.ascendlifequest.ui.features.auth.LoginOptionScreen
 import com.example.ascendlifequest.ui.features.auth.LoginScreen
 import com.example.ascendlifequest.ui.features.auth.RegisterScreen
-import com.example.ascendlifequest.ui.features.leaderboard.ClassementScreen
 import com.example.ascendlifequest.ui.features.friends.FriendScreen
+import com.example.ascendlifequest.ui.features.leaderboard.ClassementScreen
+import com.example.ascendlifequest.ui.features.profile.AccountScreen
 import com.example.ascendlifequest.ui.features.profile.ProfilScreen
 import com.example.ascendlifequest.ui.features.quest.QuestScreen
-import com.example.ascendlifequest.ui.features.settings.SettingScreen
 import com.example.ascendlifequest.ui.features.settings.PreferenceScreen
+import com.example.ascendlifequest.ui.features.settings.SettingScreen
 import com.example.ascendlifequest.ui.theme.AscendLifeQuestTheme
 import com.google.firebase.FirebaseApp
-import com.example.ascendlifequest.ui.components.PermissionRequester
-import com.example.ascendlifequest.ui.features.profile.AccountScreen
 
 private const val TAG = "MainActivity"
 
@@ -41,12 +40,12 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors de l'initialisation de Firebase", e)
         }
-        queststorage().uploadFakeData()
         enableEdgeToEdge()
         setContent {
             AscendLifeQuestTheme {
                 val navController = rememberNavController()
-                // Request location permission once on app start (first launch will trigger permission prompt)
+                // Request location permission once on app start (first launch will trigger
+                // permission prompt)
                 PermissionRequester()
                 NavHost(navController = navController, startDestination = "login_option") {
                     composable("login_option") { LoginOptionScreen(navController) }
@@ -63,5 +62,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
 }

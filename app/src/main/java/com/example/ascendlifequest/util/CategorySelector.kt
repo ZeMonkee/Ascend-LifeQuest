@@ -1,12 +1,13 @@
-package com.example.ascendlifequest.helpers
+package com.example.ascendlifequest.util
 
 import android.content.Context
-import com.example.ascendlifequest.model.Categorie
+import com.example.ascendlifequest.data.local.PreferencesHelper
+import com.example.ascendlifequest.data.model.Categorie
 import kotlin.random.Random
 
 /**
- * Sélecteur de catégories basé sur les préférences utilisateur.
- * Les catégories avec un score de préférence plus élevé ont plus de chances d'être sélectionnées.
+ * Sélecteur de catégories basé sur les préférences utilisateur. Les catégories avec un score de
+ * préférence plus élevé ont plus de chances d'être sélectionnées.
  */
 object CategorySelector {
 
@@ -19,24 +20,23 @@ object CategorySelector {
      * @return La catégorie sélectionnée, ou null si la liste est vide
      */
     fun selectWeightedCategory(
-        context: Context,
-        userId: String,
-        categories: List<Categorie>
+            context: Context,
+            userId: String,
+            categories: List<Categorie>
     ): Categorie? {
         if (categories.isEmpty()) return null
 
         // Récupérer les préférences pour chaque catégorie
         val preferences = PreferencesHelper.getAllPreferences(context, userId)
 
-        // Créer une liste pondérée : chaque catégorie apparaît autant de fois que son score de préférence
+        // Créer une liste pondérée : chaque catégorie apparaît autant de fois que son score de
+        // préférence
         // Score 1 = 1 entrée, Score 5 = 5 entrées (5x plus de chances)
         val weightedCategories = mutableListOf<Categorie>()
 
         for (category in categories) {
             val weight = preferences[category.id] ?: 3 // Par défaut 3 si non défini
-            repeat(weight) {
-                weightedCategories.add(category)
-            }
+            repeat(weight) { weightedCategories.add(category) }
         }
 
         // Sélectionner aléatoirement dans la liste pondérée
@@ -48,8 +48,8 @@ object CategorySelector {
     }
 
     /**
-     * Sélectionne plusieurs catégories uniques de manière pondérée.
-     * Utile pour générer plusieurs quêtes avec une distribution basée sur les préférences.
+     * Sélectionne plusieurs catégories uniques de manière pondérée. Utile pour générer plusieurs
+     * quêtes avec une distribution basée sur les préférences.
      *
      * @param context Le contexte Android
      * @param userId L'ID de l'utilisateur
@@ -59,11 +59,11 @@ object CategorySelector {
      * @return La liste des catégories sélectionnées
      */
     fun selectMultipleWeightedCategories(
-        context: Context,
-        userId: String,
-        categories: List<Categorie>,
-        count: Int,
-        allowDuplicates: Boolean = true
+            context: Context,
+            userId: String,
+            categories: List<Categorie>,
+            count: Int,
+            allowDuplicates: Boolean = true
     ): List<Categorie> {
         if (categories.isEmpty()) return emptyList()
 
@@ -74,9 +74,7 @@ object CategorySelector {
         val weightedCategories = mutableListOf<Categorie>()
         for (category in categories) {
             val weight = preferences[category.id] ?: 3
-            repeat(weight) {
-                weightedCategories.add(category)
-            }
+            repeat(weight) { weightedCategories.add(category) }
         }
 
         val actualCount = if (allowDuplicates) count else minOf(count, categories.size)
@@ -98,15 +96,15 @@ object CategorySelector {
     }
 
     /**
-     * Calcule les probabilités de sélection pour chaque catégorie basées sur les préférences.
-     * Utile pour l'affichage ou le debug.
+     * Calcule les probabilités de sélection pour chaque catégorie basées sur les préférences. Utile
+     * pour l'affichage ou le debug.
      *
      * @return Map avec categoryId -> probabilité (en pourcentage)
      */
     fun getSelectionProbabilities(
-        context: Context,
-        userId: String,
-        categories: List<Categorie>
+            context: Context,
+            userId: String,
+            categories: List<Categorie>
     ): Map<Int, Float> {
         if (categories.isEmpty()) return emptyMap()
 
@@ -119,4 +117,3 @@ object CategorySelector {
         }
     }
 }
-

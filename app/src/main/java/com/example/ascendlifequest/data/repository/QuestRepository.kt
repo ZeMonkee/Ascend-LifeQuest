@@ -2,23 +2,25 @@ package com.example.ascendlifequest.data.repository
 
 import android.content.Context
 import android.util.Log
-import androidx.compose.ui.graphics.Color
+import com.example.ascendlifequest.R
 import com.example.ascendlifequest.data.model.Categorie
 import com.example.ascendlifequest.data.model.Quest
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
-import kotlin.time.Duration.Companion.minutes
+import com.example.ascendlifequest.database.AppDatabase
+import com.example.ascendlifequest.database.QuestEntity
+import com.example.ascendlifequest.ui.theme.AppColor
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class QuestRepository(private val context: Context) {
     // Room Database - initialisation lazy pour éviter les problèmes de contexte
     private val questDao by lazy { AppDatabase.getDatabase(context).questDao() }
 
-    suspend fun getCategories(): List<Categorie> {
+    fun getCategories(): List<Categorie> {
         return listOf(
-            Categorie(1, "Sport", R.drawable.icon_sport, AppColor.SportColor),
-            Categorie(2, "Cuisine", R.drawable.icon_cuisine, AppColor.CuisineColor),
-            Categorie(3, "Jeux Vidéo", R.drawable.icon_jeux_video, AppColor.JeuxVideoColor),
-            Categorie(4, "Lecture", R.drawable.icon_lecture, AppColor.LectureColor)
+                Categorie(1, "Sport", R.drawable.icon_sport, AppColor.SportColor),
+                Categorie(2, "Cuisine", R.drawable.icon_cuisine, AppColor.CuisineColor),
+                Categorie(3, "Jeux Vidéo", R.drawable.icon_jeux_video, AppColor.JeuxVideoColor),
+                Categorie(4, "Lecture", R.drawable.icon_lecture, AppColor.LectureColor)
         )
     }
 
@@ -35,9 +37,7 @@ class QuestRepository(private val context: Context) {
 
     // Flow pour observer les changements en temps réel
     fun getQuestsFlow(): Flow<List<Quest>> {
-        return questDao.getAllQuestsFlow().map { entities ->
-            entities.map { it.toQuest() }
-        }
+        return questDao.getAllQuestsFlow().map { entities -> entities.map { it.toQuest() } }
     }
 
     // Sauvegarder une quête localement
