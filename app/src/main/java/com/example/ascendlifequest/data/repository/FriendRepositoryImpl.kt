@@ -159,6 +159,14 @@ class FriendRepositoryImpl(
             Log.d(TAG, "========================================")
             Log.d(TAG, "Recherche des demandes d'amis en attente pour userId: $userId")
 
+            // DEBUG: Lister TOUS les documents de friendships pour voir ce qui existe
+            Log.d(TAG, "--- DEBUG: Liste de TOUS les documents friendships ---")
+            val allDocs = friendshipsCollection.get().await()
+            allDocs.documents.forEach { doc ->
+                Log.d(TAG, "Doc: ${doc.id} -> ${doc.data}")
+            }
+            Log.d(TAG, "--- FIN DEBUG ---")
+
             // Approche simplifiée : récupérer toutes les demandes où friendId = userId
             // puis filtrer par status en mémoire (évite le besoin d'un index composite)
             val requests = friendshipsCollection
