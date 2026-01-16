@@ -4,8 +4,8 @@ import android.content.Context
 import android.util.Log
 import com.example.ascendlifequest.data.model.Categorie
 import com.example.ascendlifequest.data.model.Quest
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
+import com.example.ascendlifequest.database.AppDatabase
+import com.example.ascendlifequest.database.QuestEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.*
@@ -15,11 +15,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.time.Duration.Companion.minutes
 
-// ⚠️ REMPLACEZ PAR UNE NOUVELLE CLÉ (L'ancienne est compromise)
 private const val API_KEY = "AIzaSyDYo073tAQ8OSRkxnn9dP3rM8Zu4EyAw0Y"
 private const val MODEL = "gemini-2.5-flash"
 
-// 🔥 Fonction pour récupérer le prochain ID disponible depuis Room
 suspend fun getNextQuestIdFromRoom(context: Context): Int {
     return try {
         val questDao = AppDatabase.getDatabase(context).questDao()
