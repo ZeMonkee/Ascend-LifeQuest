@@ -118,23 +118,25 @@ fun FriendScreen(
                         )
                     }
 
-                    // Header avec bouton des demandes
-                    Row(
+                    // Header avec titre centré et bouton des demandes à droite
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
+                        // Titre centré
                         Text(
                             text = "AMIS",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AppColor.MainTextColor
+                            color = AppColor.MainTextColor,
+                            modifier = Modifier.align(Alignment.Center)
                         )
 
-                        // Bouton des demandes d'amis avec badge
-                        Box {
+                        // Bouton des demandes d'amis avec badge à droite
+                        Box(
+                            modifier = Modifier.align(Alignment.CenterEnd)
+                        ) {
                             IconButton(
                                 onClick = { viewModel.openPendingRequestsDialog() }
                             ) {
