@@ -62,26 +62,13 @@ fun SettingScreen(navController: NavHostController) {
                     SettingsItem("Comptes", R.drawable.icon_quetes){
                         navController.navigate("account")
                     }
-                    SettingsItem("Notifications", R.drawable.icon_quetes){}
-                    SettingsItem("Thèmes", R.drawable.icon_quetes){}
                     SettingsItem("Préférences", R.drawable.icon_quetes) {
                         navController.navigate("preference")
                     }
-
                     // Bouton de déconnexion
                     SettingsItem("Se déconnecter", R.drawable.icon_quetes){ _ ->
                         viewModel.signOut()
                     }
-
-                    // Autres options
-                    SettingsItem("Autres", R.drawable.icon_quetes){}
-                    SettingsItem("Autres", R.drawable.icon_quetes){}
-                    SettingsItem("Autres", R.drawable.icon_quetes){}
-                    SettingsItem("Autres", R.drawable.icon_quetes){}
-                    SettingsItem("Autres", R.drawable.icon_quetes){}
-                    SettingsItem("Autres", R.drawable.icon_quetes){}
-                    SettingsItem("Autres", R.drawable.icon_quetes){}
-                    SettingsItem("Autres", R.drawable.icon_quetes){}
 
                 }
             }
