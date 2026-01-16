@@ -11,9 +11,34 @@ interface FriendRepository {
     suspend fun searchUsersByPseudo(query: String, currentUserId: String): Result<List<UserProfile>>
 
     /**
-     * Ajoute un ami
+     * Envoie une demande d'ami (statut pending)
      */
-    suspend fun addFriend(currentUserId: String, friendId: String): Result<Unit>
+    suspend fun sendFriendRequest(currentUserId: String, friendId: String): Result<Unit>
+
+    /**
+     * Accepte une demande d'ami
+     */
+    suspend fun acceptFriendRequest(currentUserId: String, friendId: String): Result<Unit>
+
+    /**
+     * Refuse une demande d'ami
+     */
+    suspend fun declineFriendRequest(currentUserId: String, friendId: String): Result<Unit>
+
+    /**
+     * Récupère les demandes d'amis en attente (reçues)
+     */
+    suspend fun getPendingFriendRequests(userId: String): Result<List<UserProfile>>
+
+    /**
+     * Observe les demandes d'amis en attente en temps réel
+     */
+    fun observePendingFriendRequests(userId: String): Flow<List<UserProfile>>
+
+    /**
+     * Vérifie si une demande d'ami a déjà été envoyée
+     */
+    suspend fun hasPendingRequest(currentUserId: String, friendId: String): Boolean
 
     /**
      * Supprime un ami
@@ -21,7 +46,7 @@ interface FriendRepository {
     suspend fun removeFriend(currentUserId: String, friendId: String): Result<Unit>
 
     /**
-     * Récupère la liste des amis d'un utilisateur
+     * Récupère la liste des amis d'un utilisateur (statut accepted uniquement)
      */
     suspend fun getFriends(userId: String): Result<List<UserProfile>>
 
@@ -31,7 +56,7 @@ interface FriendRepository {
     fun observeFriends(userId: String): Flow<List<UserProfile>>
 
     /**
-     * Vérifie si deux utilisateurs sont amis
+     * Vérifie si deux utilisateurs sont amis (statut accepted)
      */
     suspend fun areFriends(userId: String, friendId: String): Boolean
 
