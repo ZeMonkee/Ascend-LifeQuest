@@ -5,13 +5,16 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.ascendlifequest.ui.components.PermissionRequester
 import com.example.ascendlifequest.ui.features.auth.LoginOptionScreen
 import com.example.ascendlifequest.ui.features.auth.LoginScreen
 import com.example.ascendlifequest.ui.features.auth.RegisterScreen
+import com.example.ascendlifequest.ui.features.chat.ChatScreen
 import com.example.ascendlifequest.ui.features.friends.FriendScreen
 import com.example.ascendlifequest.ui.features.leaderboard.ClassementScreen
 import com.example.ascendlifequest.ui.features.profile.AccountScreen
@@ -58,6 +61,15 @@ class MainActivity : ComponentActivity() {
                     composable("account") { AccountScreen(navController) }
                     composable("profil") { ProfilScreen(navController) }
                     composable("preference") { PreferenceScreen(navController) }
+                    composable(
+                        route = "chat/{friendId}",
+                        arguments = listOf(
+                            navArgument("friendId") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
+                        ChatScreen(navController = navController, friendId = friendId)
+                    }
                 }
             }
         }

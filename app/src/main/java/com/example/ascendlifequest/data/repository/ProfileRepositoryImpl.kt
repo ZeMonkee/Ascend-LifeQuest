@@ -41,8 +41,18 @@ class ProfileRepositoryImpl(
             val document = profileCollection.document(userId).get().await()
             if (document.exists()) {
                 val profile = document.toObject(UserProfile::class.java)
-                Log.d(TAG, "Profil récupéré: $profile")
-                Result.success(profile)
+
+                // Si le champ uid est vide, le mettre à jour avec l'ID du document
+                if (profile != null && profile.uid.isEmpty()) {
+                    Log.d(TAG, "Mise à jour du champ uid pour le profil: $userId")
+                    profileCollection.document(userId).update("uid", userId).await()
+                    profile.uid = userId
+                    Log.d(TAG, "Profil récupéré (uid mis à jour): $profile")
+                    Result.success(profile)
+                } else {
+                    Log.d(TAG, "Profil récupéré: $profile")
+                    Result.success(profile)
+                }
             } else {
                 Log.d(TAG, "Aucun profil trouvé pour l'utilisateur: $userId")
                 Result.success(null)
