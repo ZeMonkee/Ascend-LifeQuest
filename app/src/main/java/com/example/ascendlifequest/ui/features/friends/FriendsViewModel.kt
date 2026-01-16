@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ascendlifequest.data.auth.AuthRepository
 import com.example.ascendlifequest.data.auth.AuthRepositoryImpl
+import com.example.ascendlifequest.data.model.Notification
 import com.example.ascendlifequest.data.model.UserProfile
 import com.example.ascendlifequest.data.remote.AuthService
 import com.example.ascendlifequest.data.repository.FriendRepository
@@ -20,7 +21,8 @@ sealed class FriendsUiState {
     object Loading : FriendsUiState()
     data class Success(
         val friends: List<UserProfile>,
-        val pendingRequests: List<UserProfile>
+        val pendingRequests: List<UserProfile>,
+        val notifications: List<Notification> = emptyList()
     ) : FriendsUiState()
     data class Error(val message: String) : FriendsUiState()
 }
@@ -63,14 +65,20 @@ class FriendsViewModel(
     private val _pendingRequestsCount = MutableStateFlow(0)
     val pendingRequestsCount: StateFlow<Int> = _pendingRequestsCount.asStateFlow()
 
+    private val _notificationsCount = MutableStateFlow(0)
+    val notificationsCount: StateFlow<Int> = _notificationsCount.asStateFlow()
+
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    private val _isAddingFriend = MutableStateFlow(false)
-    val isAddingFriend: StateFlow<Boolean> = _isAddingFriend.asStateFlow()
+    // ID de l'utilisateur en cours d'ajout (null si aucun)
+    private val _addingFriendId = MutableStateFlow<String?>(null)
+    val addingFriendId: StateFlow<String?> = _addingFriendId.asStateFlow()
 
     private val _currentUserId = MutableStateFlow("")
     val currentUserId: StateFlow<String> = _currentUserId.asStateFlow()
+
+    private val _currentUserPseudo = MutableStateFlow("")
 
     private val _requestSentMessage = MutableStateFlow<String?>(null)
     val requestSentMessage: StateFlow<String?> = _requestSentMessage.asStateFlow()
@@ -135,13 +143,27 @@ class FriendsViewModel(
                     Log.d(TAG, "║   - ${profile.pseudo} (uid: ${profile.uid})")
                 }
 
-                // Mettre à jour le compteur de demandes
-                _pendingRequestsCount.value = pendingRequests.size
-                Log.d(TAG, "║ 🔢 Compteur badge: ${_pendingRequestsCount.value}")
+                // Charger les notifications
+                Log.d(TAG, "║ 🔔 Chargement des notifications...")
+                val notificationsResult = friendRepository.getNotifications(userId)
+                val notifications = notificationsResult.getOrNull() ?: emptyList()
+                Log.d(TAG, "║ ✓ Notifications: ${notifications.size}")
+
+                // Charger le pseudo de l'utilisateur actuel (pour les notifications de refus)
+                val profileResult = friendRepository.getProfileById(userId)
+                val profile = profileResult.getOrNull()
+                _currentUserPseudo.value = profile?.pseudo ?: ""
+                Log.d(TAG, "║ 👤 Pseudo actuel: ${_currentUserPseudo.value}")
+
+                // Mettre à jour les compteurs
+                _pendingRequestsCount.value = pendingRequests.size + notifications.size
+                _notificationsCount.value = notifications.size
+                Log.d(TAG, "║ 🔢 Compteur badge: ${_pendingRequestsCount.value} (demandes: ${pendingRequests.size}, notifs: ${notifications.size})")
 
                 _uiState.value = FriendsUiState.Success(
                     friends = friends,
-                    pendingRequests = pendingRequests
+                    pendingRequests = pendingRequests,
+                    notifications = notifications
                 )
                 Log.d(TAG, "║ ✅ État mis à jour")
             } catch (e: Exception) {
@@ -213,11 +235,11 @@ class FriendsViewModel(
      */
     fun sendFriendRequest(friend: UserProfile) {
         viewModelScope.launch {
-            _isAddingFriend.value = true
+            _addingFriendId.value = friend.uid
 
             val userId = _currentUserId.value
             if (userId.isEmpty()) {
-                _isAddingFriend.value = false
+                _addingFriendId.value = null
                 return@launch
             }
 
@@ -234,7 +256,7 @@ class FriendsViewModel(
                 }
             )
 
-            _isAddingFriend.value = false
+            _addingFriendId.value = null
         }
     }
 
@@ -265,16 +287,35 @@ class FriendsViewModel(
     fun declineFriendRequest(friend: UserProfile) {
         viewModelScope.launch {
             val userId = _currentUserId.value
+            val userPseudo = _currentUserPseudo.value
             if (userId.isEmpty()) return@launch
 
-            val result = friendRepository.declineFriendRequest(userId, friend.uid)
+            val result = friendRepository.declineFriendRequest(userId, friend.uid, userPseudo)
             result.fold(
                 onSuccess = {
-                    Log.d(TAG, "Demande refusée de: ${friend.pseudo}")
+                    Log.d(TAG, "Demande refusée de: ${friend.pseudo} - Notification envoyée")
                     loadFriendsAndRequests()
                 },
                 onFailure = { error ->
                     Log.e(TAG, "Erreur refus demande", error)
+                }
+            )
+        }
+    }
+
+    /**
+     * Supprime une notification
+     */
+    fun deleteNotification(notificationId: String) {
+        viewModelScope.launch {
+            val result = friendRepository.deleteNotification(notificationId)
+            result.fold(
+                onSuccess = {
+                    Log.d(TAG, "Notification supprimée: $notificationId")
+                    loadFriendsAndRequests()
+                },
+                onFailure = { error ->
+                    Log.e(TAG, "Erreur suppression notification", error)
                 }
             )
         }
@@ -323,15 +364,22 @@ class FriendsViewModel(
                 val pendingResult = friendRepository.getPendingFriendRequests(userId)
                 val pendingRequests = pendingResult.getOrNull() ?: emptyList()
 
-                _pendingRequestsCount.value = pendingRequests.size
+                val notificationsResult = friendRepository.getNotifications(userId)
+                val notifications = notificationsResult.getOrNull() ?: emptyList()
 
-                // Mettre à jour l'état avec les nouvelles demandes
+                _pendingRequestsCount.value = pendingRequests.size + notifications.size
+                _notificationsCount.value = notifications.size
+
+                // Mettre à jour l'état avec les nouvelles demandes et notifications
                 val currentState = _uiState.value
                 if (currentState is FriendsUiState.Success) {
-                    _uiState.value = currentState.copy(pendingRequests = pendingRequests)
+                    _uiState.value = currentState.copy(
+                        pendingRequests = pendingRequests,
+                        notifications = notifications
+                    )
                 }
 
-                Log.d(TAG, "Demandes rechargées: ${pendingRequests.size}")
+                Log.d(TAG, "Demandes rechargées: ${pendingRequests.size}, Notifications: ${notifications.size}")
             }
 
             _showPendingRequestsDialog.value = true
