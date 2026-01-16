@@ -2,6 +2,9 @@ package com.example.ascendlifequest.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.ascendlifequest.database.AppDatabase
+import com.example.ascendlifequest.database.QuestStateEntity
+import kotlinx.coroutines.runBlocking
 
 object QuestHelper {
 
@@ -9,18 +12,11 @@ object QuestHelper {
     private const val QUEST_COUNTER_KEY = "quest_counter"
     private const val MAX_QUESTS = 5
 
-    private fun getQuestKey(userId: String, questId: Int) = "quest_${userId}_$questId"
-
-    private fun getSharedPreferences(context: Context, userId: String): SharedPreferences {
-        val prefsName = "PREFS_NAME_$userId"
-        return context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
-    }
-
     private fun getGlobalPreferences(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
-    // 🔥 Compteur de quêtes générées
+    // Compteur global (reste en SharedPreferences pour simplicité)
     fun getQuestCounter(context: Context): Int {
         return getGlobalPreferences(context).getInt(QUEST_COUNTER_KEY, 0)
     }
@@ -44,28 +40,30 @@ object QuestHelper {
     fun getMaxQuests(): Int = MAX_QUESTS
 
     fun saveQuestState(context: Context, userId: String, questId: Int, isValid: Boolean) {
-        val prefs = getSharedPreferences(context, userId)
-        with(prefs.edit()) {
-            putBoolean(getQuestKey(userId, questId), isValid)
-            apply()
+        val db = AppDatabase.getDatabase(context)
+        runBlocking {
+            db.questStateDao().upsert(QuestStateEntity(userId = userId, questId = questId, isDone = isValid))
         }
     }
 
     fun getQuestState(context: Context, userId: String, questId: Int): Boolean {
-        val prefs = getSharedPreferences(context, userId)
-        return prefs.getBoolean(getQuestKey(userId, questId), false) // false est la valeur par défaut
+        val db = AppDatabase.getDatabase(context)
+        return runBlocking {
+            db.questStateDao().getState(userId, questId) ?: false
+        }
     }
 
-    // 🔥 Compter les quêtes terminées pour une liste de quêtes
     fun getCompletedQuestsCount(context: Context, userId: String, questIds: List<Int>): Int {
-        val prefs = getSharedPreferences(context, userId)
-        return questIds.count { questId ->
-            prefs.getBoolean(getQuestKey(userId, questId), false)
+        val db = AppDatabase.getDatabase(context)
+        return runBlocking {
+            db.questStateDao().countCompletedForUser(userId, questIds)
         }
     }
 
     fun clearQuest(context: Context, userId: String) {
-        val prefs = getSharedPreferences(context, userId)
-        prefs.edit().clear().apply() // Efface toutes les données de cet utilisateur
+        val db = AppDatabase.getDatabase(context)
+        runBlocking {
+            db.questStateDao().clearForUser(userId)
+        }
     }
 }
