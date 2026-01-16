@@ -24,6 +24,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.data.model.Message
 import com.example.ascendlifequest.ui.components.AppBackground
+import com.example.ascendlifequest.ui.components.AppBottomNavBar
+import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.theme.AppColor
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,51 +46,54 @@ fun ChatScreen(
         viewModel.loadConversation(friendId)
     }
 
-    AppBackground {
-        Scaffold(
-            containerColor = Color.Transparent,
-            topBar = {
-                ChatTopBar(
-                    uiState = uiState,
-                    onBackClick = { navController.popBackStack() }
-                )
-            },
-            bottomBar = {
-                ChatInputBar(
-                    messageText = messageText,
-                    onMessageChange = { viewModel.updateMessageText(it) },
-                    onSendClick = { viewModel.sendMessage() },
-                    isSending = isSending
-                )
-            }
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                when (val state = uiState) {
-                    is ChatUiState.Loading -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center),
-                            color = AppColor.LightBlueColor
-                        )
-                    }
-                    is ChatUiState.Success -> {
-                        ChatMessagesList(
-                            messages = state.messages,
-                            currentUserId = currentUserId
-                        )
-                    }
-                    is ChatUiState.Error -> {
-                        Text(
-                            text = state.message,
-                            color = AppColor.MinusTextColor,
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .padding(16.dp),
-                            textAlign = TextAlign.Center
-                        )
+    AppBottomNavBar(navController, BottomNavItem.Amis) { innerPadding ->
+        AppBackground {
+            Scaffold(
+                containerColor = Color.Transparent,
+                modifier = Modifier.padding(innerPadding),
+                topBar = {
+                    ChatTopBar(
+                        uiState = uiState,
+                        onBackClick = { navController.popBackStack() }
+                    )
+                },
+                bottomBar = {
+                    ChatInputBar(
+                        messageText = messageText,
+                        onMessageChange = { viewModel.updateMessageText(it) },
+                        onSendClick = { viewModel.sendMessage() },
+                        isSending = isSending
+                    )
+                }
+            ) { scaffoldPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(scaffoldPadding)
+                ) {
+                    when (val state = uiState) {
+                        is ChatUiState.Loading -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.align(Alignment.Center),
+                                color = AppColor.LightBlueColor
+                            )
+                        }
+                        is ChatUiState.Success -> {
+                            ChatMessagesList(
+                                messages = state.messages,
+                                currentUserId = currentUserId
+                            )
+                        }
+                        is ChatUiState.Error -> {
+                            Text(
+                                text = state.message,
+                                color = AppColor.MinusTextColor,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .padding(16.dp),
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
@@ -103,31 +108,41 @@ private fun ChatTopBar(
     onBackClick: () -> Unit
 ) {
     val title = when (uiState) {
-        is ChatUiState.Success -> uiState.otherUser?.pseudo ?: "Chat"
-        else -> "Chat"
+        is ChatUiState.Success -> uiState.otherUser?.pseudo?.uppercase() ?: "CHAT"
+        else -> "CHAT"
     }
 
-    TopAppBar(
-        title = {
-            Text(
-                text = title,
-                color = AppColor.MainTextColor,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        navigationIcon = {
-            IconButton(onClick = onBackClick) {
+    Column {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+        ) {
+            // Bouton retour à gauche
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Retour",
                     tint = AppColor.MainTextColor
                 )
             }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = AppColor.DarkBlueColor
-        )
-    )
+
+            // Titre centré
+            Text(
+                text = title,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = AppColor.MainTextColor,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+    }
 }
 
 @Composable
@@ -144,34 +159,57 @@ private fun ChatMessagesList(
         }
     }
 
-    if (messages.isEmpty()) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Barre de séparation turquoise en haut
         Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Aucun message\nCommencez la conversation ! 💬",
-                color = AppColor.MinusTextColor,
-                textAlign = TextAlign.Center,
-                fontSize = 16.sp
-            )
-        }
-    } else {
-        LazyColumn(
-            state = listState,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(messages) { message ->
-                ChatMessageItem(
-                    message = message,
-                    isFromCurrentUser = message.senderId == currentUserId
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(AppColor.DarkBlueColor)
+        )
+
+        if (messages.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Aucun message\nCommencez la conversation ! 💬",
+                    color = AppColor.MinusTextColor,
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp
                 )
             }
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(messages) { message ->
+                    ChatMessageItem(
+                        message = message,
+                        isFromCurrentUser = message.senderId == currentUserId
+                    )
+                }
+            }
         }
+
+        // Barre de séparation turquoise en bas
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(AppColor.DarkBlueColor)
+        )
     }
 }
 
@@ -227,7 +265,7 @@ private fun ChatInputBar(
     isSending: Boolean
 ) {
     Surface(
-        color = AppColor.DarkBlueColor,
+        color = Color.Transparent,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -249,6 +287,8 @@ private fun ChatInputBar(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = AppColor.MainTextColor,
                     unfocusedTextColor = AppColor.MainTextColor,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
                     focusedBorderColor = AppColor.LightBlueColor,
                     unfocusedBorderColor = AppColor.MinusTextColor.copy(alpha = 0.5f),
                     cursorColor = AppColor.LightBlueColor
