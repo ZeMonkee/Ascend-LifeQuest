@@ -157,18 +157,10 @@ class FriendRepositoryImpl(
     override suspend fun getPendingFriendRequests(userId: String): Result<List<UserProfile>> {
         return try {
             Log.d(TAG, "========================================")
-            Log.d(TAG, "Recherche des demandes d'amis en attente pour userId: $userId")
+            Log.d(TAG, "Recherche des demandes d'amis en attente")
+            Log.d(TAG, "UserId (destinataire recherché): $userId")
 
-            // DEBUG: Lister TOUS les documents de friendships pour voir ce qui existe
-            Log.d(TAG, "--- DEBUG: Liste de TOUS les documents friendships ---")
-            val allDocs = friendshipsCollection.get().await()
-            allDocs.documents.forEach { doc ->
-                Log.d(TAG, "Doc: ${doc.id} -> ${doc.data}")
-            }
-            Log.d(TAG, "--- FIN DEBUG ---")
-
-            // Approche simplifiée : récupérer toutes les demandes où friendId = userId
-            // puis filtrer par status en mémoire (évite le besoin d'un index composite)
+            // Récupérer toutes les demandes où friendId = userId
             val requests = friendshipsCollection
                 .whereEqualTo("friendId", userId)
                 .get()
@@ -203,22 +195,28 @@ class FriendRepositoryImpl(
             }
 
             // Récupérer les profils des demandeurs
+            // On utilise l'ID du document (qui est le userId) car le champ 'uid' peut être vide
             val profiles = mutableListOf<UserProfile>()
-            pendingRequests.chunked(10).forEach { chunk ->
-                Log.d(TAG, "Recherche profils pour: $chunk")
-                val profileDocs = profileCollection
-                    .whereIn("uid", chunk)
-                    .get()
-                    .await()
-
-                Log.d(TAG, "Profils trouvés: ${profileDocs.documents.size}")
-
-                profileDocs.documents.forEach { doc ->
-                    val profile = doc.toObject(UserProfile::class.java)
-                    Log.d(TAG, "  Profil: ${profile?.pseudo} (uid: ${profile?.uid})")
-                    if (profile != null) {
-                        profiles.add(profile)
+            pendingRequests.forEach { senderId ->
+                Log.d(TAG, "Recherche profil pour senderId: $senderId")
+                try {
+                    // Récupérer directement par l'ID du document
+                    val profileDoc = profileCollection.document(senderId).get().await()
+                    if (profileDoc.exists()) {
+                        val profile = profileDoc.toObject(UserProfile::class.java)
+                        if (profile != null) {
+                            // S'assurer que l'uid est défini (utiliser l'ID du document si vide)
+                            if (profile.uid.isEmpty()) {
+                                profile.uid = senderId
+                            }
+                            profiles.add(profile)
+                            Log.d(TAG, "  ✓ Profil trouvé: ${profile.pseudo}")
+                        }
+                    } else {
+                        Log.d(TAG, "  ✗ Profil non trouvé pour $senderId")
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "  ✗ Erreur récupération profil $senderId", e)
                 }
             }
 
