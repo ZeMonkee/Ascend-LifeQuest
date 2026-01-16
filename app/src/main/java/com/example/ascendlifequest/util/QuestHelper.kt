@@ -16,6 +16,22 @@ object QuestHelper {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
+    // Flag pour la génération initiale (persiste uniquement pour cette session d'app)
+    // On utilise un companion object variable pour éviter de persister entre les sessions
+    private var initialGenerationDoneThisSession = false
+
+    fun hasInitialGenerationBeenDone(): Boolean {
+        return initialGenerationDoneThisSession
+    }
+
+    fun markInitialGenerationAsDone() {
+        initialGenerationDoneThisSession = true
+    }
+
+    fun resetInitialGenerationFlag() {
+        initialGenerationDoneThisSession = false
+    }
+
     // Compteur global (reste en SharedPreferences pour simplicité)
     fun getQuestCounter(context: Context): Int {
         return getGlobalPreferences(context).getInt(QUEST_COUNTER_KEY, 0)
