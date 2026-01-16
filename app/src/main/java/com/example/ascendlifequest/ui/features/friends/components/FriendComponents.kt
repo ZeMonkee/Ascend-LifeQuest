@@ -283,3 +283,73 @@ fun SearchUserItem(
         }
     }
 }
+
+/**
+ * Composant pour afficher une notification (ex: demande d'ami refusée)
+ */
+@Composable
+fun NotificationItem(
+    message: String,
+    fromUserPseudo: String,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = AppColor.DarkBlueColor.copy(alpha = 0.7f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    color = AppColor.SportColor.copy(alpha = 0.1f)
+                )
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icône
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(AppColor.SportColor.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "❌",
+                    fontSize = 18.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Message
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = message,
+                    fontSize = 14.sp,
+                    color = AppColor.MainTextColor
+                )
+            }
+
+            // Bouton fermer
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Fermer",
+                    tint = AppColor.MinusTextColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
