@@ -22,6 +22,9 @@ import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.features.quest.components.QuestCategory
 import com.example.ascendlifequest.ui.theme.AppColor
 import com.example.ascendlifequest.util.QuestHelper
+import com.example.ascendlifequest.ui.components.WeatherWidget
+import com.example.ascendlifequest.ui.components.requestRealLocation
+import com.example.ascendlifequest.ui.components.fetchWeather
 
 @Composable
 fun QuestScreen(
@@ -45,7 +48,7 @@ fun QuestScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val isGenerating by viewModel.isGenerating.collectAsState()
     val generationProgress by viewModel.generationProgress.collectAsState()
-    val questCounter by viewModel.questCounter.collectAsState()
+    // questCounter n'est pas utilisé pour l'instant ; on le laisse dans le ViewModel si besoin.
     val completedQuestsCount by viewModel.completedQuestsCount.collectAsState()
     val showMaxQuestsDialog by viewModel.showMaxQuestsDialog.collectAsState()
 
@@ -85,7 +88,31 @@ fun QuestScreen(
     AppBottomNavBar(navController, BottomNavItem.Quetes) { innerPadding ->
         AppBackground {
             Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                AppHeader(title = "QUÊTES")
+                AppHeader(title = "QUÊTES", trailing = {
+                    // Widget aplati : largeur courte et hauteur adaptée
+                    WeatherWidget(modifier = Modifier.width(80.dp).height(36.dp))
+                })
+
+                // Récupération asynchrone de la météo pour marquer les quêtes dépendantes
+                var isWeatherBad by remember { mutableStateOf<Boolean?>(null) }
+                var weatherCondition by remember { mutableStateOf<String?>(null) }
+
+                LaunchedEffect(Unit) {
+                    try {
+                        val loc = requestRealLocation(context)
+                        if (loc != null) {
+                            val weather = fetchWeather(loc.latitude, loc.longitude)
+                            if (weather != null) {
+                                weatherCondition = weather.second
+                                val badKeywords = listOf("Pluie", "Neige", "Averses", "Bruine", "Brouillard")
+                                isWeatherBad = badKeywords.any { k -> weatherCondition?.contains(k, ignoreCase = true) == true }
+                            }
+                        }
+                    } catch (_: Exception) {
+                        // en cas d'échec, on n'affiche pas les marquages
+                        isWeatherBad = null
+                    }
+                }
 
                 Column(
                     modifier =
@@ -225,14 +252,14 @@ fun QuestScreen(
 
                             if (questsForCategory.isNotEmpty()) {
                                 QuestCategory(
-                                    categorie = categorie,
-                                    quests = questsForCategory,
-                                    context = context,
-                                    userId = userId,
-                                    onQuestStateChanged = { _: Int, isDone: Boolean, xpAmount: Int ->
-                                        viewModel.updateQuestState(isDone, xpAmount)
-                                    }
-                                )
+                                    categorie,
+                                    questsForCategory,
+                                    context,
+                                    userId,
+                                    isWeatherBad == true
+                                ) { _: Int, isDone: Boolean, xpAmount: Int ->
+                                    viewModel.updateQuestState(isDone, xpAmount)
+                                }
                             }
                         }
                     }
