@@ -27,6 +27,7 @@ import com.example.ascendlifequest.ui.components.AppBottomNavBar
 import com.example.ascendlifequest.ui.components.AppHeader
 import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.features.friends.components.FriendItem
+import com.example.ascendlifequest.ui.features.friends.components.FriendRequestItem
 import com.example.ascendlifequest.ui.features.friends.components.SearchUserItem
 import com.example.ascendlifequest.ui.theme.AppColor
 
@@ -41,6 +42,7 @@ fun FriendScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchState by viewModel.searchState.collectAsState()
     val isAddingFriend by viewModel.isAddingFriend.collectAsState()
+    val requestSentMessage by viewModel.requestSentMessage.collectAsState()
 
     // Dialogue d'ajout d'ami
     if (showAddFriendDialog) {
@@ -48,8 +50,9 @@ fun FriendScreen(
             searchQuery = searchQuery,
             searchState = searchState,
             isAddingFriend = isAddingFriend,
+            requestSentMessage = requestSentMessage,
             onSearchQueryChange = { viewModel.updateSearchQuery(it) },
-            onAddFriend = { viewModel.addFriend(it) },
+            onSendFriendRequest = { viewModel.sendFriendRequest(it) },
             onDismiss = { viewModel.closeAddFriendDialog() }
         )
     }
@@ -85,27 +88,14 @@ fun FriendScreen(
                             }
                         }
                         is FriendsUiState.Success -> {
-                            if (state.friends.isEmpty()) {
-                                EmptyFriendsContent()
-                            } else {
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    items(state.friends) { friend ->
-                                        FriendItem(
-                                            user = friend,
-                                            onMessageClick = {
-                                                navController.navigate("chat/${friend.uid}")
-                                            },
-                                            onLongPress = {
-                                                viewModel.showDeleteConfirmation(friend)
-                                            }
-                                        )
-                                    }
-                                }
-                            }
+                            FriendsContent(
+                                friends = state.friends,
+                                pendingRequests = state.pendingRequests,
+                                navController = navController,
+                                onAcceptRequest = { viewModel.acceptFriendRequest(it) },
+                                onDeclineRequest = { viewModel.declineFriendRequest(it) },
+                                onDeleteFriend = { viewModel.showDeleteConfirmation(it) }
+                            )
                         }
                         is FriendsUiState.Error -> {
                             Box(
@@ -136,6 +126,80 @@ fun FriendScreen(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Ajouter un ami",
                         modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FriendsContent(
+    friends: List<UserProfile>,
+    pendingRequests: List<UserProfile>,
+    navController: NavHostController,
+    onAcceptRequest: (UserProfile) -> Unit,
+    onDeclineRequest: (UserProfile) -> Unit,
+    onDeleteFriend: (UserProfile) -> Unit
+) {
+    if (friends.isEmpty() && pendingRequests.isEmpty()) {
+        EmptyFriendsContent()
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Section des demandes en attente
+            if (pendingRequests.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Demandes d'amis (${pendingRequests.size})",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColor.MainTextColor,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+
+                items(pendingRequests) { request ->
+                    FriendRequestItem(
+                        user = request,
+                        onAccept = { onAcceptRequest(request) },
+                        onDecline = { onDeclineRequest(request) }
+                    )
+                }
+
+                // Séparateur
+                item {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = AppColor.MinusTextColor.copy(alpha = 0.3f)
+                    )
+                }
+            }
+
+            // Section des amis
+            if (friends.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Mes amis (${friends.size})",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColor.MainTextColor,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+
+                items(friends) { friend ->
+                    FriendItem(
+                        user = friend,
+                        onMessageClick = {
+                            navController.navigate("chat/${friend.uid}")
+                        },
+                        onLongPress = {
+                            onDeleteFriend(friend)
+                        }
                     )
                 }
             }
@@ -181,8 +245,9 @@ private fun AddFriendDialog(
     searchQuery: String,
     searchState: SearchUiState,
     isAddingFriend: Boolean,
+    requestSentMessage: String?,
     onSearchQueryChange: (String) -> Unit,
-    onAddFriend: (UserProfile) -> Unit,
+    onSendFriendRequest: (UserProfile) -> Unit,
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -253,6 +318,18 @@ private fun AddFriendDialog(
                     singleLine = true
                 )
 
+                // Message de confirmation
+                requestSentMessage?.let { message ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = message,
+                        color = if (message.startsWith("Demande")) AppColor.LectureColor else AppColor.SportColor,
+                        fontSize = 14.sp,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Résultats de recherche
@@ -299,7 +376,7 @@ private fun AddFriendDialog(
                                     items(searchState.users) { user ->
                                         SearchUserItem(
                                             user = user,
-                                            onAddClick = { onAddFriend(user) },
+                                            onAddClick = { onSendFriendRequest(user) },
                                             isAdding = isAddingFriend
                                         )
                                     }
@@ -367,3 +444,4 @@ private fun DeleteFriendConfirmDialog(
         containerColor = AppColor.DarkBlueColor
     )
 }
+
