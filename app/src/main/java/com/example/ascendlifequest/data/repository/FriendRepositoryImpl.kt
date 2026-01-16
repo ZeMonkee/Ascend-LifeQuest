@@ -156,53 +156,69 @@ class FriendRepositoryImpl(
 
     override suspend fun getPendingFriendRequests(userId: String): Result<List<UserProfile>> {
         return try {
+            Log.d(TAG, "========================================")
             Log.d(TAG, "Recherche des demandes d'amis en attente pour userId: $userId")
 
-            // Récupérer les demandes où l'utilisateur est le destinataire (friendId) et statut pending
+            // Approche simplifiée : récupérer toutes les demandes où friendId = userId
+            // puis filtrer par status en mémoire (évite le besoin d'un index composite)
             val requests = friendshipsCollection
                 .whereEqualTo("friendId", userId)
-                .whereEqualTo("status", Friendship.STATUS_PENDING)
                 .get()
                 .await()
 
-            Log.d(TAG, "Nombre de documents trouvés: ${requests.documents.size}")
+            Log.d(TAG, "Documents trouvés avec friendId=$userId: ${requests.documents.size}")
 
-            val senderIds = requests.documents.mapNotNull { doc ->
-                val friendship = doc.toObject(Friendship::class.java)
-                Log.d(TAG, "Document: ${doc.id}, userId: ${friendship?.userId}, friendId: ${friendship?.friendId}, status: ${friendship?.status}")
-                friendship?.userId
+            // Filtrer les demandes en attente
+            val pendingRequests = requests.documents.mapNotNull { doc ->
+                val data = doc.data
+                Log.d(TAG, "Document ${doc.id}: $data")
+
+                val status = data?.get("status") as? String
+                val senderId = data?.get("userId") as? String
+
+                Log.d(TAG, "  -> status: $status, senderId: $senderId")
+
+                if (status == Friendship.STATUS_PENDING && senderId != null) {
+                    senderId
+                } else {
+                    null
+                }
             }
 
-            Log.d(TAG, "SenderIds extraits: $senderIds")
+            Log.d(TAG, "Demandes pending trouvées: ${pendingRequests.size}")
+            Log.d(TAG, "SenderIds: $pendingRequests")
 
-            if (senderIds.isEmpty()) {
+            if (pendingRequests.isEmpty()) {
                 Log.d(TAG, "Aucune demande d'ami en attente")
+                Log.d(TAG, "========================================")
                 return Result.success(emptyList())
             }
 
             // Récupérer les profils des demandeurs
             val profiles = mutableListOf<UserProfile>()
-            senderIds.chunked(10).forEach { chunk ->
+            pendingRequests.chunked(10).forEach { chunk ->
+                Log.d(TAG, "Recherche profils pour: $chunk")
                 val profileDocs = profileCollection
                     .whereIn("uid", chunk)
                     .get()
                     .await()
 
-                Log.d(TAG, "Profils trouvés pour chunk $chunk: ${profileDocs.documents.size}")
+                Log.d(TAG, "Profils trouvés: ${profileDocs.documents.size}")
 
-                profileDocs.documents.mapNotNullTo(profiles) { doc ->
-                    doc.toObject(UserProfile::class.java)
+                profileDocs.documents.forEach { doc ->
+                    val profile = doc.toObject(UserProfile::class.java)
+                    Log.d(TAG, "  Profil: ${profile?.pseudo} (uid: ${profile?.uid})")
+                    if (profile != null) {
+                        profiles.add(profile)
+                    }
                 }
             }
 
-            Log.d(TAG, "Récupéré ${profiles.size} demandes d'amis en attente pour $userId")
+            Log.d(TAG, "Total profils récupérés: ${profiles.size}")
+            Log.d(TAG, "========================================")
             Result.success(profiles)
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors de la récupération des demandes d'amis: ${e.message}", e)
-            // Si c'est une erreur d'index, on log le message pour aider au débogage
-            if (e.message?.contains("index") == true) {
-                Log.e(TAG, "⚠️ Un index Firebase est peut-être nécessaire. Vérifiez la console Firebase.")
-            }
+            Log.e(TAG, "❌ Erreur lors de la récupération des demandes d'amis: ${e.message}", e)
             Result.failure(e)
         }
     }
