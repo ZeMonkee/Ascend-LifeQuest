@@ -37,7 +37,7 @@ fun QuestCategory(
     quests: List<Quest>,
     context: Context,
     userId: String,
-    onQuestStateChanged: (questId: Int, isDone: Boolean) -> Unit = { _, _ -> }
+    onQuestStateChanged: (questId: Int, isDone: Boolean, xpAmount: Int) -> Unit = { _, _, _ -> }
 ) {
     // État local pour les quêtes terminées
     val questDoneStates = remember {
@@ -104,22 +104,23 @@ fun QuestCategory(
             Row(
                 modifier =
                 Modifier.fillMaxWidth()
-                    .clickable {
-                        // Inverser l'état de la quête et déléguer
-                        // la persistance
-                        val newState = !isDone
-                        questDoneStates[quest.id] = newState
+                    .clickable(enabled = !isDone) {
+                        // Seulement permettre de valider une quête (pas d'invalidation)
+                        // Si la quête est déjà validée, le clic est désactivé
+                        if (!isDone) {
+                            questDoneStates[quest.id] = true
 
-                        // Sauvegarder l'état dans SharedPreferences
-                        com.example.ascendlifequest.util.QuestHelper.saveQuestState(
-                            context,
-                            userId,
-                            quest.id,
-                            newState
-                        )
+                            // Sauvegarder l'état dans SharedPreferences
+                            com.example.ascendlifequest.util.QuestHelper.saveQuestState(
+                                context,
+                                userId,
+                                quest.id,
+                                true
+                            )
 
-                        // Notifier le parent du changement
-                        onQuestStateChanged(quest.id, newState)
+                            // Notifier le parent du changement avec l'XP de la quête
+                            onQuestStateChanged(quest.id, true, quest.xpRapporte)
+                        }
                     }
                     .background(
                         AppColor.DarkBlueColor,
