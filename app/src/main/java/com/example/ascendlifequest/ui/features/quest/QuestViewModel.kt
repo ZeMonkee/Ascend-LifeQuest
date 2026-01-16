@@ -54,6 +54,35 @@ class QuestViewModel(
     private val _showMaxQuestsDialog = MutableStateFlow(false)
     val showMaxQuestsDialog: StateFlow<Boolean> = _showMaxQuestsDialog.asStateFlow()
 
+    /**
+     * Vérifie si l'utilisateur actuel est différent de celui qui a généré les quêtes.
+     * Si oui, vide la base de données des quêtes et réinitialise les compteurs.
+     * @return true si la base a été vidée (nouvel utilisateur), false sinon
+     */
+    suspend fun checkAndClearQuestsForNewUser(context: Context, userId: String): Boolean {
+        if (QuestHelper.isUserDifferent(context, userId)) {
+            Log.d("QuestViewModel", "🔄 Utilisateur différent détecté - Nettoyage des quêtes")
+            Log.d("QuestViewModel", "   Ancien userId: ${QuestHelper.getQuestUserId(context)}")
+            Log.d("QuestViewModel", "   Nouveau userId: $userId")
+
+            // Vider la base de données Room des quêtes
+            questRepository.clearAllQuests()
+
+            // Réinitialiser pour le nouvel utilisateur
+            QuestHelper.resetForNewUser(context, userId)
+
+            Log.d("QuestViewModel", "✅ Base de données des quêtes vidée pour le nouvel utilisateur")
+            return true
+        } else {
+            // Si c'est le même utilisateur ou premier lancement, on sauvegarde l'userId
+            if (QuestHelper.getQuestUserId(context).isEmpty()) {
+                QuestHelper.setQuestUserId(context, userId)
+                Log.d("QuestViewModel", "📝 Premier lancement - userId sauvegardé: $userId")
+            }
+            return false
+        }
+    }
+
     fun loadData(context: Context, userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
