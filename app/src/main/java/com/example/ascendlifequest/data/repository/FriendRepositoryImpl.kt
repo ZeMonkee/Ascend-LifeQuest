@@ -2,6 +2,7 @@ package com.example.ascendlifequest.data.repository
 
 import android.util.Log
 import com.example.ascendlifequest.data.model.Friendship
+import com.example.ascendlifequest.data.model.Notification
 import com.example.ascendlifequest.data.model.UserProfile
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -18,10 +19,12 @@ class FriendRepositoryImpl(
         private const val TAG = "FriendRepository"
         private const val COLLECTION_PROFILE = "profile"
         private const val COLLECTION_FRIENDSHIPS = "friendships"
+        private const val COLLECTION_NOTIFICATION = "notification"
     }
 
     private val profileCollection = firestore.collection(COLLECTION_PROFILE)
     private val friendshipsCollection = firestore.collection(COLLECTION_FRIENDSHIPS)
+    private val notificationCollection = firestore.collection(COLLECTION_NOTIFICATION)
 
     override suspend fun searchUsersByPseudo(query: String, currentUserId: String): Result<List<UserProfile>> {
         return try {
@@ -31,21 +34,19 @@ class FriendRepositoryImpl(
 
             val queryLower = query.lowercase().trim()
 
-            // Recherche par préfixe sur le pseudo
+            // Récupérer tous les profils et filtrer côté client pour une recherche insensible à la casse
+            // Firebase ne supporte pas nativement les recherches case-insensitive
             val results = profileCollection
-                .orderBy("pseudo")
-                .startAt(queryLower)
-                .endAt(queryLower + "\uf8ff")
-                .limit(10)
+                .limit(100) // Limiter pour éviter de charger trop de données
                 .get()
                 .await()
 
             val users = results.documents.mapNotNull { doc ->
                 doc.toObject(UserProfile::class.java)?.takeIf {
                     it.uid != currentUserId &&
-                    it.pseudo.lowercase().contains(queryLower)
+                    it.pseudo.lowercase().startsWith(queryLower)
                 }
-            }
+            }.take(10) // Limiter les résultats affichés
 
             Log.d(TAG, "Recherche '$query': ${users.size} résultats")
             Result.success(users)
@@ -138,7 +139,7 @@ class FriendRepositoryImpl(
         }
     }
 
-    override suspend fun declineFriendRequest(currentUserId: String, friendId: String): Result<Unit> {
+    override suspend fun declineFriendRequest(currentUserId: String, friendId: String, currentUserPseudo: String): Result<Unit> {
         return try {
             // La demande a été envoyée par friendId vers currentUserId
             val requestDocId = "${friendId}_${currentUserId}"
@@ -146,7 +147,20 @@ class FriendRepositoryImpl(
             // Supprimer la demande
             friendshipsCollection.document(requestDocId).delete().await()
 
-            Log.d(TAG, "Demande d'ami refusée: $currentUserId a refusé $friendId")
+            // Créer une notification pour informer l'utilisateur que sa demande a été refusée
+            val notificationData = hashMapOf(
+                "userId" to friendId, // L'utilisateur qui reçoit la notification (celui qui a envoyé la demande)
+                "type" to Notification.TYPE_FRIEND_REQUEST_DECLINED,
+                "message" to "$currentUserPseudo a refusé votre demande d'ami",
+                "fromUserId" to currentUserId,
+                "fromUserPseudo" to currentUserPseudo,
+                "createdAt" to Timestamp.now(),
+                "read" to false
+            )
+
+            notificationCollection.add(notificationData).await()
+
+            Log.d(TAG, "Demande d'ami refusée: $currentUserId a refusé $friendId - Notification envoyée")
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors du refus de la demande d'ami", e)
@@ -444,6 +458,51 @@ class FriendRepositoryImpl(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors de la récupération du profil", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getNotifications(userId: String): Result<List<Notification>> {
+        return try {
+            val notifications = notificationCollection
+                .whereEqualTo("userId", userId)
+                .get()
+                .await()
+
+            val notificationList = notifications.documents.mapNotNull { doc ->
+                doc.toObject(Notification::class.java)
+            }.sortedByDescending { it.createdAt }
+
+            Log.d(TAG, "Récupéré ${notificationList.size} notifications pour $userId")
+            Result.success(notificationList)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de la récupération des notifications", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun markNotificationAsRead(notificationId: String): Result<Unit> {
+        return try {
+            notificationCollection.document(notificationId)
+                .update("read", true)
+                .await()
+
+            Log.d(TAG, "Notification $notificationId marquée comme lue")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors du marquage de la notification", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteNotification(notificationId: String): Result<Unit> {
+        return try {
+            notificationCollection.document(notificationId).delete().await()
+
+            Log.d(TAG, "Notification $notificationId supprimée")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de la suppression de la notification", e)
             Result.failure(e)
         }
     }
