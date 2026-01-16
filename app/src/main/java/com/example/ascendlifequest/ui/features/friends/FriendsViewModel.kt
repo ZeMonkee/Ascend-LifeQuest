@@ -57,6 +57,12 @@ class FriendsViewModel(
     private val _showDeleteConfirmDialog = MutableStateFlow<UserProfile?>(null)
     val showDeleteConfirmDialog: StateFlow<UserProfile?> = _showDeleteConfirmDialog.asStateFlow()
 
+    private val _showPendingRequestsDialog = MutableStateFlow(false)
+    val showPendingRequestsDialog: StateFlow<Boolean> = _showPendingRequestsDialog.asStateFlow()
+
+    private val _pendingRequestsCount = MutableStateFlow(0)
+    val pendingRequestsCount: StateFlow<Int> = _pendingRequestsCount.asStateFlow()
+
     private val _isAddingFriend = MutableStateFlow(false)
     val isAddingFriend: StateFlow<Boolean> = _isAddingFriend.asStateFlow()
 
@@ -93,6 +99,9 @@ class FriendsViewModel(
                 // Charger les demandes en attente
                 val pendingResult = friendRepository.getPendingFriendRequests(userId)
                 val pendingRequests = pendingResult.getOrNull() ?: emptyList()
+
+                // Mettre à jour le compteur de demandes
+                _pendingRequestsCount.value = pendingRequests.size
 
                 _uiState.value = FriendsUiState.Success(
                     friends = friends,
@@ -263,6 +272,14 @@ class FriendsViewModel(
 
     fun clearRequestSentMessage() {
         _requestSentMessage.value = null
+    }
+
+    fun openPendingRequestsDialog() {
+        _showPendingRequestsDialog.value = true
+    }
+
+    fun closePendingRequestsDialog() {
+        _showPendingRequestsDialog.value = false
     }
 }
 
