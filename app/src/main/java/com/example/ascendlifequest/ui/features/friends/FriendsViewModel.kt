@@ -63,6 +63,9 @@ class FriendsViewModel(
     private val _pendingRequestsCount = MutableStateFlow(0)
     val pendingRequestsCount: StateFlow<Int> = _pendingRequestsCount.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     private val _isAddingFriend = MutableStateFlow(false)
     val isAddingFriend: StateFlow<Boolean> = _isAddingFriend.asStateFlow()
 
@@ -76,16 +79,33 @@ class FriendsViewModel(
 
     init {
         _currentUserId.value = authRepository.getCurrentUserId()
-        loadFriendsAndRequests()
+        // Ne pas charger automatiquement, laisser le LaunchedEffect le faire
     }
 
     fun loadFriendsAndRequests() {
         viewModelScope.launch {
-            _uiState.value = FriendsUiState.Loading
+            Log.d(TAG, "=== Début loadFriendsAndRequests ===")
+
+            // Si déjà en cours de chargement, on ne fait rien
+            if (_isRefreshing.value) {
+                Log.d(TAG, "Déjà en cours de chargement, ignoré")
+                return@launch
+            }
+
+            _isRefreshing.value = true
+
+            // Ne mettre en Loading que si on n'a pas déjà des données
+            val currentState = _uiState.value
+            if (currentState !is FriendsUiState.Success) {
+                _uiState.value = FriendsUiState.Loading
+            }
 
             val userId = authRepository.getCurrentUserId()
+            Log.d(TAG, "UserId actuel: $userId")
+
             if (userId.isEmpty()) {
                 _uiState.value = FriendsUiState.Error("Utilisateur non connecté")
+                _isRefreshing.value = false
                 return@launch
             }
 
@@ -93,24 +113,32 @@ class FriendsViewModel(
 
             try {
                 // Charger les amis
+                Log.d(TAG, "Chargement des amis...")
                 val friendsResult = friendRepository.getFriends(userId)
                 val friends = friendsResult.getOrNull() ?: emptyList()
+                Log.d(TAG, "Amis chargés: ${friends.size}")
 
                 // Charger les demandes en attente
+                Log.d(TAG, "Chargement des demandes en attente...")
                 val pendingResult = friendRepository.getPendingFriendRequests(userId)
                 val pendingRequests = pendingResult.getOrNull() ?: emptyList()
+                Log.d(TAG, "Demandes en attente chargées: ${pendingRequests.size}")
 
                 // Mettre à jour le compteur de demandes
                 _pendingRequestsCount.value = pendingRequests.size
+                Log.d(TAG, "Compteur mis à jour: ${_pendingRequestsCount.value}")
 
                 _uiState.value = FriendsUiState.Success(
                     friends = friends,
                     pendingRequests = pendingRequests
                 )
-                Log.d(TAG, "Chargé: ${friends.size} amis, ${pendingRequests.size} demandes en attente")
+                Log.d(TAG, "✅ État mis à jour avec ${friends.size} amis et ${pendingRequests.size} demandes")
             } catch (e: Exception) {
                 _uiState.value = FriendsUiState.Error(e.message ?: "Erreur inconnue")
-                Log.e(TAG, "Erreur chargement", e)
+                Log.e(TAG, "❌ Erreur chargement", e)
+            } finally {
+                _isRefreshing.value = false
+                Log.d(TAG, "=== Fin loadFriendsAndRequests ===")
             }
         }
     }
@@ -275,7 +303,28 @@ class FriendsViewModel(
     }
 
     fun openPendingRequestsDialog() {
-        _showPendingRequestsDialog.value = true
+        // Recharger les données avant d'ouvrir le dialogue
+        viewModelScope.launch {
+            Log.d(TAG, "Ouverture du dialogue des demandes - rechargement des données")
+
+            val userId = _currentUserId.value
+            if (userId.isNotEmpty()) {
+                val pendingResult = friendRepository.getPendingFriendRequests(userId)
+                val pendingRequests = pendingResult.getOrNull() ?: emptyList()
+
+                _pendingRequestsCount.value = pendingRequests.size
+
+                // Mettre à jour l'état avec les nouvelles demandes
+                val currentState = _uiState.value
+                if (currentState is FriendsUiState.Success) {
+                    _uiState.value = currentState.copy(pendingRequests = pendingRequests)
+                }
+
+                Log.d(TAG, "Demandes rechargées: ${pendingRequests.size}")
+            }
+
+            _showPendingRequestsDialog.value = true
+        }
     }
 
     fun closePendingRequestsDialog() {
