@@ -255,7 +255,7 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
                 is AccountUiState.Loading -> CircularProgressIndicator(color = AppColor.LightBlueColor)
                 is AccountUiState.Error -> {
                     val msg = (state as AccountUiState.Error).message
-                    successMessage = msg
+                    // N'affecte pas successMessage ici (éviter doublons avec SuccessNotice)
                     Text(text = msg, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp))
                 }
 
@@ -268,8 +268,7 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
                         passwordSuccessMessage = msg
                     }
 
-                    Text(text = msg, color = AppColor.LectureColor, modifier = Modifier.padding(8.dp))
-
+                    // Nous laissons la SuccessNotice gérer l'affichage unique des messages importants
                     LaunchedEffect(msg) {
                         if (msg.contains("e-mail de vérification") && !pendingEmailVerificationRedirect) {
                             pendingEmailVerificationRedirect = true
@@ -282,14 +281,16 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
                 else -> {}
             }
 
-            if (pendingPasswordChangeRedirect && passwordSuccessMessage != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                SuccessNotice(message = passwordSuccessMessage ?: "")
+            // Affiche une seule SuccessNotice à la fois (priorité au message de changement de mot de passe)
+            val singleNoticeMessage = when {
+                pendingPasswordChangeRedirect && !passwordSuccessMessage.isNullOrEmpty() -> passwordSuccessMessage
+                pendingEmailVerificationRedirect && !successMessage.isNullOrEmpty() -> successMessage
+                else -> null
             }
 
-            if (pendingEmailVerificationRedirect && successMessage != null) {
+            if (!singleNoticeMessage.isNullOrEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                SuccessNotice(message = successMessage ?: "")
+                SuccessNotice(message = singleNoticeMessage)
             }
 
             Spacer(modifier = Modifier.height(20.dp))
