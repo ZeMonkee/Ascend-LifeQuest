@@ -32,7 +32,6 @@ class FriendRepositoryImpl(
             val queryLower = query.lowercase().trim()
 
             // Recherche par préfixe sur le pseudo
-            // Firebase ne supporte pas les recherches "contains", donc on utilise une recherche par préfixe
             val results = profileCollection
                 .orderBy("pseudo")
                 .startAt(queryLower)
@@ -56,45 +55,216 @@ class FriendRepositoryImpl(
         }
     }
 
-    override suspend fun addFriend(currentUserId: String, friendId: String): Result<Unit> {
+    override suspend fun sendFriendRequest(currentUserId: String, friendId: String): Result<Unit> {
         return try {
-            // Vérifier si l'amitié existe déjà
+            // Vérifier si déjà amis
             if (areFriends(currentUserId, friendId)) {
-                Log.d(TAG, "Amitié déjà existante entre $currentUserId et $friendId")
-                return Result.success(Unit)
+                Log.d(TAG, "Déjà amis: $currentUserId et $friendId")
+                return Result.failure(Exception("Vous êtes déjà amis"))
             }
 
-            // Créer deux documents d'amitié (bidirectionnel)
-            val friendship1 = Friendship(
+            // Vérifier si une demande est déjà en attente
+            if (hasPendingRequest(currentUserId, friendId)) {
+                Log.d(TAG, "Demande déjà en attente entre $currentUserId et $friendId")
+                return Result.failure(Exception("Une demande est déjà en attente"))
+            }
+
+            // Créer la demande d'ami (un seul document, pas bidirectionnel pour les pending)
+            val friendRequest = Friendship(
+                userId = currentUserId,
+                friendId = friendId,
+                createdAt = Timestamp.now(),
+                status = Friendship.STATUS_PENDING
+            )
+
+            friendshipsCollection
+                .document("${currentUserId}_${friendId}")
+                .set(friendRequest)
+                .await()
+
+            Log.d(TAG, "Demande d'ami envoyée de $currentUserId à $friendId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de l'envoi de la demande d'ami", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun acceptFriendRequest(currentUserId: String, friendId: String): Result<Unit> {
+        return try {
+            // La demande a été envoyée par friendId vers currentUserId
+            val requestDocId = "${friendId}_${currentUserId}"
+
+            // Vérifier que la demande existe et est en pending
+            val requestDoc = friendshipsCollection.document(requestDocId).get().await()
+            if (!requestDoc.exists()) {
+                return Result.failure(Exception("Demande d'ami introuvable"))
+            }
+
+            val friendship = requestDoc.toObject(Friendship::class.java)
+            if (friendship?.status != Friendship.STATUS_PENDING) {
+                return Result.failure(Exception("Cette demande n'est plus en attente"))
+            }
+
+            // Créer les deux documents d'amitié (bidirectionnel avec statut accepted)
+            val batch = firestore.batch()
+
+            // Mettre à jour la demande originale en accepted
+            val doc1Ref = friendshipsCollection.document(requestDocId)
+            batch.update(doc1Ref, "status", Friendship.STATUS_ACCEPTED)
+
+            // Créer le document inverse
+            val friendship2 = Friendship(
                 userId = currentUserId,
                 friendId = friendId,
                 createdAt = Timestamp.now(),
                 status = Friendship.STATUS_ACCEPTED
             )
-
-            val friendship2 = Friendship(
-                userId = friendId,
-                friendId = currentUserId,
-                createdAt = Timestamp.now(),
-                status = Friendship.STATUS_ACCEPTED
-            )
-
-            // Utiliser un batch pour écrire les deux documents
-            val batch = firestore.batch()
-
-            val doc1Ref = friendshipsCollection.document("${currentUserId}_${friendId}")
-            val doc2Ref = friendshipsCollection.document("${friendId}_${currentUserId}")
-
-            batch.set(doc1Ref, friendship1)
+            val doc2Ref = friendshipsCollection.document("${currentUserId}_${friendId}")
             batch.set(doc2Ref, friendship2)
 
             batch.commit().await()
 
-            Log.d(TAG, "Amitié créée entre $currentUserId et $friendId")
+            Log.d(TAG, "Demande d'ami acceptée: $currentUserId a accepté $friendId")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "Erreur lors de l'ajout d'ami", e)
+            Log.e(TAG, "Erreur lors de l'acceptation de la demande d'ami", e)
             Result.failure(e)
+        }
+    }
+
+    override suspend fun declineFriendRequest(currentUserId: String, friendId: String): Result<Unit> {
+        return try {
+            // La demande a été envoyée par friendId vers currentUserId
+            val requestDocId = "${friendId}_${currentUserId}"
+
+            // Supprimer la demande
+            friendshipsCollection.document(requestDocId).delete().await()
+
+            Log.d(TAG, "Demande d'ami refusée: $currentUserId a refusé $friendId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors du refus de la demande d'ami", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getPendingFriendRequests(userId: String): Result<List<UserProfile>> {
+        return try {
+            // Récupérer les demandes où l'utilisateur est le destinataire (friendId) et statut pending
+            val requests = friendshipsCollection
+                .whereEqualTo("friendId", userId)
+                .whereEqualTo("status", Friendship.STATUS_PENDING)
+                .get()
+                .await()
+
+            val senderIds = requests.documents.mapNotNull { doc ->
+                doc.toObject(Friendship::class.java)?.userId
+            }
+
+            if (senderIds.isEmpty()) {
+                return Result.success(emptyList())
+            }
+
+            // Récupérer les profils des demandeurs
+            val profiles = mutableListOf<UserProfile>()
+            senderIds.chunked(10).forEach { chunk ->
+                val profileDocs = profileCollection
+                    .whereIn("uid", chunk)
+                    .get()
+                    .await()
+
+                profileDocs.documents.mapNotNullTo(profiles) { doc ->
+                    doc.toObject(UserProfile::class.java)
+                }
+            }
+
+            Log.d(TAG, "Récupéré ${profiles.size} demandes d'amis en attente pour $userId")
+            Result.success(profiles)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de la récupération des demandes d'amis", e)
+            Result.failure(e)
+        }
+    }
+
+    override fun observePendingFriendRequests(userId: String): Flow<List<UserProfile>> = callbackFlow {
+        val listenerRegistration = friendshipsCollection
+            .whereEqualTo("friendId", userId)
+            .whereEqualTo("status", Friendship.STATUS_PENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Erreur lors de l'observation des demandes d'amis", error)
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && !snapshot.isEmpty) {
+                    val senderIds = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(Friendship::class.java)?.userId
+                    }
+
+                    if (senderIds.isEmpty()) {
+                        trySend(emptyList())
+                        return@addSnapshotListener
+                    }
+
+                    // Récupérer les profils des demandeurs
+                    senderIds.chunked(10).forEach { chunk ->
+                        profileCollection
+                            .whereIn("uid", chunk)
+                            .get()
+                            .addOnSuccessListener { profiles ->
+                                val users = profiles.documents.mapNotNull { doc ->
+                                    doc.toObject(UserProfile::class.java)
+                                }
+                                trySend(users)
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e(TAG, "Erreur lors de la récupération des profils", e)
+                                trySend(emptyList())
+                            }
+                    }
+                } else {
+                    trySend(emptyList())
+                }
+            }
+
+        awaitClose {
+            listenerRegistration.remove()
+        }
+    }
+
+    override suspend fun hasPendingRequest(currentUserId: String, friendId: String): Boolean {
+        return try {
+            // Vérifier si une demande existe dans un sens ou l'autre
+            val doc1 = friendshipsCollection
+                .document("${currentUserId}_${friendId}")
+                .get()
+                .await()
+
+            if (doc1.exists()) {
+                val friendship = doc1.toObject(Friendship::class.java)
+                if (friendship?.status == Friendship.STATUS_PENDING) {
+                    return true
+                }
+            }
+
+            val doc2 = friendshipsCollection
+                .document("${friendId}_${currentUserId}")
+                .get()
+                .await()
+
+            if (doc2.exists()) {
+                val friendship = doc2.toObject(Friendship::class.java)
+                if (friendship?.status == Friendship.STATUS_PENDING) {
+                    return true
+                }
+            }
+
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de la vérification de demande en attente", e)
+            false
         }
     }
 
@@ -121,7 +291,7 @@ class FriendRepositoryImpl(
 
     override suspend fun getFriends(userId: String): Result<List<UserProfile>> {
         return try {
-            // Récupérer toutes les amitiés de l'utilisateur
+            // Récupérer toutes les amitiés acceptées de l'utilisateur
             val friendships = friendshipsCollection
                 .whereEqualTo("userId", userId)
                 .whereEqualTo("status", Friendship.STATUS_ACCEPTED)
@@ -138,8 +308,6 @@ class FriendRepositoryImpl(
 
             // Récupérer les profils des amis
             val friends = mutableListOf<UserProfile>()
-
-            // Firebase limite whereIn à 10 éléments, donc on fait des requêtes par lots
             friendIds.chunked(10).forEach { chunk ->
                 val profiles = profileCollection
                     .whereIn("uid", chunk)
@@ -183,7 +351,6 @@ class FriendRepositoryImpl(
                         return@addSnapshotListener
                     }
 
-                    // Récupérer les profils des amis
                     friendIds.chunked(10).forEach { chunk ->
                         profileCollection
                             .whereIn("uid", chunk)
