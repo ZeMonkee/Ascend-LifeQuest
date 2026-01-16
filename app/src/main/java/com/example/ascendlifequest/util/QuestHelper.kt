@@ -10,6 +10,7 @@ object QuestHelper {
 
     private const val PREFS_NAME = "quest_preferences"
     private const val QUEST_COUNTER_KEY = "quest_counter"
+    private const val QUEST_USER_ID_KEY = "quest_user_id"
     private const val MAX_QUESTS = 5
 
     private fun getGlobalPreferences(context: Context): SharedPreferences {
@@ -30,6 +31,37 @@ object QuestHelper {
 
     fun resetInitialGenerationFlag() {
         initialGenerationDoneThisSession = false
+    }
+
+    // Gestion de l'ID utilisateur lié aux quêtes
+    fun getQuestUserId(context: Context): String {
+        return getGlobalPreferences(context).getString(QUEST_USER_ID_KEY, "") ?: ""
+    }
+
+    fun setQuestUserId(context: Context, userId: String) {
+        getGlobalPreferences(context).edit().putString(QUEST_USER_ID_KEY, userId).apply()
+    }
+
+    /**
+     * Vérifie si l'utilisateur actuel est le même que celui qui a généré les quêtes.
+     * @return true si l'utilisateur est différent (les quêtes doivent être vidées), false sinon
+     */
+    fun isUserDifferent(context: Context, currentUserId: String): Boolean {
+        val savedUserId = getQuestUserId(context)
+        // Si aucun userId n'est sauvegardé, c'est un nouvel utilisateur ou première utilisation
+        if (savedUserId.isEmpty()) {
+            return false
+        }
+        return savedUserId != currentUserId
+    }
+
+    /**
+     * Réinitialise toutes les données des quêtes pour un nouvel utilisateur
+     */
+    fun resetForNewUser(context: Context, newUserId: String) {
+        resetQuestCounter(context)
+        resetInitialGenerationFlag()
+        setQuestUserId(context, newUserId)
     }
 
     // Compteur global (reste en SharedPreferences pour simplicité)
