@@ -84,10 +84,21 @@ class QuestViewModel(
     }
 
     fun generateInitialQuests(context: Context, userId: String) {
+        // Vérifier si la génération initiale a déjà été lancée cette session
+        if (QuestHelper.hasInitialGenerationBeenDone()) {
+            Log.d("QuestViewModel", "⏭️ Génération initiale déjà effectuée cette session, ignorée")
+            _isLoading.value = false
+            return
+        }
+
+        // Marquer la génération comme démarrée
+        QuestHelper.markInitialGenerationAsDone()
+
         viewModelScope.launch {
             val maxQuests = QuestHelper.getMaxQuests()
             val currentCounter = QuestHelper.getQuestCounter(context)
             if (currentCounter >= maxQuests) {
+                Log.d("QuestViewModel", "⏭️ Maximum de quêtes déjà atteint ($currentCounter/$maxQuests)")
                 _isLoading.value = false
                 return@launch
             }
@@ -192,6 +203,7 @@ class QuestViewModel(
         viewModelScope.launch {
             questRepository.clearAllQuests()
             QuestHelper.resetQuestCounter(context)
+            QuestHelper.resetInitialGenerationFlag() // Permettre une nouvelle génération
             QuestHelper.clearQuest(context, userId)
             _questCounter.value = 0
             _completedQuestsCount.value = 0
