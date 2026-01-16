@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.ascendlifequest.data.auth.AuthRepository
 import com.example.ascendlifequest.data.model.Categorie
 import com.example.ascendlifequest.data.model.Quest
 import com.example.ascendlifequest.data.repository.QuestRepository
@@ -15,9 +16,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class QuestViewModel(private val questRepository: QuestRepository) : ViewModel() {
+class QuestViewModel(
+    private val questRepository: QuestRepository,
+    private val authRepository: AuthRepository? = null
+) : ViewModel() {
+
+    // Exposer l'id utilisateur courant via le ViewModel afin d'éviter la création de services dans la View
+    private val _currentUserId = MutableStateFlow(authRepository?.getCurrentUserId() ?: "")
+    val currentUserId: StateFlow<String> = _currentUserId.asStateFlow()
 
     private val _categories = MutableStateFlow<List<Categorie>>(emptyList())
     val categories: StateFlow<List<Categorie>> = _categories.asStateFlow()
@@ -51,16 +60,19 @@ class QuestViewModel(private val questRepository: QuestRepository) : ViewModel()
                 val loadedQuests = questRepository.getQuests()
 
                 _categories.value =
-                        loadedCategories.map { cat ->
-                            val restoredColor = Color(cat.couleur.value)
-                            cat.copy(couleur = restoredColor)
-                        }
+                    loadedCategories.map { cat ->
+                        val restoredColor = Color(cat.couleur.value)
+                        cat.copy(couleur = restoredColor)
+                    }
                 _quests.value = loadedQuests
                 _questCounter.value = QuestHelper.getQuestCounter(context)
 
                 val questIds = loadedQuests.map { it.id }
                 _completedQuestsCount.value =
-                        QuestHelper.getCompletedQuestsCount(context, userId, questIds)
+                    QuestHelper.getCompletedQuestsCount(context, userId, questIds)
+
+                // Mettre à jour le userId interne si besoin
+                _currentUserId.update { userId }
             } catch (e: Exception) {
                 Log.e("QuestViewModel", "Error loading data", e)
             } finally {
@@ -95,8 +107,8 @@ class QuestViewModel(private val questRepository: QuestRepository) : ViewModel()
 
             while (QuestHelper.getQuestCounter(context) < maxQuests) {
                 val selectedCategory =
-                        CategorySelector.selectWeightedCategory(context, userId, loadedCategories)
-                                ?: break
+                    CategorySelector.selectWeightedCategory(context, userId, loadedCategories)
+                        ?: break
 
                 try {
                     val newQuest = generateQuestForCategory(context, selectedCategory)
@@ -104,8 +116,8 @@ class QuestViewModel(private val questRepository: QuestRepository) : ViewModel()
                         QuestHelper.incrementQuestCounter(context)
                         _generationProgress.value = QuestHelper.getQuestCounter(context)
                         Log.d(
-                                "QuestViewModel",
-                                "✅ Quête générée (${_generationProgress.value}/$maxQuests) : ${newQuest.nom}"
+                            "QuestViewModel",
+                            "✅ Quête générée (${_generationProgress.value}/$maxQuests) : ${newQuest.nom}"
                         )
 
                         // Refresh quests locally
@@ -135,7 +147,7 @@ class QuestViewModel(private val questRepository: QuestRepository) : ViewModel()
                 if (_isGenerating.value) return@launch
 
                 val selectedCategory =
-                        CategorySelector.selectWeightedCategory(context, userId, _categories.value)
+                    CategorySelector.selectWeightedCategory(context, userId, _categories.value)
                 if (selectedCategory != null) {
                     val newQuest = generateQuestForCategory(context, selectedCategory)
                     if (newQuest != null) {
