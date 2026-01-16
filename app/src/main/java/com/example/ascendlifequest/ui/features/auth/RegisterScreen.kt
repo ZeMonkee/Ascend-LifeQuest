@@ -36,7 +36,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.ui.components.AppBackground
-import com.example.ascendlifequest.data.remote.AuthService
 import com.example.ascendlifequest.ui.theme.AppColor
 import com.example.ascendlifequest.di.AppViewModelFactory
 
@@ -48,8 +47,7 @@ fun RegisterScreen(navController: NavHostController) {
     var isLoading by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val authService = AuthService()
-    val factory = AppViewModelFactory(com.example.ascendlifequest.data.auth.AuthRepositoryImpl(authService))
+    val factory = AppViewModelFactory()
     val viewModel: RegisterViewModel = viewModel(factory = factory)
 
     // Observing events from ViewModel in a Compose coroutine
