@@ -1,33 +1,27 @@
 package com.example.ascendlifequest.ui.features.profile
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.ascendlifequest.di.AppViewModelFactory
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import com.example.ascendlifequest.di.AppViewModelFactory
 import com.example.ascendlifequest.ui.components.AppBackground
 import com.example.ascendlifequest.ui.components.AppBottomNavBar
 import com.example.ascendlifequest.ui.components.AppHeader
 import com.example.ascendlifequest.ui.components.BottomNavItem
+import com.example.ascendlifequest.ui.features.profile.components.AccountAvatar
+import com.example.ascendlifequest.ui.features.profile.components.SuccessNotice
 import com.example.ascendlifequest.ui.theme.AppColor
 import kotlinx.coroutines.delay
-import androidx.compose.ui.unit.Dp
 
 @Composable
 fun AccountScreen(navController: NavHostController) {
@@ -39,23 +33,22 @@ fun AccountScreenWithBottomNav(navController: NavHostController) {
     AppBottomNavBar(navController = navController, current = BottomNavItem.Profil) { innerPadding ->
         AppBackground {
             Column(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
+                    modifier = Modifier.padding(innerPadding).fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top
             ) {
                 AppHeader(title = "COMPTE")
-
-                // Délégué le contenu réel au composable principal
-                AccountScreenContent(navController = navController, modifier = Modifier.fillMaxWidth().padding(16.dp))
+                AccountScreenContent(
+                        navController = navController,
+                        modifier = Modifier.fillMaxWidth().padding(16.dp)
+                )
             }
         }
     }
 }
 
 @Composable
-fun AccountScreenContent(navController: NavHostController, modifier: Modifier = Modifier) {
+private fun AccountScreenContent(navController: NavHostController, modifier: Modifier = Modifier) {
     val factory = AppViewModelFactory()
     val vm: AccountViewModel = viewModel(factory = factory)
     val state by vm.uiState.collectAsState()
@@ -92,15 +85,26 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
         }
     }
 
-    LaunchedEffect(showEmailDialog, showPasswordDialog, pendingEmailVerificationRedirect, pendingPasswordChangeRedirect) {
+    LaunchedEffect(
+            showEmailDialog,
+            showPasswordDialog,
+            pendingEmailVerificationRedirect,
+            pendingPasswordChangeRedirect
+    ) {
         while (true) {
             delay(5000)
             val currentState = state
             val isReauthRequired = currentState is AccountUiState.ReauthRequired
-            val isShowingMessage = currentState is AccountUiState.Success || currentState is AccountUiState.Error
+            val isShowingMessage =
+                    currentState is AccountUiState.Success || currentState is AccountUiState.Error
 
-            if (!showEmailDialog && !showPasswordDialog && !isReauthRequired &&
-                !isShowingMessage && !pendingEmailVerificationRedirect && !pendingPasswordChangeRedirect) {
+            if (!showEmailDialog &&
+                            !showPasswordDialog &&
+                            !isReauthRequired &&
+                            !isShowingMessage &&
+                            !pendingEmailVerificationRedirect &&
+                            !pendingPasswordChangeRedirect
+            ) {
                 vm.refreshUser()
             }
         }
@@ -110,9 +114,7 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
         if (pendingEmailVerificationRedirect) {
             delay(10000)
             vm.signOut()
-            navController.navigate("login_option") {
-                popUpTo(0) { inclusive = true }
-            }
+            navController.navigate("login_option") { popUpTo(0) { inclusive = true } }
         }
     }
 
@@ -120,22 +122,20 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
         if (pendingPasswordChangeRedirect) {
             delay(5000)
             vm.signOut()
-            navController.navigate("login_option") {
-                popUpTo(0) { inclusive = true }
-            }
+            navController.navigate("login_option") { popUpTo(0) { inclusive = true } }
         }
     }
 
-    // Contenu principal (sans Scaffold) pour correspondre au pattern des autres écrans
     Card(
-        modifier = modifier.fillMaxWidth().padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColor.DarkBlueColor),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            modifier = modifier.fillMaxWidth().padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = AppColor.DarkBlueColor),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-
-        Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-
+        Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -144,20 +144,23 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            val displayEmail = when (state) {
-                is AccountUiState.Loaded -> (state as AccountUiState.Loaded).email
-                is AccountUiState.Success -> (state as AccountUiState.Success).email
-                is AccountUiState.Error -> (state as AccountUiState.Error).email
-                else -> null
-            }
+            val displayEmail =
+                    when (state) {
+                        is AccountUiState.Loaded -> (state as AccountUiState.Loaded).email
+                        is AccountUiState.Success -> (state as AccountUiState.Success).email
+                        is AccountUiState.Error -> (state as AccountUiState.Error).email
+                        else -> null
+                    }
 
             val displayEmailText = displayEmail ?: "Chargement..."
 
             Text(
-                text = "Email: $displayEmailText",
-                color = if (displayEmail != null) AppColor.MainTextColor else AppColor.MinusTextColor,
-                fontWeight = if (displayEmail != null) FontWeight.Medium else FontWeight.Normal,
-                modifier = Modifier.padding(bottom = 8.dp)
+                    text = "Email: $displayEmailText",
+                    color =
+                            if (displayEmail != null) AppColor.MainTextColor
+                            else AppColor.MinusTextColor,
+                    fontWeight = if (displayEmail != null) FontWeight.Medium else FontWeight.Normal,
+                    modifier = Modifier.padding(bottom = 8.dp)
             )
 
             if (displayEmail == null) {
@@ -174,58 +177,55 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
 
                     if (reauthDialogVisible) {
                         AlertDialog(
-                            onDismissRequest = {
-                                if (!reauthLoadingReauth) {
-                                    reauthDialogVisible = false
-                                    reauthCurrentPassword = ""
-                                    reauthErrorReauth = null
-                                }
-                            },
-                            title = { Text("Ré-authentification requise") },
-                            text = {
-                                Column {
-                                    OutlinedTextField(
-                                        value = reauthCurrentPassword,
-                                        onValueChange = {
-                                            reauthCurrentPassword = it
-                                            reauthErrorReauth = null
-                                        },
-                                        label = { Text("Mot de passe actuel") },
-                                        visualTransformation = PasswordVisualTransformation()
-                                    )
-                                    if (!reauthErrorReauth.isNullOrEmpty()) {
-                                        Text(
-                                            text = reauthErrorReauth ?: "",
-                                            color = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.padding(top = 8.dp)
+                                onDismissRequest = {
+                                    if (!reauthLoadingReauth) {
+                                        reauthDialogVisible = false
+                                        reauthCurrentPassword = ""
+                                        reauthErrorReauth = null
+                                    }
+                                },
+                                title = { Text("Ré-authentification requise") },
+                                text = {
+                                    Column {
+                                        OutlinedTextField(
+                                                value = reauthCurrentPassword,
+                                                onValueChange = {
+                                                    reauthCurrentPassword = it
+                                                    reauthErrorReauth = null
+                                                },
+                                                label = { Text("Mot de passe actuel") },
+                                                visualTransformation =
+                                                        PasswordVisualTransformation()
                                         )
-                                    }
-                                }
-                            },
-                            confirmButton = {
-                                TextButton(
-                                    onClick = {
-                                        if (!reauthLoadingReauth) {
-                                            reauthTriggerReauth = reauthCurrentPassword
+                                        if (!reauthErrorReauth.isNullOrEmpty()) {
+                                            Text(
+                                                    text = reauthErrorReauth ?: "",
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    modifier = Modifier.padding(top = 8.dp)
+                                            )
                                         }
                                     }
-                                ) {
-                                    Text("Valider")
+                                },
+                                confirmButton = {
+                                    TextButton(
+                                            onClick = {
+                                                if (!reauthLoadingReauth) {
+                                                    reauthTriggerReauth = reauthCurrentPassword
+                                                }
+                                            }
+                                    ) { Text("Valider") }
+                                },
+                                dismissButton = {
+                                    TextButton(
+                                            onClick = {
+                                                if (!reauthLoadingReauth) {
+                                                    reauthDialogVisible = false
+                                                    reauthCurrentPassword = ""
+                                                    reauthErrorReauth = null
+                                                }
+                                            }
+                                    ) { Text("Annuler") }
                                 }
-                            },
-                            dismissButton = {
-                                TextButton(
-                                    onClick = {
-                                        if (!reauthLoadingReauth) {
-                                            reauthDialogVisible = false
-                                            reauthCurrentPassword = ""
-                                            reauthErrorReauth = null
-                                        }
-                                    }
-                                ) {
-                                    Text("Annuler")
-                                }
-                            }
                         )
                     }
 
@@ -241,24 +241,26 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
                                 reauthDialogVisible = false
                                 reauthCurrentPassword = ""
                             } else {
-                                reauthErrorReauth = res.exceptionOrNull()?.message
-                                    ?: "Ré-authentification échouée"
+                                reauthErrorReauth =
+                                        res.exceptionOrNull()?.message
+                                                ?: "Ré-authentification échouée"
                             }
                             reauthLoadingReauth = false
                             reauthTriggerReauth = null
                         }
                     }
-
                 }
-
                 is AccountUiState.Loaded -> {}
-                is AccountUiState.Loading -> CircularProgressIndicator(color = AppColor.LightBlueColor)
+                is AccountUiState.Loading ->
+                        CircularProgressIndicator(color = AppColor.LightBlueColor)
                 is AccountUiState.Error -> {
                     val msg = (state as AccountUiState.Error).message
-                    // N'affecte pas successMessage ici (éviter doublons avec SuccessNotice)
-                    Text(text = msg, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(8.dp))
+                    Text(
+                            text = msg,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(8.dp)
+                    )
                 }
-
                 is AccountUiState.Success -> {
                     val msg = (state as AccountUiState.Success).message
 
@@ -268,25 +270,29 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
                         passwordSuccessMessage = msg
                     }
 
-                    // Nous laissons la SuccessNotice gérer l'affichage unique des messages importants
                     LaunchedEffect(msg) {
-                        if (msg.contains("e-mail de vérification") && !pendingEmailVerificationRedirect) {
+                        if (msg.contains("e-mail de vérification") &&
+                                        !pendingEmailVerificationRedirect
+                        ) {
                             pendingEmailVerificationRedirect = true
-                        } else if (msg.contains("Mot de passe mis à jour") && !pendingPasswordChangeRedirect) {
+                        } else if (msg.contains("Mot de passe mis à jour") &&
+                                        !pendingPasswordChangeRedirect
+                        ) {
                             pendingPasswordChangeRedirect = true
                         }
                     }
                 }
-
                 else -> {}
             }
 
-            // Affiche une seule SuccessNotice à la fois (priorité au message de changement de mot de passe)
-            val singleNoticeMessage = when {
-                pendingPasswordChangeRedirect && !passwordSuccessMessage.isNullOrEmpty() -> passwordSuccessMessage
-                pendingEmailVerificationRedirect && !successMessage.isNullOrEmpty() -> successMessage
-                else -> null
-            }
+            val singleNoticeMessage =
+                    when {
+                        pendingPasswordChangeRedirect && !passwordSuccessMessage.isNullOrEmpty() ->
+                                passwordSuccessMessage
+                        pendingEmailVerificationRedirect && !successMessage.isNullOrEmpty() ->
+                                successMessage
+                        else -> null
+                    }
 
             if (!singleNoticeMessage.isNullOrEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -295,70 +301,91 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Actions
             Column(modifier = Modifier.fillMaxWidth()) {
                 Button(
-                    onClick = { showEmailDialog = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColor.LightBlueColor),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                        onClick = { showEmailDialog = true },
+                        colors =
+                                ButtonDefaults.buttonColors(
+                                        containerColor = AppColor.LightBlueColor
+                                ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
-                    Text(text = "Modifier l'e-mail", color = AppColor.MainTextColor, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                            text = "Modifier l'e-mail",
+                            color = AppColor.MainTextColor,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
-                    onClick = { showPasswordDialog = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColor.LightBlueColor),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                        onClick = { showPasswordDialog = true },
+                        colors =
+                                ButtonDefaults.buttonColors(
+                                        containerColor = AppColor.LightBlueColor
+                                ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
-                    Text(text = "Modifier le mot de passe", color = AppColor.MainTextColor, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                            text = "Modifier le mot de passe",
+                            color = AppColor.MainTextColor,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
-                    onClick = {
-                        vm.signOut()
-                        navController.navigate("login_option") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColor.DarkBlueColor),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                        onClick = {
+                            vm.signOut()
+                            navController.navigate("login_option") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        },
+                        colors =
+                                ButtonDefaults.buttonColors(
+                                        containerColor = AppColor.DarkBlueColor
+                                ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
-                    Text(text = "Se déconnecter", color = AppColor.MainTextColor, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                            text = "Se déconnecter",
+                            color = AppColor.MainTextColor,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                    )
                 }
             }
 
             // Email dialog
             if (showEmailDialog) {
                 AlertDialog(
-                    onDismissRequest = { showEmailDialog = false },
-                    title = { Text("Modifier l'e-mail") },
-                    text = {
-                        OutlinedTextField(
-                            value = newEmail,
-                            onValueChange = { newEmail = it },
-                            label = { Text("Nouvel e-mail") }
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            showEmailDialog = false
-                            vm.updateEmail(newEmail)
-                        }) {
-                            Text("Valider")
+                        onDismissRequest = { showEmailDialog = false },
+                        title = { Text("Modifier l'e-mail") },
+                        text = {
+                            OutlinedTextField(
+                                    value = newEmail,
+                                    onValueChange = { newEmail = it },
+                                    label = { Text("Nouvel e-mail") }
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                    onClick = {
+                                        showEmailDialog = false
+                                        vm.updateEmail(newEmail)
+                                    }
+                            ) { Text("Valider") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showEmailDialog = false }) { Text("Annuler") }
                         }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showEmailDialog = false }) {
-                            Text("Annuler")
-                        }
-                    }
                 )
             }
 
@@ -366,60 +393,56 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
             if (showPasswordDialog) {
                 if (!askingNew) {
                     AlertDialog(
-                        onDismissRequest = {
-                            if (!reauthLoadingPassword) {
-                                showPasswordDialog = false
-                                askingNew = false
-                                currentPassword = ""
-                                reauthErrorPassword = null
-                            }
-                        },
-                        title = { Text("Vérification") },
-                        text = {
-                            Column {
-                                OutlinedTextField(
-                                    value = currentPassword,
-                                    onValueChange = {
-                                        currentPassword = it
-                                        reauthErrorPassword = null
-                                    },
-                                    label = { Text("Mot de passe actuel") },
-                                    visualTransformation = PasswordVisualTransformation()
-                                )
-                                if (!reauthErrorPassword.isNullOrEmpty()) {
-                                    Text(
-                                        text = reauthErrorPassword ?: "",
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(top = 8.dp)
+                            onDismissRequest = {
+                                if (!reauthLoadingPassword) {
+                                    showPasswordDialog = false
+                                    askingNew = false
+                                    currentPassword = ""
+                                    reauthErrorPassword = null
+                                }
+                            },
+                            title = { Text("Vérification") },
+                            text = {
+                                Column {
+                                    OutlinedTextField(
+                                            value = currentPassword,
+                                            onValueChange = {
+                                                currentPassword = it
+                                                reauthErrorPassword = null
+                                            },
+                                            label = { Text("Mot de passe actuel") },
+                                            visualTransformation = PasswordVisualTransformation()
                                     )
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    if (!reauthLoadingPassword) {
-                                        reauthTriggerPassword = currentPassword
+                                    if (!reauthErrorPassword.isNullOrEmpty()) {
+                                        Text(
+                                                text = reauthErrorPassword ?: "",
+                                                color = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.padding(top = 8.dp)
+                                        )
                                     }
                                 }
-                            ) {
-                                Text("Valider")
+                            },
+                            confirmButton = {
+                                TextButton(
+                                        onClick = {
+                                            if (!reauthLoadingPassword) {
+                                                reauthTriggerPassword = currentPassword
+                                            }
+                                        }
+                                ) { Text("Valider") }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                        onClick = {
+                                            if (!reauthLoadingPassword) {
+                                                showPasswordDialog = false
+                                                askingNew = false
+                                                currentPassword = ""
+                                                reauthErrorPassword = null
+                                            }
+                                        }
+                                ) { Text("Annuler") }
                             }
-                        },
-                        dismissButton = {
-                            TextButton(
-                                onClick = {
-                                    if (!reauthLoadingPassword) {
-                                        showPasswordDialog = false
-                                        askingNew = false
-                                        currentPassword = ""
-                                        reauthErrorPassword = null
-                                    }
-                                }
-                            ) {
-                                Text("Annuler")
-                            }
-                        }
                     )
 
                     LaunchedEffect(reauthTriggerPassword) {
@@ -432,7 +455,9 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
                                 askingNew = true
                                 currentPassword = ""
                             } else {
-                                reauthErrorPassword = res.exceptionOrNull()?.message ?: "Ré-authentification échouée"
+                                reauthErrorPassword =
+                                        res.exceptionOrNull()?.message
+                                                ?: "Ré-authentification échouée"
                             }
                             reauthLoadingPassword = false
                             reauthTriggerPassword = null
@@ -440,108 +465,82 @@ fun AccountScreenContent(navController: NavHostController, modifier: Modifier = 
                     }
                 } else {
                     AlertDialog(
-                        onDismissRequest = {
-                            showPasswordDialog = false
-                            askingNew = false
-                            newPassword = ""
-                            confirmNew = ""
-                            newPasswordError = null
-                        },
-                        title = { Text("Nouveau mot de passe") },
-                        text = {
-                            Column {
-                                OutlinedTextField(
-                                    value = newPassword,
-                                    onValueChange = { newPassword = it; newPasswordError = null },
-                                    label = { Text("Nouveau mot de passe") },
-                                    visualTransformation = PasswordVisualTransformation()
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                OutlinedTextField(
-                                    value = confirmNew,
-                                    onValueChange = { confirmNew = it; newPasswordError = null },
-                                    label = { Text("Confirmer le mot de passe") },
-                                    visualTransformation = PasswordVisualTransformation()
-                                )
-                                if (!newPasswordError.isNullOrEmpty()) {
-                                    Text(
-                                        text = newPasswordError ?: "",
-                                        color = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    )
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                when {
-                                    newPassword.length < 6 -> {
-                                        newPasswordError = "Le mot de passe doit contenir au moins 6 caractères"
-                                    }
-                                    newPassword != confirmNew -> {
-                                        newPasswordError = "Les mots de passe ne correspondent pas"
-                                    }
-                                    else -> {
-                                        showPasswordDialog = false
-                                        askingNew = false
-                                        vm.updatePassword(newPassword)
-                                        newPassword = ""
-                                        confirmNew = ""
-                                        newPasswordError = null
-                                    }
-                                }
-                            }) {
-                                Text("Valider")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = {
+                            onDismissRequest = {
                                 showPasswordDialog = false
                                 askingNew = false
                                 newPassword = ""
                                 confirmNew = ""
                                 newPasswordError = null
-                            }) {
-                                Text("Annuler")
+                            },
+                            title = { Text("Nouveau mot de passe") },
+                            text = {
+                                Column {
+                                    OutlinedTextField(
+                                            value = newPassword,
+                                            onValueChange = {
+                                                newPassword = it
+                                                newPasswordError = null
+                                            },
+                                            label = { Text("Nouveau mot de passe") },
+                                            visualTransformation = PasswordVisualTransformation()
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    OutlinedTextField(
+                                            value = confirmNew,
+                                            onValueChange = {
+                                                confirmNew = it
+                                                newPasswordError = null
+                                            },
+                                            label = { Text("Confirmer le mot de passe") },
+                                            visualTransformation = PasswordVisualTransformation()
+                                    )
+                                    if (!newPasswordError.isNullOrEmpty()) {
+                                        Text(
+                                                text = newPasswordError ?: "",
+                                                color = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.padding(top = 8.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(
+                                        onClick = {
+                                            when {
+                                                newPassword.length < 6 -> {
+                                                    newPasswordError =
+                                                            "Le mot de passe doit contenir au moins 6 caractères"
+                                                }
+                                                newPassword != confirmNew -> {
+                                                    newPasswordError =
+                                                            "Les mots de passe ne correspondent pas"
+                                                }
+                                                else -> {
+                                                    showPasswordDialog = false
+                                                    askingNew = false
+                                                    vm.updatePassword(newPassword)
+                                                    newPassword = ""
+                                                    confirmNew = ""
+                                                    newPasswordError = null
+                                                }
+                                            }
+                                        }
+                                ) { Text("Valider") }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                        onClick = {
+                                            showPasswordDialog = false
+                                            askingNew = false
+                                            newPassword = ""
+                                            confirmNew = ""
+                                            newPasswordError = null
+                                        }
+                                ) { Text("Annuler") }
                             }
-                        }
                     )
                 }
             }
-        }
-    }
-}
-
-// Small reusable avatar composable
-@Composable
-fun AccountAvatar(resId: Int, size: Dp = 96.dp) {
-    Image(
-        painter = painterResource(id = resId),
-        contentDescription = "Avatar",
-        contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(AppColor.MinusTextColor, CircleShape)
-            .border(width = 2.dp, color = AppColor.LightBlueColor, shape = CircleShape)
-    )
-}
-
-// Small reusable success notice
-@Composable
-fun SuccessNotice(message: String, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = AppColor.LectureColor.copy(alpha = 0.12f)),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = message, color = AppColor.LectureColor, fontWeight = FontWeight.Medium)
-            Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = AppColor.LectureColor)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "Redirection dans quelques secondes...", color = AppColor.LectureColor, fontSize = 12.sp)
         }
     }
 }
