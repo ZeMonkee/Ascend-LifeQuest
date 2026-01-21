@@ -9,8 +9,8 @@ import com.example.ascendlifequest.data.auth.AuthRepository
 import com.example.ascendlifequest.data.model.Categorie
 import com.example.ascendlifequest.data.model.Quest
 import com.example.ascendlifequest.data.repository.ProfileRepository
+import com.example.ascendlifequest.data.repository.QuestGeneratorRepository
 import com.example.ascendlifequest.data.repository.QuestRepository
-import com.example.ascendlifequest.data.repository.generateQuestForCategory
 import com.example.ascendlifequest.util.CategorySelector
 import com.example.ascendlifequest.util.QuestHelper
 import kotlinx.coroutines.delay
@@ -21,12 +21,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class QuestViewModel(
-    private val questRepository: QuestRepository,
-    private val authRepository: AuthRepository? = null,
-    private val profileRepository: ProfileRepository? = null
+        private val questRepository: QuestRepository,
+        private val questGeneratorRepository: QuestGeneratorRepository,
+        private val authRepository: AuthRepository? = null,
+        private val profileRepository: ProfileRepository? = null
 ) : ViewModel() {
 
-    // Exposer l'id utilisateur courant via le ViewModel afin d'éviter la création de services dans la View
+    // Exposer l'id utilisateur courant via le ViewModel afin d'éviter la création de services dans
+    // la View
     private val _currentUserId = MutableStateFlow(authRepository?.getCurrentUserId() ?: "")
     val currentUserId: StateFlow<String> = _currentUserId.asStateFlow()
 
@@ -55,8 +57,8 @@ class QuestViewModel(
     val showMaxQuestsDialog: StateFlow<Boolean> = _showMaxQuestsDialog.asStateFlow()
 
     /**
-     * Vérifie si l'utilisateur actuel est différent de celui qui a généré les quêtes.
-     * Si oui, vide la base de données des quêtes et réinitialise les compteurs.
+     * Vérifie si l'utilisateur actuel est différent de celui qui a généré les quêtes. Si oui, vide
+     * la base de données des quêtes et réinitialise les compteurs.
      * @return true si la base a été vidée (nouvel utilisateur), false sinon
      */
     suspend fun checkAndClearQuestsForNewUser(context: Context, userId: String): Boolean {
@@ -91,16 +93,16 @@ class QuestViewModel(
                 val loadedQuests = questRepository.getQuests()
 
                 _categories.value =
-                    loadedCategories.map { cat ->
-                        val restoredColor = Color(cat.couleur.value)
-                        cat.copy(couleur = restoredColor)
-                    }
+                        loadedCategories.map { cat ->
+                            val restoredColor = Color(cat.couleur.value)
+                            cat.copy(couleur = restoredColor)
+                        }
                 _quests.value = loadedQuests
                 _questCounter.value = QuestHelper.getQuestCounter(context)
 
                 val questIds = loadedQuests.map { it.id }
                 _completedQuestsCount.value =
-                    QuestHelper.getCompletedQuestsCount(context, userId, questIds)
+                        QuestHelper.getCompletedQuestsCount(context, userId, questIds)
 
                 // Mettre à jour le userId interne si besoin
                 _currentUserId.update { userId }
@@ -127,7 +129,10 @@ class QuestViewModel(
             val maxQuests = QuestHelper.getMaxQuests()
             val currentCounter = QuestHelper.getQuestCounter(context)
             if (currentCounter >= maxQuests) {
-                Log.d("QuestViewModel", "⏭️ Maximum de quêtes déjà atteint ($currentCounter/$maxQuests)")
+                Log.d(
+                        "QuestViewModel",
+                        "⏭️ Maximum de quêtes déjà atteint ($currentCounter/$maxQuests)"
+                )
                 _isLoading.value = false
                 return@launch
             }
@@ -154,16 +159,20 @@ class QuestViewModel(
             while (QuestHelper.getQuestCounter(context) < maxQuests) {
                 // Vérifier si on a atteint le maximum d'échecs consécutifs
                 if (consecutiveFailures >= maxConsecutiveFailures) {
-                    Log.w("QuestViewModel", "⚠️ Arrêt après $maxConsecutiveFailures échecs consécutifs. Affichage des quêtes générées.")
+                    Log.w(
+                            "QuestViewModel",
+                            "⚠️ Arrêt après $maxConsecutiveFailures échecs consécutifs. Affichage des quêtes générées."
+                    )
                     break
                 }
 
                 val selectedCategory =
-                    CategorySelector.selectWeightedCategory(context, userId, loadedCategories)
-                        ?: break
+                        CategorySelector.selectWeightedCategory(context, userId, loadedCategories)
+                                ?: break
 
                 try {
-                    val newQuest = generateQuestForCategory(context, selectedCategory)
+                    val newQuest =
+                            questGeneratorRepository.generateQuestForCategory(selectedCategory)
                     if (newQuest != null) {
                         // Réinitialiser le compteur d'échecs en cas de succès
                         consecutiveFailures = 0
@@ -171,20 +180,27 @@ class QuestViewModel(
                         QuestHelper.incrementQuestCounter(context)
                         _generationProgress.value = QuestHelper.getQuestCounter(context)
                         Log.d(
-                            "QuestViewModel",
-                            "✅ Quête générée (${_generationProgress.value}/$maxQuests) : ${newQuest.nom}"
+                                "QuestViewModel",
+                                "✅ Quête générée (${_generationProgress.value}/$maxQuests) : ${newQuest.nom}"
                         )
 
                         // Refresh quests locally
                         _quests.value = questRepository.getQuests()
                     } else {
                         consecutiveFailures++
-                        Log.w("QuestViewModel", "⚠️ Échec génération ($consecutiveFailures/$maxConsecutiveFailures), retry dans 5s...")
+                        Log.w(
+                                "QuestViewModel",
+                                "⚠️ Échec génération ($consecutiveFailures/$maxConsecutiveFailures), retry dans 5s..."
+                        )
                         delay(5000)
                     }
                 } catch (e: Exception) {
                     consecutiveFailures++
-                    Log.e("QuestViewModel", "❌ Erreur génération ($consecutiveFailures/$maxConsecutiveFailures), retry dans 5s...", e)
+                    Log.e(
+                            "QuestViewModel",
+                            "❌ Erreur génération ($consecutiveFailures/$maxConsecutiveFailures), retry dans 5s...",
+                            e
+                    )
                     delay(5000)
                 }
             }
@@ -196,7 +212,10 @@ class QuestViewModel(
             // Log du résultat final
             val generatedCount = _quests.value.size
             if (consecutiveFailures >= maxConsecutiveFailures) {
-                Log.w("QuestViewModel", "⚠️ Génération arrêtée après $maxConsecutiveFailures échecs. $generatedCount quêtes affichées.")
+                Log.w(
+                        "QuestViewModel",
+                        "⚠️ Génération arrêtée après $maxConsecutiveFailures échecs. $generatedCount quêtes affichées."
+                )
             } else {
                 Log.d("QuestViewModel", "✅ Génération terminée. $generatedCount quêtes générées.")
             }
@@ -212,9 +231,10 @@ class QuestViewModel(
                 if (_isGenerating.value) return@launch
 
                 val selectedCategory =
-                    CategorySelector.selectWeightedCategory(context, userId, _categories.value)
+                        CategorySelector.selectWeightedCategory(context, userId, _categories.value)
                 if (selectedCategory != null) {
-                    val newQuest = generateQuestForCategory(context, selectedCategory)
+                    val newQuest =
+                            questGeneratorRepository.generateQuestForCategory(selectedCategory)
                     if (newQuest != null) {
                         QuestHelper.incrementQuestCounter(context)
                         _questCounter.value = QuestHelper.getQuestCounter(context)
