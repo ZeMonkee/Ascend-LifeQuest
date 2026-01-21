@@ -19,10 +19,14 @@ import com.example.ascendlifequest.ui.features.profile.components.NotLoggedInCon
 import com.example.ascendlifequest.ui.features.profile.components.ProfileContent
 
 @Composable
-fun ProfilScreen(navController: NavHostController, viewModel: ProfileViewModel = viewModel()) {
+fun ProfilScreen(
+        navController: NavHostController,
+        userId: String? = null,
+        viewModel: ProfileViewModel = viewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) { viewModel.loadProfile() }
+    LaunchedEffect(userId) { viewModel.loadProfile(userId) }
 
     AppBottomNavBar(navController, BottomNavItem.Profil) { innerPadding ->
         AppBackground {
@@ -41,7 +45,10 @@ fun ProfilScreen(navController: NavHostController, viewModel: ProfileViewModel =
                         ProfileContent(profile = state.profile, rank = state.rank)
                     }
                     is ProfileUiState.Error -> {
-                        ErrorContent(message = state.message, onRetry = { viewModel.loadProfile() })
+                        ErrorContent(
+                                message = state.message,
+                                onRetry = { viewModel.loadProfile(userId) }
+                        )
                     }
                     is ProfileUiState.NotLoggedIn -> {
                         NotLoggedInContent(
