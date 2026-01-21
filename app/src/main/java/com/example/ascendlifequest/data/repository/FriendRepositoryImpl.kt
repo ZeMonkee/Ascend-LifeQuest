@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class FriendRepositoryImpl(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+        private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) : FriendRepository {
 
     companion object {
@@ -26,7 +26,10 @@ class FriendRepositoryImpl(
     private val friendshipsCollection = firestore.collection(COLLECTION_FRIENDSHIPS)
     private val notificationCollection = firestore.collection(COLLECTION_NOTIFICATION)
 
-    override suspend fun searchUsersByPseudo(query: String, currentUserId: String): Result<List<UserProfile>> {
+    override suspend fun searchUsersByPseudo(
+            query: String,
+            currentUserId: String
+    ): Result<List<UserProfile>> {
         return try {
             if (query.isBlank()) {
                 return Result.success(emptyList())
@@ -34,19 +37,24 @@ class FriendRepositoryImpl(
 
             val queryLower = query.lowercase().trim()
 
-            // Récupérer tous les profils et filtrer côté client pour une recherche insensible à la casse
+            // Récupérer tous les profils et filtrer côté client pour une recherche insensible à la
+            // casse
             // Firebase ne supporte pas nativement les recherches case-insensitive
-            val results = profileCollection
-                .limit(100) // Limiter pour éviter de charger trop de données
-                .get()
-                .await()
+            val results =
+                    profileCollection
+                            .limit(100) // Limiter pour éviter de charger trop de données
+                            .get()
+                            .await()
 
-            val users = results.documents.mapNotNull { doc ->
-                doc.toObject(UserProfile::class.java)?.takeIf {
-                    it.uid != currentUserId &&
-                    it.pseudo.lowercase().startsWith(queryLower)
-                }
-            }.take(10) // Limiter les résultats affichés
+            val users =
+                    results.documents
+                            .mapNotNull { doc ->
+                                doc.toObject(UserProfile::class.java)?.takeIf {
+                                    it.uid != currentUserId &&
+                                            it.pseudo.lowercase().startsWith(queryLower)
+                                }
+                            }
+                            .take(10) // Limiter les résultats affichés
 
             Log.d(TAG, "Recherche '$query': ${users.size} résultats")
             Result.success(users)
@@ -74,21 +82,22 @@ class FriendRepositoryImpl(
 
             // Créer la demande d'ami
             val docId = "${currentUserId}_${friendId}"
-            val friendRequestData = hashMapOf(
-                "userId" to currentUserId,
-                "friendId" to friendId,
-                "createdAt" to Timestamp.now(),
-                "status" to Friendship.STATUS_PENDING
-            )
+            val friendRequestData =
+                    hashMapOf(
+                            "userId" to currentUserId,
+                            "friendId" to friendId,
+                            "createdAt" to Timestamp.now(),
+                            "status" to Friendship.STATUS_PENDING
+                    )
 
             Log.d(TAG, "Création document: $docId avec data: $friendRequestData")
 
-            friendshipsCollection
-                .document(docId)
-                .set(friendRequestData)
-                .await()
+            friendshipsCollection.document(docId).set(friendRequestData).await()
 
-            Log.d(TAG, "✅ Demande d'ami envoyée avec succès de $currentUserId à $friendId (docId: $docId)")
+            Log.d(
+                    TAG,
+                    "✅ Demande d'ami envoyée avec succès de $currentUserId à $friendId (docId: $docId)"
+            )
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "❌ Erreur lors de l'envoi de la demande d'ami", e)
@@ -96,7 +105,10 @@ class FriendRepositoryImpl(
         }
     }
 
-    override suspend fun acceptFriendRequest(currentUserId: String, friendId: String): Result<Unit> {
+    override suspend fun acceptFriendRequest(
+            currentUserId: String,
+            friendId: String
+    ): Result<Unit> {
         return try {
             // La demande a été envoyée par friendId vers currentUserId
             val requestDocId = "${friendId}_${currentUserId}"
@@ -120,12 +132,13 @@ class FriendRepositoryImpl(
             batch.update(doc1Ref, "status", Friendship.STATUS_ACCEPTED)
 
             // Créer le document inverse
-            val friendship2 = Friendship(
-                userId = currentUserId,
-                friendId = friendId,
-                createdAt = Timestamp.now(),
-                status = Friendship.STATUS_ACCEPTED
-            )
+            val friendship2 =
+                    Friendship(
+                            userId = currentUserId,
+                            friendId = friendId,
+                            createdAt = Timestamp.now(),
+                            status = Friendship.STATUS_ACCEPTED
+                    )
             val doc2Ref = friendshipsCollection.document("${currentUserId}_${friendId}")
             batch.set(doc2Ref, friendship2)
 
@@ -139,39 +152,43 @@ class FriendRepositoryImpl(
         }
     }
 
-    override suspend fun declineFriendRequest(currentUserId: String, friendId: String, currentUserPseudo: String): Result<Unit> {
+    override suspend fun declineFriendRequest(
+            currentUserId: String,
+            friendId: String,
+            currentUserPseudo: String
+    ): Result<Unit> {
         return try {
-            Log.d(TAG, "╔════════════════════════════════════════")
-            Log.d(TAG, "║ declineFriendRequest")
-            Log.d(TAG, "║ currentUserId: $currentUserId")
-            Log.d(TAG, "║ friendId: $friendId")
-            Log.d(TAG, "║ currentUserPseudo: $currentUserPseudo")
-            Log.d(TAG, "╠════════════════════════════════════════")
+            Log.d(TAG, "declineFriendRequest")
+            Log.d(TAG, "currentUserId: $currentUserId")
+            Log.d(TAG, "friendId: $friendId")
+            Log.d(TAG, "currentUserPseudo: $currentUserPseudo")
 
             // La demande a été envoyée par friendId vers currentUserId
             val requestDocId = "${friendId}_${currentUserId}"
-            Log.d(TAG, "║ Suppression du document: $requestDocId")
+            Log.d(TAG, "Suppression du document: $requestDocId")
 
             // Supprimer la demande
             friendshipsCollection.document(requestDocId).delete().await()
-            Log.d(TAG, "║ ✓ Document supprimé")
+            Log.d(TAG, "Document supprimé")
 
             // Créer une notification pour informer l'utilisateur que sa demande a été refusée
-            val notificationData = hashMapOf(
-                "userId" to friendId, // L'utilisateur qui reçoit la notification (celui qui a envoyé la demande)
-                "type" to Notification.TYPE_FRIEND_REQUEST_DECLINED,
-                "message" to "$currentUserPseudo a refusé votre demande d'ami",
-                "fromUserId" to currentUserId,
-                "fromUserPseudo" to currentUserPseudo,
-                "createdAt" to Timestamp.now(),
-                "read" to false
-            )
+            val notificationData =
+                    hashMapOf(
+                            "userId" to
+                                    friendId, // L'utilisateur qui reçoit la notification (celui qui
+                            // a envoyé la demande)
+                            "type" to Notification.TYPE_FRIEND_REQUEST_DECLINED,
+                            "message" to "$currentUserPseudo a refusé votre demande d'ami",
+                            "fromUserId" to currentUserId,
+                            "fromUserPseudo" to currentUserPseudo,
+                            "createdAt" to Timestamp.now(),
+                            "read" to false
+                    )
 
-            Log.d(TAG, "║ Création notification: $notificationData")
+            Log.d(TAG, "Création notification: $notificationData")
 
             val notifRef = notificationCollection.add(notificationData).await()
-            Log.d(TAG, "║ ✓ Notification créée avec ID: ${notifRef.id}")
-            Log.d(TAG, "╚════════════════════════════════════════")
+            Log.d(TAG, "Notification créée avec ID: ${notifRef.id}")
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -187,29 +204,27 @@ class FriendRepositoryImpl(
             Log.d(TAG, "UserId (destinataire recherché): $userId")
 
             // Récupérer toutes les demandes où friendId = userId
-            val requests = friendshipsCollection
-                .whereEqualTo("friendId", userId)
-                .get()
-                .await()
+            val requests = friendshipsCollection.whereEqualTo("friendId", userId).get().await()
 
             Log.d(TAG, "Documents trouvés avec friendId=$userId: ${requests.documents.size}")
 
             // Filtrer les demandes en attente
-            val pendingRequests = requests.documents.mapNotNull { doc ->
-                val data = doc.data
-                Log.d(TAG, "Document ${doc.id}: $data")
+            val pendingRequests =
+                    requests.documents.mapNotNull { doc ->
+                        val data = doc.data
+                        Log.d(TAG, "Document ${doc.id}: $data")
 
-                val status = data?.get("status") as? String
-                val senderId = data?.get("userId") as? String
+                        val status = data?.get("status") as? String
+                        val senderId = data?.get("userId") as? String
 
-                Log.d(TAG, "  -> status: $status, senderId: $senderId")
+                        Log.d(TAG, "  -> status: $status, senderId: $senderId")
 
-                if (status == Friendship.STATUS_PENDING && senderId != null) {
-                    senderId
-                } else {
-                    null
-                }
-            }
+                        if (status == Friendship.STATUS_PENDING && senderId != null) {
+                            senderId
+                        } else {
+                            null
+                        }
+                    }
 
             Log.d(TAG, "Demandes pending trouvées: ${pendingRequests.size}")
             Log.d(TAG, "SenderIds: $pendingRequests")
@@ -255,60 +270,70 @@ class FriendRepositoryImpl(
         }
     }
 
-    override fun observePendingFriendRequests(userId: String): Flow<List<UserProfile>> = callbackFlow {
-        val listenerRegistration = friendshipsCollection
-            .whereEqualTo("friendId", userId)
-            .whereEqualTo("status", Friendship.STATUS_PENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e(TAG, "Erreur lors de l'observation des demandes d'amis", error)
-                    trySend(emptyList())
-                    return@addSnapshotListener
-                }
+    override fun observePendingFriendRequests(userId: String): Flow<List<UserProfile>> =
+            callbackFlow {
+                val listenerRegistration =
+                        friendshipsCollection
+                                .whereEqualTo("friendId", userId)
+                                .whereEqualTo("status", Friendship.STATUS_PENDING)
+                                .addSnapshotListener { snapshot, error ->
+                                    if (error != null) {
+                                        Log.e(
+                                                TAG,
+                                                "Erreur lors de l'observation des demandes d'amis",
+                                                error
+                                        )
+                                        trySend(emptyList())
+                                        return@addSnapshotListener
+                                    }
 
-                if (snapshot != null && !snapshot.isEmpty) {
-                    val senderIds = snapshot.documents.mapNotNull { doc ->
-                        doc.toObject(Friendship::class.java)?.userId
-                    }
+                                    if (snapshot != null && !snapshot.isEmpty) {
+                                        val senderIds =
+                                                snapshot.documents.mapNotNull { doc ->
+                                                    doc.toObject(Friendship::class.java)?.userId
+                                                }
 
-                    if (senderIds.isEmpty()) {
-                        trySend(emptyList())
-                        return@addSnapshotListener
-                    }
+                                        if (senderIds.isEmpty()) {
+                                            trySend(emptyList())
+                                            return@addSnapshotListener
+                                        }
 
-                    // Récupérer les profils des demandeurs
-                    senderIds.chunked(10).forEach { chunk ->
-                        profileCollection
-                            .whereIn("uid", chunk)
-                            .get()
-                            .addOnSuccessListener { profiles ->
-                                val users = profiles.documents.mapNotNull { doc ->
-                                    doc.toObject(UserProfile::class.java)
+                                        // Récupérer les profils des demandeurs
+                                        senderIds.chunked(10).forEach { chunk ->
+                                            profileCollection
+                                                    .whereIn("uid", chunk)
+                                                    .get()
+                                                    .addOnSuccessListener { profiles ->
+                                                        val users =
+                                                                profiles.documents.mapNotNull { doc
+                                                                    ->
+                                                                    doc.toObject(
+                                                                            UserProfile::class.java
+                                                                    )
+                                                                }
+                                                        trySend(users)
+                                                    }
+                                                    .addOnFailureListener { e ->
+                                                        Log.e(
+                                                                TAG,
+                                                                "Erreur lors de la récupération des profils",
+                                                                e
+                                                        )
+                                                        trySend(emptyList())
+                                                    }
+                                        }
+                                    } else {
+                                        trySend(emptyList())
+                                    }
                                 }
-                                trySend(users)
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e(TAG, "Erreur lors de la récupération des profils", e)
-                                trySend(emptyList())
-                            }
-                    }
-                } else {
-                    trySend(emptyList())
-                }
-            }
 
-        awaitClose {
-            listenerRegistration.remove()
-        }
-    }
+                awaitClose { listenerRegistration.remove() }
+            }
 
     override suspend fun hasPendingRequest(currentUserId: String, friendId: String): Boolean {
         return try {
             // Vérifier si une demande existe dans un sens ou l'autre
-            val doc1 = friendshipsCollection
-                .document("${currentUserId}_${friendId}")
-                .get()
-                .await()
+            val doc1 = friendshipsCollection.document("${currentUserId}_${friendId}").get().await()
 
             if (doc1.exists()) {
                 val friendship = doc1.toObject(Friendship::class.java)
@@ -317,10 +342,7 @@ class FriendRepositoryImpl(
                 }
             }
 
-            val doc2 = friendshipsCollection
-                .document("${friendId}_${currentUserId}")
-                .get()
-                .await()
+            val doc2 = friendshipsCollection.document("${friendId}_${currentUserId}").get().await()
 
             if (doc2.exists()) {
                 val friendship = doc2.toObject(Friendship::class.java)
@@ -360,15 +382,17 @@ class FriendRepositoryImpl(
     override suspend fun getFriends(userId: String): Result<List<UserProfile>> {
         return try {
             // Récupérer toutes les amitiés acceptées de l'utilisateur
-            val friendships = friendshipsCollection
-                .whereEqualTo("userId", userId)
-                .whereEqualTo("status", Friendship.STATUS_ACCEPTED)
-                .get()
-                .await()
+            val friendships =
+                    friendshipsCollection
+                            .whereEqualTo("userId", userId)
+                            .whereEqualTo("status", Friendship.STATUS_ACCEPTED)
+                            .get()
+                            .await()
 
-            val friendIds = friendships.documents.mapNotNull { doc ->
-                doc.toObject(Friendship::class.java)?.friendId
-            }
+            val friendIds =
+                    friendships.documents.mapNotNull { doc ->
+                        doc.toObject(Friendship::class.java)?.friendId
+                    }
 
             if (friendIds.isEmpty()) {
                 return Result.success(emptyList())
@@ -377,10 +401,7 @@ class FriendRepositoryImpl(
             // Récupérer les profils des amis
             val friends = mutableListOf<UserProfile>()
             friendIds.chunked(10).forEach { chunk ->
-                val profiles = profileCollection
-                    .whereIn("uid", chunk)
-                    .get()
-                    .await()
+                val profiles = profileCollection.whereIn("uid", chunk).get().await()
 
                 profiles.documents.mapNotNullTo(friends) { doc ->
                     doc.toObject(UserProfile::class.java)
@@ -399,60 +420,67 @@ class FriendRepositoryImpl(
     }
 
     override fun observeFriends(userId: String): Flow<List<UserProfile>> = callbackFlow {
-        val listenerRegistration = friendshipsCollection
-            .whereEqualTo("userId", userId)
-            .whereEqualTo("status", Friendship.STATUS_ACCEPTED)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e(TAG, "Erreur lors de l'observation des amis", error)
-                    trySend(emptyList())
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null) {
-                    val friendIds = snapshot.documents.mapNotNull { doc ->
-                        doc.toObject(Friendship::class.java)?.friendId
-                    }
-
-                    if (friendIds.isEmpty()) {
-                        trySend(emptyList())
-                        return@addSnapshotListener
-                    }
-
-                    friendIds.chunked(10).forEach { chunk ->
-                        profileCollection
-                            .whereIn("uid", chunk)
-                            .get()
-                            .addOnSuccessListener { profiles ->
-                                val friends = profiles.documents.mapNotNull { doc ->
-                                    doc.toObject(UserProfile::class.java)
-                                }.sortedByDescending { it.xp }
-
-                                trySend(friends)
+        val listenerRegistration =
+                friendshipsCollection
+                        .whereEqualTo("userId", userId)
+                        .whereEqualTo("status", Friendship.STATUS_ACCEPTED)
+                        .addSnapshotListener { snapshot, error ->
+                            if (error != null) {
+                                Log.e(TAG, "Erreur lors de l'observation des amis", error)
+                                trySend(emptyList())
+                                return@addSnapshotListener
                             }
-                            .addOnFailureListener { e ->
-                                Log.e(TAG, "Erreur lors de la récupération des profils", e)
+
+                            if (snapshot != null) {
+                                val friendIds =
+                                        snapshot.documents.mapNotNull { doc ->
+                                            doc.toObject(Friendship::class.java)?.friendId
+                                        }
+
+                                if (friendIds.isEmpty()) {
+                                    trySend(emptyList())
+                                    return@addSnapshotListener
+                                }
+
+                                friendIds.chunked(10).forEach { chunk ->
+                                    profileCollection
+                                            .whereIn("uid", chunk)
+                                            .get()
+                                            .addOnSuccessListener { profiles ->
+                                                val friends =
+                                                        profiles.documents
+                                                                .mapNotNull { doc ->
+                                                                    doc.toObject(
+                                                                            UserProfile::class.java
+                                                                    )
+                                                                }
+                                                                .sortedByDescending { it.xp }
+
+                                                trySend(friends)
+                                            }
+                                            .addOnFailureListener { e ->
+                                                Log.e(
+                                                        TAG,
+                                                        "Erreur lors de la récupération des profils",
+                                                        e
+                                                )
+                                                trySend(emptyList())
+                                            }
+                                }
+                            } else {
                                 trySend(emptyList())
                             }
-                    }
-                } else {
-                    trySend(emptyList())
-                }
-            }
+                        }
 
-        awaitClose {
-            listenerRegistration.remove()
-        }
+        awaitClose { listenerRegistration.remove() }
     }
 
     override suspend fun areFriends(userId: String, friendId: String): Boolean {
         return try {
-            val doc = friendshipsCollection
-                .document("${userId}_${friendId}")
-                .get()
-                .await()
+            val doc = friendshipsCollection.document("${userId}_${friendId}").get().await()
 
-            doc.exists() && doc.toObject(Friendship::class.java)?.status == Friendship.STATUS_ACCEPTED
+            doc.exists() &&
+                    doc.toObject(Friendship::class.java)?.status == Friendship.STATUS_ACCEPTED
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors de la vérification d'amitié", e)
             false
@@ -476,14 +504,12 @@ class FriendRepositoryImpl(
 
     override suspend fun getNotifications(userId: String): Result<List<Notification>> {
         return try {
-            val notifications = notificationCollection
-                .whereEqualTo("userId", userId)
-                .get()
-                .await()
+            val notifications = notificationCollection.whereEqualTo("userId", userId).get().await()
 
-            val notificationList = notifications.documents.mapNotNull { doc ->
-                doc.toObject(Notification::class.java)
-            }.sortedByDescending { it.createdAt }
+            val notificationList =
+                    notifications.documents
+                            .mapNotNull { doc -> doc.toObject(Notification::class.java) }
+                            .sortedByDescending { it.createdAt }
 
             Log.d(TAG, "Récupéré ${notificationList.size} notifications pour $userId")
             Result.success(notificationList)
@@ -495,9 +521,7 @@ class FriendRepositoryImpl(
 
     override suspend fun markNotificationAsRead(notificationId: String): Result<Unit> {
         return try {
-            notificationCollection.document(notificationId)
-                .update("read", true)
-                .await()
+            notificationCollection.document(notificationId).update("read", true).await()
 
             Log.d(TAG, "Notification $notificationId marquée comme lue")
             Result.success(Unit)
@@ -519,4 +543,3 @@ class FriendRepositoryImpl(
         }
     }
 }
-
