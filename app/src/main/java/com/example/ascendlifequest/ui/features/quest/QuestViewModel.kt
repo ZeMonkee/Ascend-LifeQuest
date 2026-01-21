@@ -63,7 +63,7 @@ class QuestViewModel(
      */
     suspend fun checkAndClearQuestsForNewUser(context: Context, userId: String): Boolean {
         if (QuestHelper.isUserDifferent(context, userId)) {
-            Log.d("QuestViewModel", "🔄 Utilisateur différent détecté - Nettoyage des quêtes")
+            Log.d("QuestViewModel", "Utilisateur différent détecté - Nettoyage des quêtes")
             Log.d("QuestViewModel", "   Ancien userId: ${QuestHelper.getQuestUserId(context)}")
             Log.d("QuestViewModel", "   Nouveau userId: $userId")
 
@@ -73,13 +73,13 @@ class QuestViewModel(
             // Réinitialiser pour le nouvel utilisateur
             QuestHelper.resetForNewUser(context, userId)
 
-            Log.d("QuestViewModel", "✅ Base de données des quêtes vidée pour le nouvel utilisateur")
+            Log.d("QuestViewModel", "Base de données des quêtes vidée pour le nouvel utilisateur")
             return true
         } else {
             // Si c'est le même utilisateur ou premier lancement, on sauvegarde l'userId
             if (QuestHelper.getQuestUserId(context).isEmpty()) {
                 QuestHelper.setQuestUserId(context, userId)
-                Log.d("QuestViewModel", "📝 Premier lancement - userId sauvegardé: $userId")
+                Log.d("QuestViewModel", "Premier lancement - userId sauvegardé: $userId")
             }
             return false
         }
@@ -117,7 +117,7 @@ class QuestViewModel(
     fun generateInitialQuests(context: Context, userId: String) {
         // Vérifier si la génération initiale a déjà été lancée cette session
         if (QuestHelper.hasInitialGenerationBeenDone()) {
-            Log.d("QuestViewModel", "⏭️ Génération initiale déjà effectuée cette session, ignorée")
+            Log.d("QuestViewModel", "Génération initiale déjà effectuée cette session, ignorée")
             _isLoading.value = false
             return
         }
@@ -131,7 +131,7 @@ class QuestViewModel(
             if (currentCounter >= maxQuests) {
                 Log.d(
                         "QuestViewModel",
-                        "⏭️ Maximum de quêtes déjà atteint ($currentCounter/$maxQuests)"
+                        "Maximum de quêtes déjà atteint ($currentCounter/$maxQuests)"
                 )
                 _isLoading.value = false
                 return@launch
@@ -161,7 +161,7 @@ class QuestViewModel(
                 if (consecutiveFailures >= maxConsecutiveFailures) {
                     Log.w(
                             "QuestViewModel",
-                            "⚠️ Arrêt après $maxConsecutiveFailures échecs consécutifs. Affichage des quêtes générées."
+                            "Arrêt après $maxConsecutiveFailures échecs consécutifs. Affichage des quêtes générées."
                     )
                     break
                 }
@@ -181,7 +181,7 @@ class QuestViewModel(
                         _generationProgress.value = QuestHelper.getQuestCounter(context)
                         Log.d(
                                 "QuestViewModel",
-                                "✅ Quête générée (${_generationProgress.value}/$maxQuests) : ${newQuest.nom}"
+                                "Quête générée (${_generationProgress.value}/$maxQuests) : ${newQuest.nom}"
                         )
 
                         // Refresh quests locally
@@ -190,7 +190,7 @@ class QuestViewModel(
                         consecutiveFailures++
                         Log.w(
                                 "QuestViewModel",
-                                "⚠️ Échec génération ($consecutiveFailures/$maxConsecutiveFailures), retry dans 5s..."
+                                "Échec génération ($consecutiveFailures/$maxConsecutiveFailures), retry dans 5s..."
                         )
                         delay(5000)
                     }
@@ -198,7 +198,7 @@ class QuestViewModel(
                     consecutiveFailures++
                     Log.e(
                             "QuestViewModel",
-                            "❌ Erreur génération ($consecutiveFailures/$maxConsecutiveFailures), retry dans 5s...",
+                            "Erreur génération ($consecutiveFailures/$maxConsecutiveFailures), retry dans 5s...",
                             e
                     )
                     delay(5000)
@@ -214,10 +214,10 @@ class QuestViewModel(
             if (consecutiveFailures >= maxConsecutiveFailures) {
                 Log.w(
                         "QuestViewModel",
-                        "⚠️ Génération arrêtée après $maxConsecutiveFailures échecs. $generatedCount quêtes affichées."
+                        "Génération arrêtée après $maxConsecutiveFailures échecs. $generatedCount quêtes affichées."
                 )
             } else {
-                Log.d("QuestViewModel", "✅ Génération terminée. $generatedCount quêtes générées.")
+                Log.d("QuestViewModel", "Génération terminée. $generatedCount quêtes générées.")
             }
         }
     }
@@ -238,10 +238,10 @@ class QuestViewModel(
                     if (newQuest != null) {
                         QuestHelper.incrementQuestCounter(context)
                         _questCounter.value = QuestHelper.getQuestCounter(context)
-                        Log.d("QuestViewModel", "✅ Quête générée : ${newQuest.nom}")
+                        Log.d("QuestViewModel", "Quête générée : ${newQuest.nom}")
                         loadData(context, userId) // Refresh full data
                     } else {
-                        Log.e("QuestViewModel", "❌ Échec génération quête")
+                        Log.e("QuestViewModel", "Échec génération quête")
                     }
                 }
             }
@@ -281,14 +281,14 @@ class QuestViewModel(
                         // Ajouter l'XP
                         if (xpAmount > 0) {
                             profileRepository.updateXp(userId, xpAmount.toLong())
-                            Log.d("QuestViewModel", "✅ XP ajoutée au profil Firebase: +$xpAmount")
+                            Log.d("QuestViewModel", "XP ajoutée au profil Firebase: +$xpAmount")
                         }
 
                         // Incrémenter le compteur de quêtes réalisées
                         profileRepository.incrementQuestsCompleted(userId)
-                        Log.d("QuestViewModel", "✅ Quêtes réalisées incrémentées dans Firebase")
+                        Log.d("QuestViewModel", "Quêtes réalisées incrémentées dans Firebase")
                     } catch (e: Exception) {
-                        Log.e("QuestViewModel", "❌ Erreur mise à jour profil Firebase", e)
+                        Log.e("QuestViewModel", "Erreur mise à jour profil Firebase", e)
                     }
                 }
             } else {
