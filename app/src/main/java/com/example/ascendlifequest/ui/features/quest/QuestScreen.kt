@@ -71,7 +71,7 @@ fun QuestScreen(
         viewModel.loadData(context, userId)
     }
 
-    // 🔥 Dialog pour afficher le max atteint
+    // Dialog pour afficher le max atteint
     if (showMaxQuestsDialog) {
         AlertDialog(
                 onDismissRequest = { viewModel.dismissDialog() },
@@ -155,7 +155,7 @@ fun QuestScreen(
                             color = AppColor.MinusTextColor
                     )
 
-                    // 🔘 BOUTON CRÉER UNE QUÊTE
+                    // BOUTON CRÉER UNE QUÊTE
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
                             onClick = { viewModel.generateNewQuest(context, userId) },
@@ -183,7 +183,7 @@ fun QuestScreen(
                     ) { Text("Vider la BDD (Debug)") }
                 }
 
-                // 🔥 Loader pendant la génération initiale
+                // Loader pendant la génération initiale
                 if (isGenerating) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(
