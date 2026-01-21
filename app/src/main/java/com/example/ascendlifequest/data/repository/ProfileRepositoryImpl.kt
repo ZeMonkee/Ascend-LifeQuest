@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class ProfileRepositoryImpl(
-    private val authRepository: AuthRepository,
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+        private val authRepository: AuthRepository,
+        private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) : ProfileRepository {
 
     companion object {
@@ -65,7 +65,8 @@ class ProfileRepositoryImpl(
 
     override suspend fun saveProfile(profile: UserProfile): Result<Unit> {
         return try {
-            val userId = if (profile.id.isNotEmpty()) profile.id else authRepository.getCurrentUserId()
+            val userId =
+                    if (profile.id.isNotEmpty()) profile.id else authRepository.getCurrentUserId()
             if (userId.isEmpty()) {
                 return Result.failure(Exception("ID utilisateur invalide"))
             }
@@ -79,7 +80,10 @@ class ProfileRepositoryImpl(
         }
     }
 
-    override suspend fun createProfileForNewUser(userId: String, email: String): Result<UserProfile> {
+    override suspend fun createProfileForNewUser(
+            userId: String,
+            email: String
+    ): Result<UserProfile> {
         return try {
             // Vérifier si le profil existe déjà
             val existingProfile = getProfileById(userId).getOrNull()
@@ -91,31 +95,33 @@ class ProfileRepositoryImpl(
             // Extraire le pseudo de l'email (partie avant @)
             val pseudo = email.substringBefore("@").take(20)
 
-            val newProfile = UserProfile(
-                id = userId,
-                uid = userId,  // UID Firebase pour identification unique
-                pseudo = pseudo,
-                photoUrl = "",
-                xp = 0,
-                quetesRealisees = 0,
-                streak = 0,
-                dateDeCreation = Timestamp.now(),
-                rang = 0,
-                online = true
-            )
+            val newProfile =
+                    UserProfile(
+                            id = userId,
+                            uid = userId, // UID Firebase pour identification unique
+                            pseudo = pseudo,
+                            photoUrl = "",
+                            xp = 0,
+                            quetesRealisees = 0,
+                            streak = 0,
+                            dateDeCreation = Timestamp.now(),
+                            rang = 0,
+                            online = true
+                    )
 
             // Créer un map pour inclure explicitement l'UID comme champ
-            val profileData = hashMapOf(
-                "uid" to userId,  // ID Firebase pour recherche unique
-                "pseudo" to newProfile.pseudo,
-                "photoUrl" to newProfile.photoUrl,
-                "xp" to newProfile.xp,
-                "quetesRealisees" to newProfile.quetesRealisees,
-                "streak" to newProfile.streak,
-                "dateDeCreation" to newProfile.dateDeCreation,
-                "rang" to newProfile.rang,
-                "online" to newProfile.online
-            )
+            val profileData =
+                    hashMapOf(
+                            "uid" to userId, // ID Firebase pour recherche unique
+                            "pseudo" to newProfile.pseudo,
+                            "photoUrl" to newProfile.photoUrl,
+                            "xp" to newProfile.xp,
+                            "quetesRealisees" to newProfile.quetesRealisees,
+                            "streak" to newProfile.streak,
+                            "dateDeCreation" to newProfile.dateDeCreation,
+                            "rang" to newProfile.rang,
+                            "online" to newProfile.online
+                    )
 
             profileCollection.document(userId).set(profileData).await()
             Log.d(TAG, "Nouveau profil créé pour: $userId avec UID comme champ")
@@ -129,11 +135,13 @@ class ProfileRepositoryImpl(
     override suspend fun updateXp(userId: String, xpToAdd: Long): Result<Unit> {
         return try {
             val docRef = profileCollection.document(userId)
-            firestore.runTransaction { transaction ->
-                val snapshot = transaction.get(docRef)
-                val currentXp = snapshot.getLong("xp") ?: 0L
-                transaction.update(docRef, "xp", currentXp + xpToAdd)
-            }.await()
+            firestore
+                    .runTransaction { transaction ->
+                        val snapshot = transaction.get(docRef)
+                        val currentXp = snapshot.getLong("xp") ?: 0L
+                        transaction.update(docRef, "xp", currentXp + xpToAdd)
+                    }
+                    .await()
             Log.d(TAG, "XP mis à jour pour $userId: +$xpToAdd")
 
             // Mettre à jour le rang après le changement d'XP
@@ -149,11 +157,13 @@ class ProfileRepositoryImpl(
     override suspend fun incrementQuestsCompleted(userId: String): Result<Unit> {
         return try {
             val docRef = profileCollection.document(userId)
-            firestore.runTransaction { transaction ->
-                val snapshot = transaction.get(docRef)
-                val currentQuests = snapshot.getLong("quetesRealisees")?.toInt() ?: 0
-                transaction.update(docRef, "quetesRealisees", currentQuests + 1)
-            }.await()
+            firestore
+                    .runTransaction { transaction ->
+                        val snapshot = transaction.get(docRef)
+                        val currentQuests = snapshot.getLong("quetesRealisees")?.toInt() ?: 0
+                        transaction.update(docRef, "quetesRealisees", currentQuests + 1)
+                    }
+                    .await()
             Log.d(TAG, "Quêtes complétées incrémentées pour $userId")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -164,9 +174,7 @@ class ProfileRepositoryImpl(
 
     override suspend fun updateStreak(userId: String, newStreak: Int): Result<Unit> {
         return try {
-            profileCollection.document(userId)
-                .update("streak", newStreak)
-                .await()
+            profileCollection.document(userId).update("streak", newStreak).await()
             Log.d(TAG, "Streak mis à jour pour $userId: $newStreak")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -176,40 +184,36 @@ class ProfileRepositoryImpl(
     }
 
     override fun observeProfile(userId: String): Flow<UserProfile?> = callbackFlow {
-        val listenerRegistration = profileCollection.document(userId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e(TAG, "Erreur lors de l'observation du profil", error)
-                    trySend(null)
-                    return@addSnapshotListener
+        val listenerRegistration =
+                profileCollection.document(userId).addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        Log.e(TAG, "Erreur lors de l'observation du profil", error)
+                        trySend(null)
+                        return@addSnapshotListener
+                    }
+
+                    if (snapshot != null && snapshot.exists()) {
+                        val profile = snapshot.toObject(UserProfile::class.java)
+                        trySend(profile)
+                    } else {
+                        trySend(null)
+                    }
                 }
 
-                if (snapshot != null && snapshot.exists()) {
-                    val profile = snapshot.toObject(UserProfile::class.java)
-                    trySend(profile)
-                } else {
-                    trySend(null)
-                }
-            }
-
-        awaitClose {
-            listenerRegistration.remove()
-        }
+        awaitClose { listenerRegistration.remove() }
     }
 
     override suspend fun getUserRank(userId: String): Result<Int> {
         return try {
             // Récupérer l'XP de l'utilisateur actuel
-            val currentUserProfile = getProfileById(userId).getOrNull()
-                ?: return Result.failure(Exception("Profil non trouvé"))
+            val currentUserProfile =
+                    getProfileById(userId).getOrNull()
+                            ?: return Result.failure(Exception("Profil non trouvé"))
 
             val userXp = currentUserProfile.xp
 
             // Compter combien d'utilisateurs ont plus d'XP
-            val usersWithMoreXp = profileCollection
-                .whereGreaterThan("xp", userXp)
-                .get()
-                .await()
+            val usersWithMoreXp = profileCollection.whereGreaterThan("xp", userXp).get().await()
 
             val rank = usersWithMoreXp.size() + 1
             Log.d(TAG, "Rang calculé pour $userId: $rank (XP: $userXp)")
@@ -226,9 +230,7 @@ class ProfileRepositoryImpl(
                 return Result.failure(Exception("Le pseudo doit contenir entre 1 et 20 caractères"))
             }
 
-            profileCollection.document(userId)
-                .update("pseudo", newPseudo.trim())
-                .await()
+            profileCollection.document(userId).update("pseudo", newPseudo.trim()).await()
             Log.d(TAG, "Pseudo mis à jour pour $userId: $newPseudo")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -237,18 +239,35 @@ class ProfileRepositoryImpl(
         }
     }
 
-    /**
-     * Met à jour le rang de l'utilisateur dans Firestore
-     */
+    /** Met à jour le rang de l'utilisateur dans Firestore */
     private suspend fun updateUserRank(userId: String) {
         try {
             val rank = getUserRank(userId).getOrNull() ?: return
-            profileCollection.document(userId)
-                .update("rang", rank)
-                .await()
+            profileCollection.document(userId).update("rang", rank).await()
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors de la mise à jour du rang", e)
         }
     }
-}
 
+    override suspend fun getLeaderboard(limit: Int): Result<List<UserProfile>> {
+        return try {
+            val snapshot =
+                    profileCollection
+                            .orderBy("xp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                            .limit(limit.toLong())
+                            .get()
+                            .await()
+
+            val topUsers = snapshot.toObjects(UserProfile::class.java)
+
+            // Assigner le rang en fonction de la position dans la liste (1-indexed)
+            topUsers.forEachIndexed { index, user -> user.rang = index + 1 }
+
+            Log.d(TAG, "Classement récupéré: ${topUsers.size} utilisateurs")
+            Result.success(topUsers)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de la récupération du classement", e)
+            Result.failure(e)
+        }
+    }
+}
