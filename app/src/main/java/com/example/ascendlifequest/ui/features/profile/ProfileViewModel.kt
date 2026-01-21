@@ -22,8 +22,9 @@ sealed class ProfileUiState {
 }
 
 class ProfileViewModel(
-    private val authRepository: AuthRepository = AuthRepositoryImpl(AuthService()),
-    private val profileRepository: ProfileRepository = ProfileRepositoryImpl(AuthRepositoryImpl(AuthService()))
+        private val authRepository: AuthRepository = AuthRepositoryImpl(AuthService()),
+        private val profileRepository: ProfileRepository =
+                ProfileRepositoryImpl(AuthRepositoryImpl(AuthService()))
 ) : ViewModel() {
 
     companion object {
@@ -40,10 +41,12 @@ class ProfileViewModel(
         loadProfile()
     }
 
+    /** Charge le profil de l'utilisateur connecté */
     /**
-     * Charge le profil de l'utilisateur connecté
+     * Charge le profil d'un utilisateur
+     * @param userId ID de l'utilisateur à charger (null = utilisateur connecté)
      */
-    fun loadProfile() {
+    fun loadProfile(targetUserId: String? = null) {
         viewModelScope.launch {
             _uiState.value = ProfileUiState.Loading
 
@@ -54,73 +57,86 @@ class ProfileViewModel(
                     return@launch
                 }
 
-                val userId = authRepository.getCurrentUserId()
-                if (userId.isEmpty()) {
+                val currentUserId = authRepository.getCurrentUserId()
+                val userIdToLoad = targetUserId ?: currentUserId
+
+                if (userIdToLoad.isEmpty()) {
                     _uiState.value = ProfileUiState.NotLoggedIn
                     return@launch
                 }
 
                 // Récupérer le profil
-                val profileResult = profileRepository.getCurrentUserProfile()
+                val profileResult = profileRepository.getProfileById(userIdToLoad)
 
                 profileResult.fold(
-                    onSuccess = { profile ->
-                        if (profile != null) {
-                            // Récupérer le rang
-                            val rankResult = profileRepository.getUserRank(userId)
-                            val rank = rankResult.getOrNull() ?: profile.rang
+                        onSuccess = { profile ->
+                            if (profile != null) {
+                                // Récupérer le rang
+                                val rankResult = profileRepository.getUserRank(userIdToLoad)
+                                val rank = rankResult.getOrNull() ?: profile.rang
 
-                            _uiState.value = ProfileUiState.Success(profile, rank)
-                            Log.d(TAG, "Profil chargé avec succès: ${profile.pseudo}")
-                        } else {
-                            // Créer un nouveau profil si non existant
-                            val user = authRepository.getCurrentUser()
-                            val email = user?.email ?: "user@unknown.com"
+                                _uiState.value = ProfileUiState.Success(profile, rank)
+                                Log.d(TAG, "Profil chargé avec succès: ${profile.pseudo}")
+                            } else {
+                                // Si c'est l'utilisateur actuel et qu'il n'a pas de profil, on en
+                                // crée un
+                                if (userIdToLoad == currentUserId) {
+                                    val user = authRepository.getCurrentUser()
+                                    val email = user?.email ?: "user@unknown.com"
 
-                            val createResult = profileRepository.createProfileForNewUser(userId, email)
-                            createResult.fold(
-                                onSuccess = { newProfile ->
-                                    _uiState.value = ProfileUiState.Success(newProfile, 1)
-                                    Log.d(TAG, "Nouveau profil créé: ${newProfile.pseudo}")
-                                },
-                                onFailure = { error ->
-                                    _uiState.value = ProfileUiState.Error(
-                                        error.message ?: "Erreur lors de la création du profil"
+                                    val createResult =
+                                            profileRepository.createProfileForNewUser(
+                                                    currentUserId,
+                                                    email
+                                            )
+                                    createResult.fold(
+                                            onSuccess = { newProfile ->
+                                                _uiState.value =
+                                                        ProfileUiState.Success(newProfile, 1)
+                                                Log.d(
+                                                        TAG,
+                                                        "Nouveau profil créé: ${newProfile.pseudo}"
+                                                )
+                                            },
+                                            onFailure = { error ->
+                                                _uiState.value =
+                                                        ProfileUiState.Error(
+                                                                error.message
+                                                                        ?: "Erreur lors de la création du profil"
+                                                        )
+                                            }
                                     )
+                                } else {
+                                    _uiState.value =
+                                            ProfileUiState.Error("Profil utilisateur introuvable")
                                 }
-                            )
+                            }
+                        },
+                        onFailure = { error ->
+                            Log.e(TAG, "Erreur lors du chargement du profil", error)
+                            _uiState.value =
+                                    ProfileUiState.Error(
+                                            error.message ?: "Erreur lors du chargement du profil"
+                                    )
                         }
-                    },
-                    onFailure = { error ->
-                        Log.e(TAG, "Erreur lors du chargement du profil", error)
-                        _uiState.value = ProfileUiState.Error(
-                            error.message ?: "Erreur lors du chargement du profil"
-                        )
-                    }
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Exception lors du chargement du profil", e)
-                _uiState.value = ProfileUiState.Error(
-                    e.message ?: "Erreur inattendue"
-                )
+                _uiState.value = ProfileUiState.Error(e.message ?: "Erreur inattendue")
             }
         }
     }
 
-    /**
-     * Rafraîchit le profil (pull-to-refresh)
-     */
+    /** Rafraîchit le profil (pull-to-refresh) */
     fun refreshProfile() {
         viewModelScope.launch {
             _isRefreshing.value = true
-            loadProfile()
+            loadProfile() // Recharges current or last loaded - simplified for now
             _isRefreshing.value = false
         }
     }
 
-    /**
-     * Met à jour le pseudo de l'utilisateur
-     */
+    /** Met à jour le pseudo de l'utilisateur */
     fun updatePseudo(newPseudo: String) {
         viewModelScope.launch {
             val userId = authRepository.getCurrentUserId()
@@ -131,22 +147,21 @@ class ProfileViewModel(
 
             val result = profileRepository.updatePseudo(userId, newPseudo)
             result.fold(
-                onSuccess = {
-                    // Recharger le profil après mise à jour
-                    loadProfile()
-                },
-                onFailure = { error ->
-                    _uiState.value = ProfileUiState.Error(
-                        error.message ?: "Erreur lors de la mise à jour du pseudo"
-                    )
-                }
+                    onSuccess = {
+                        // Recharger le profil après mise à jour
+                        loadProfile()
+                    },
+                    onFailure = { error ->
+                        _uiState.value =
+                                ProfileUiState.Error(
+                                        error.message ?: "Erreur lors de la mise à jour du pseudo"
+                                )
+                    }
             )
         }
     }
 
-    /**
-     * Ajoute de l'XP à l'utilisateur (appelé après complétion de quête)
-     */
+    /** Ajoute de l'XP à l'utilisateur (appelé après complétion de quête) */
     fun addXp(xpAmount: Long) {
         viewModelScope.launch {
             val userId = authRepository.getCurrentUserId()
@@ -157,9 +172,7 @@ class ProfileViewModel(
         }
     }
 
-    /**
-     * Incrémente le nombre de quêtes réalisées
-     */
+    /** Incrémente le nombre de quêtes réalisées */
     fun incrementQuestsCompleted() {
         viewModelScope.launch {
             val userId = authRepository.getCurrentUserId()
@@ -170,4 +183,3 @@ class ProfileViewModel(
         }
     }
 }
-
