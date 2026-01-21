@@ -62,10 +62,16 @@ class MainActivity : ComponentActivity() {
                     composable("profil") { ProfilScreen(navController) }
                     composable("preference") { PreferenceScreen(navController) }
                     composable(
-                        route = "chat/{friendId}",
-                        arguments = listOf(
-                            navArgument("friendId") { type = NavType.StringType }
-                        )
+                            route = "profil/{userId}",
+                            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getString("userId")
+                        ProfilScreen(navController = navController, userId = userId)
+                    }
+                    composable(
+                            route = "chat/{friendId}",
+                            arguments =
+                                    listOf(navArgument("friendId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
                         ChatScreen(navController = navController, friendId = friendId)
