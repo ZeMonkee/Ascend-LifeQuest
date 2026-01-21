@@ -27,6 +27,7 @@ fun FriendsContent(
                 FriendItem(
                         user = friend,
                         onMessageClick = { navController.navigate("chat/${friend.uid}") },
+                        onClick = { navController.navigate("profil/${friend.uid}") },
                         onLongPress = { onDeleteFriend(friend) }
                 )
             }
