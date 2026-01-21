@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 class QuestViewModel(
         private val questRepository: QuestRepository,
         private val questGeneratorRepository: QuestGeneratorRepository,
-        private val authRepository: AuthRepository? = null,
+        authRepository: AuthRepository? = null,
         private val profileRepository: ProfileRepository? = null
 ) : ViewModel() {
 
@@ -48,7 +48,6 @@ class QuestViewModel(
     val generationProgress: StateFlow<Int> = _generationProgress.asStateFlow()
 
     private val _questCounter = MutableStateFlow(0)
-    val questCounter: StateFlow<Int> = _questCounter.asStateFlow()
 
     private val _completedQuestsCount = MutableStateFlow(0)
     val completedQuestsCount: StateFlow<Int> = _completedQuestsCount.asStateFlow()

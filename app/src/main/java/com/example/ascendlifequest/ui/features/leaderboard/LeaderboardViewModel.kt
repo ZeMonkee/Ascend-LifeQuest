@@ -46,7 +46,6 @@ class LeaderboardViewModel(
     val filterMode: StateFlow<LeaderboardFilter> = _filterMode.asStateFlow()
 
     private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     init {
         loadLeaderboard()
@@ -101,7 +100,6 @@ class LeaderboardViewModel(
 
                     val allUsers =
                             (friends + (currentUser ?: return@launch))
-                                    .filterNotNull()
                                     .distinctBy {
                                         it.uid
                                     } // Avoid duplicates if self is in friends list (unlikely but

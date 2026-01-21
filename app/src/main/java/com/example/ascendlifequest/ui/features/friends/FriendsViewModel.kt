@@ -66,7 +66,6 @@ class FriendsViewModel(
     val pendingRequestsCount: StateFlow<Int> = _pendingRequestsCount.asStateFlow()
 
     private val _notificationsCount = MutableStateFlow(0)
-    val notificationsCount: StateFlow<Int> = _notificationsCount.asStateFlow()
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
@@ -344,10 +343,6 @@ class FriendsViewModel(
                     onFailure = { error -> Log.e(TAG, "Erreur suppression ami", error) }
             )
         }
-    }
-
-    fun clearRequestSentMessage() {
-        _requestSentMessage.value = null
     }
 
     fun openPendingRequestsDialog() {

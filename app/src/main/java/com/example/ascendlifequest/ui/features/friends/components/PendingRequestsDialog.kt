@@ -94,8 +94,7 @@ fun PendingRequestsDialog(
                             items(notifications) { notification ->
                                 NotificationItem(
                                         message = notification.message,
-                                        fromUserPseudo = notification.fromUserPseudo,
-                                        onDismiss = { onDeleteNotification(notification.id) }
+                                    onDismiss = { onDeleteNotification(notification.id) }
                                 )
                             }
                         }

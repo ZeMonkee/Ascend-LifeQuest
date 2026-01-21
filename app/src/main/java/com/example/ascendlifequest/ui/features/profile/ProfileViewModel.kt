@@ -35,7 +35,6 @@ class ProfileViewModel(
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     init {
         loadProfile()
@@ -44,7 +43,6 @@ class ProfileViewModel(
     /** Charge le profil de l'utilisateur connecté */
     /**
      * Charge le profil d'un utilisateur
-     * @param userId ID de l'utilisateur à charger (null = utilisateur connecté)
      */
     fun loadProfile(targetUserId: String? = null) {
         viewModelScope.launch {
@@ -127,59 +125,4 @@ class ProfileViewModel(
         }
     }
 
-    /** Rafraîchit le profil (pull-to-refresh) */
-    fun refreshProfile() {
-        viewModelScope.launch {
-            _isRefreshing.value = true
-            loadProfile() // Recharges current or last loaded - simplified for now
-            _isRefreshing.value = false
-        }
-    }
-
-    /** Met à jour le pseudo de l'utilisateur */
-    fun updatePseudo(newPseudo: String) {
-        viewModelScope.launch {
-            val userId = authRepository.getCurrentUserId()
-            if (userId.isEmpty()) {
-                _uiState.value = ProfileUiState.Error("Utilisateur non connecté")
-                return@launch
-            }
-
-            val result = profileRepository.updatePseudo(userId, newPseudo)
-            result.fold(
-                    onSuccess = {
-                        // Recharger le profil après mise à jour
-                        loadProfile()
-                    },
-                    onFailure = { error ->
-                        _uiState.value =
-                                ProfileUiState.Error(
-                                        error.message ?: "Erreur lors de la mise à jour du pseudo"
-                                )
-                    }
-            )
-        }
-    }
-
-    /** Ajoute de l'XP à l'utilisateur (appelé après complétion de quête) */
-    fun addXp(xpAmount: Long) {
-        viewModelScope.launch {
-            val userId = authRepository.getCurrentUserId()
-            if (userId.isEmpty()) return@launch
-
-            profileRepository.updateXp(userId, xpAmount)
-            loadProfile() // Recharger pour afficher les nouvelles données
-        }
-    }
-
-    /** Incrémente le nombre de quêtes réalisées */
-    fun incrementQuestsCompleted() {
-        viewModelScope.launch {
-            val userId = authRepository.getCurrentUserId()
-            if (userId.isEmpty()) return@launch
-
-            profileRepository.incrementQuestsCompleted(userId)
-            loadProfile()
-        }
-    }
 }

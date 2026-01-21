@@ -255,7 +255,7 @@ fun SearchUserItem(user: UserProfile, onAddClick: () -> Unit, isAdding: Boolean 
 
 /** Composant pour afficher une notification (ex: demande d'ami refusée) */
 @Composable
-fun NotificationItem(message: String, fromUserPseudo: String, onDismiss: () -> Unit) {
+fun NotificationItem(message: String, onDismiss: () -> Unit) {
         Card(
                 modifier = Modifier.fillMaxWidth().height(70.dp),
                 shape = RoundedCornerShape(12.dp),
