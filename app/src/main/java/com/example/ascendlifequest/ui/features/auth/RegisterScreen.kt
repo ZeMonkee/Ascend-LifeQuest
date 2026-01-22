@@ -85,8 +85,13 @@ fun RegisterScreen(navController: NavHostController) {
             TextField(
                 value = email,
                 onValueChange = { email = it },
-                placeholder = { Text("Adresse e-mail") },
+                placeholder = { Text("Adresse e-mail", color = Color.Black.copy(alpha = 0.6f)) },
                 colors = TextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedPlaceholderColor = Color.Black.copy(alpha = 0.6f),
+                    unfocusedPlaceholderColor = Color.Black.copy(alpha = 0.6f),
+                    cursorColor = Color.Black,
                     focusedContainerColor = Color.White.copy(alpha = 0.85f),
                     unfocusedContainerColor = Color.White.copy(alpha = 0.85f),
                     disabledContainerColor = Color.White.copy(alpha = 0.85f),
@@ -108,9 +113,14 @@ fun RegisterScreen(navController: NavHostController) {
             TextField(
                 value = password,
                 onValueChange = { password = it },
-                placeholder = { Text("Mot de passe") },
+                placeholder = { Text("Mot de passe", color = Color.Black.copy(alpha = 0.6f)) },
                 visualTransformation = PasswordVisualTransformation(),
                 colors = TextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedPlaceholderColor = Color.Black.copy(alpha = 0.6f),
+                    unfocusedPlaceholderColor = Color.Black.copy(alpha = 0.6f),
+                    cursorColor = Color.Black,
                     focusedContainerColor = Color.White.copy(alpha = 0.85f),
                     unfocusedContainerColor = Color.White.copy(alpha = 0.85f),
                     disabledContainerColor = Color.White.copy(alpha = 0.85f),
@@ -132,9 +142,14 @@ fun RegisterScreen(navController: NavHostController) {
             TextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                placeholder = { Text("Confirmer le mot de passe") },
+                placeholder = { Text("Confirmer le mot de passe", color = Color.Black.copy(alpha = 0.6f)) },
                 visualTransformation = PasswordVisualTransformation(),
                 colors = TextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedPlaceholderColor = Color.Black.copy(alpha = 0.6f),
+                    unfocusedPlaceholderColor = Color.Black.copy(alpha = 0.6f),
+                    cursorColor = Color.Black,
                     focusedContainerColor = Color.White.copy(alpha = 0.85f),
                     unfocusedContainerColor = Color.White.copy(alpha = 0.85f),
                     disabledContainerColor = Color.White.copy(alpha = 0.85f),
