@@ -172,6 +172,26 @@ class ProfileRepositoryImpl(
         }
     }
 
+    // Nouvelle méthode : décrémenter le compteur de quêtes réalisées (sans aller en négatif)
+    override suspend fun decrementQuestsCompleted(userId: String): Result<Unit> {
+        return try {
+            val docRef = profileCollection.document(userId)
+            firestore
+                    .runTransaction { transaction ->
+                        val snapshot = transaction.get(docRef)
+                        val currentQuests = snapshot.getLong("quetesRealisees")?.toInt() ?: 0
+                        val newVal = (currentQuests - 1).coerceAtLeast(0)
+                        transaction.update(docRef, "quetesRealisees", newVal)
+                    }
+                    .await()
+            Log.d(TAG, "Quêtes complétées décrémentées pour $userId")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de la décrémentation des quêtes", e)
+            Result.failure(e)
+        }
+    }
+
     override suspend fun updateStreak(userId: String, newStreak: Int): Result<Unit> {
         return try {
             profileCollection.document(userId).update("streak", newStreak).await()
