@@ -102,6 +102,11 @@ fun LoginScreen(navController: NavHostController) {
                 onValueChange = { email = it },
                 placeholder = { Text("Adresse e-mail") },
                 colors = TextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedPlaceholderColor = Color.Black.copy(alpha = 0.6f),
+                    unfocusedPlaceholderColor = Color.Black.copy(alpha = 0.6f),
+                    cursorColor = Color.Black,
                     focusedContainerColor = Color.White.copy(alpha = 0.85f),
                     unfocusedContainerColor = Color.White.copy(alpha = 0.85f),
                     disabledContainerColor = Color.White.copy(alpha = 0.85f),
@@ -126,6 +131,11 @@ fun LoginScreen(navController: NavHostController) {
                 placeholder = { Text("Mot de passe") },
                 visualTransformation = PasswordVisualTransformation(),
                 colors = TextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedPlaceholderColor = Color.Black.copy(alpha = 0.6f),
+                    unfocusedPlaceholderColor = Color.Black.copy(alpha = 0.6f),
+                    cursorColor = Color.Black,
                     focusedContainerColor = Color.White.copy(alpha = 0.85f),
                     unfocusedContainerColor = Color.White.copy(alpha = 0.85f),
                     disabledContainerColor = Color.White.copy(alpha = 0.85f),
