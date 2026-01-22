@@ -145,7 +145,7 @@ fun QuestCategory(
                         else TextDecoration.None
                     )
 
-                    if (true) {
+                    if (quest.dependantMeteo && isWeatherBad) {
                         Text(
                             text = "Attention météo défavorable !",
                             color = AppColor.Or,
