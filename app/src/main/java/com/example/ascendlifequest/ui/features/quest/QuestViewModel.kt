@@ -1,7 +1,9 @@
 package com.example.ascendlifequest.ui.features.quest
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -62,6 +64,23 @@ class QuestViewModel(
 
     private val _showMaxQuestsDialog = MutableStateFlow(false)
     val showMaxQuestsDialog: StateFlow<Boolean> = _showMaxQuestsDialog.asStateFlow()
+
+    /**
+     * Verifie si un nouveau jour a commence et reinitialise les quetes si necessaire.
+     * @return true si les quetes ont ete reinitialisees (nouveau jour), false sinon
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun checkAndResetForNewDay(context: Context, userId: String): Boolean {
+        if (QuestHelper.shouldResetQuestsForNewDay(context, userId)) {
+            Log.d("QuestViewModel", "Nouveau jour - Nettoyage des quetes pour regeneration")
+
+            questRepository.clearAllQuests()
+
+            Log.d("QuestViewModel", "Base de donnees des quetes videe pour le nouveau jour")
+            return true
+        }
+        return false
+    }
 
     /**
      * Vérifie si l'utilisateur actuel est différent de celui qui a généré les quêtes. Si oui, vide
