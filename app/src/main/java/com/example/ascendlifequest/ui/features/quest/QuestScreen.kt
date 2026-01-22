@@ -1,5 +1,7 @@
 package com.example.ascendlifequest.ui.features.quest
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,6 +36,7 @@ import com.example.ascendlifequest.util.QuestHelper
  * @param navController Navigation controller for screen transitions
  * @param viewModel ViewModel managing quest state and operations
  */
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun QuestScreen(
         navController: NavHostController,

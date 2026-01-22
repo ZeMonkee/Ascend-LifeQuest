@@ -48,7 +48,7 @@ object QuestHelper {
     }
 
     fun setQuestUserId(context: Context, userId: String) {
-        getGlobalPreferences(context).edit().putString(QUEST_USER_ID_KEY, userId).apply()
+        getGlobalPreferences(context).edit { putString(QUEST_USER_ID_KEY, userId) }
     }
 
     /**
@@ -80,12 +80,12 @@ object QuestHelper {
         val prefs = getGlobalPreferences(context)
         val currentCount = prefs.getInt(QUEST_COUNTER_KEY, 0)
         val newCount = currentCount + 1
-        prefs.edit().putInt(QUEST_COUNTER_KEY, newCount).apply()
+        prefs.edit { putInt(QUEST_COUNTER_KEY, newCount) }
         return newCount
     }
 
     fun resetQuestCounter(context: Context) {
-        getGlobalPreferences(context).edit().putInt(QUEST_COUNTER_KEY, 0).apply()
+        getGlobalPreferences(context).edit { putInt(QUEST_COUNTER_KEY, 0) }
     }
 
     fun canGenerateMoreQuests(context: Context): Boolean {
@@ -123,7 +123,7 @@ object QuestHelper {
         return dateString?.let {
             try {
                 LocalDate.parse(it, dateFormatter)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 null
             }
         }
