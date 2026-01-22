@@ -65,15 +65,18 @@ fun QuestScreen(
     val maxQuests = QuestHelper.getMaxQuests()
 
     LaunchedEffect(Unit) {
-        // Vérifier si l'utilisateur a changé et nettoyer les quêtes si nécessaire
+        // Verifier si c'est un nouveau jour et nettoyer les quetes si necessaire
+        val wasResetForNewDay = viewModel.checkAndResetForNewDay(context, userId)
+
+        // Verifier si l'utilisateur a change et nettoyer les quetes si necessaire
         val wasCleared = viewModel.checkAndClearQuestsForNewUser(context, userId)
 
-        if (wasCleared) {
-            // Si les quêtes ont été vidées, on force la régénération
+        if (wasResetForNewDay || wasCleared) {
+            // Si les quetes ont ete videes, on force la regeneration
             QuestHelper.resetInitialGenerationFlag()
         }
 
-        // Générer les quêtes initiales puis charger les données
+        // Generer les quetes initiales puis charger les donnees
         viewModel.generateInitialQuests(context, userId)
         viewModel.loadData(context, userId)
     }
