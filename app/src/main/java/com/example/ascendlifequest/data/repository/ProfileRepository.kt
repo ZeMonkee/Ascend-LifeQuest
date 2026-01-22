@@ -22,6 +22,9 @@ interface ProfileRepository {
     /** Incrémente le compteur de quêtes réalisées */
     suspend fun incrementQuestsCompleted(userId: String): Result<Unit>
 
+    /** Décrémente le compteur de quêtes réalisées */
+    suspend fun decrementQuestsCompleted(userId: String): Result<Unit>
+
     /** Met à jour le streak de l'utilisateur */
     suspend fun updateStreak(userId: String, newStreak: Int): Result<Unit>
 
