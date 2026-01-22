@@ -277,10 +277,10 @@ class QuestViewModel(
                 val userId = _currentUserId.value
                 if (userId.isNotEmpty() && profileRepository != null) {
                     try {
-                        // Ajouter l'XP
-                        if (xpAmount > 0) {
+                        // Ajouter l'XP si fourni (peut être >0)
+                        if (xpAmount != 0) {
                             profileRepository.updateXp(userId, xpAmount.toLong())
-                            Log.d("QuestViewModel", "XP ajoutée au profil Firebase: +$xpAmount")
+                            Log.d("QuestViewModel", "XP modifiée au profil Firebase: $xpAmount")
                         }
 
                         // Incrémenter le compteur de quêtes réalisées
@@ -293,19 +293,23 @@ class QuestViewModel(
             } else {
                 _completedQuestsCount.value = (_completedQuestsCount.value - 1).coerceAtLeast(0)
 
-                // Note: On ne retire pas l'XP ni les quêtes si on annule (optionnel)
-                // Si vous voulez retirer l'XP lors de l'annulation, décommentez ci-dessous:
-                /*
+                // Retirer l'XP si xpAmount négatif ou non nul
                 val userId = _currentUserId.value
-                if (userId.isNotEmpty() && profileRepository != null && xpAmount > 0) {
+                if (userId.isNotEmpty() && profileRepository != null) {
                     try {
-                        profileRepository.updateXp(userId, -xpAmount.toLong())
-                        // Note: Il faudrait aussi décrémenter le compteur de quêtes
+                        // Appliquer la modification d'XP (xpAmount peut être négatif)
+                        if (xpAmount != 0) {
+                            profileRepository.updateXp(userId, xpAmount.toLong())
+                            Log.d("QuestViewModel", "XP modifiée au profil Firebase (annulation): $xpAmount")
+                        }
+
+                        // Décrémenter le compteur de quêtes réalisées
+                        profileRepository.decrementQuestsCompleted(userId)
+                        Log.d("QuestViewModel", "Quêtes réalisées décrémentées dans Firebase")
                     } catch (e: Exception) {
-                        Log.e("QuestViewModel", "❌ Erreur retrait XP Firebase", e)
+                        Log.e("QuestViewModel", "Erreur mise à jour profil Firebase lors de l'annulation", e)
                     }
                 }
-                */
             }
         }
     }
