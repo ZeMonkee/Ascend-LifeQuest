@@ -19,7 +19,7 @@ class QuestGeneratorRepositoryImpl(private val context: Context) : QuestGenerato
 
     companion object {
         private const val TAG = "QuestGeneratorRepository"
-        private const val API_KEY = "AIzaSyDbsygYxfBF0PNFxEDl9BpvglSvozpMlVI"
+        private const val API_KEY = "AIzaSyD7PDBAlC1T02tp3mMup6nBgsjRyVTCtEY"
         private const val MODEL = "gemini-2.5-flash"
     }
 
