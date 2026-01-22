@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
@@ -61,7 +59,7 @@ fun QuestCategory(
     Column(
         modifier =
             Modifier.fillMaxWidth()
-                .padding(vertical = 8.dp)
+                .padding(top = 8.dp, bottom = 4.dp)
                 .background(
                     AppColor.DarkBlueColor,
                     shape =
@@ -107,23 +105,23 @@ fun QuestCategory(
             Row(
                 modifier =
                 Modifier.fillMaxWidth()
-                    .clickable(enabled = !isDone) {
-                        // Seulement permettre de valider une quête (pas d'invalidation)
-                        // Si la quête est déjà validée, le clic est désactivé
-                        if (!isDone) {
-                            questDoneStates[quest.id] = true
+                    .clickable {
+                        // Toggle de l'état de la quête (cocher / décocher)
+                        val newState = !(questDoneStates[quest.id] ?: false)
+                        questDoneStates[quest.id] = newState
 
-                            // Sauvegarder l'état dans SharedPreferences
-                            com.example.ascendlifequest.util.QuestHelper.saveQuestState(
-                                context,
-                                userId,
-                                quest.id,
-                                true
-                            )
+                        // Sauvegarder l'état dans SharedPreferences
+                        com.example.ascendlifequest.util.QuestHelper.saveQuestState(
+                            context,
+                            userId,
+                            quest.id,
+                            newState
+                        )
 
-                            // Notifier le parent du changement avec l'XP de la quête
-                            onQuestStateChanged(quest.id, true, quest.xpRapporte)
-                        }
+                        // Notifier le parent du changement avec l'XP de la quête
+                        // Si on décoche, on envoie un XP négatif pour le retirer
+                        val xpDelta = if (newState) quest.xpRapporte else -quest.xpRapporte
+                        onQuestStateChanged(quest.id, newState, xpDelta)
                     }
                     .background(
                         AppColor.DarkBlueColor,
@@ -132,29 +130,31 @@ fun QuestCategory(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "» ${quest.nom}",
-                    color =
-                    if (isDone) AppColor.MinusTextColor
-                    else AppColor.MainTextColor,
-                    fontWeight =
-                    if (isDone) FontWeight.Normal
-                    else FontWeight.Medium,
-                    textDecoration =
-                    if (isDone) TextDecoration.LineThrough
-                    else TextDecoration.None,
-                    modifier = Modifier.weight(1f)
-                )
-                // Indicateur météo (si la quête dépend de la météo)
-                if (quest.dependantMeteo && isWeatherBad) {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = "Météo défavorable",
-                        tint = AppColor.Or,
-                        modifier = Modifier.size(20.dp)
+                // Nom de la quête et indicateur météo (texte jaune en dessous si nécessaire)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "» ${quest.nom}",
+                        color =
+                        if (isDone) AppColor.MinusTextColor
+                        else AppColor.MainTextColor,
+                        fontWeight =
+                        if (isDone) FontWeight.Normal
+                        else FontWeight.Medium,
+                        textDecoration =
+                        if (isDone) TextDecoration.LineThrough
+                        else TextDecoration.None
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+
+                    if (true) {
+                        Text(
+                            text = "Attention météo défavorable !",
+                            color = AppColor.Or,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
+
                 Text(
                     text = "${quest.xpRapporte} XP",
                     color =
@@ -165,7 +165,5 @@ fun QuestCategory(
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
     }
 }
