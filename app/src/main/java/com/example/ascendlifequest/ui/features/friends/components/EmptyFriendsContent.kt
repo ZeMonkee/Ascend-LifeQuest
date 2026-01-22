@@ -18,8 +18,6 @@ fun EmptyFriendsContent() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(32.dp)
         ) {
-            Text(text = "👥", fontSize = 48.sp)
-            Spacer(modifier = Modifier.height(16.dp))
             Text(
                     text = "Aucun ami pour le moment",
                     color = AppColor.MainTextColor,

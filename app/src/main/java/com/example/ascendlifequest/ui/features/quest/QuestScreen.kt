@@ -27,6 +27,13 @@ import com.example.ascendlifequest.ui.features.quest.components.QuestCategory
 import com.example.ascendlifequest.ui.theme.AppColor
 import com.example.ascendlifequest.util.QuestHelper
 
+/**
+ * Main quest screen displaying categorized quests with progress tracking. Handles quest generation,
+ * completion, and weather-dependent quest visibility.
+ *
+ * @param navController Navigation controller for screen transitions
+ * @param viewModel ViewModel managing quest state and operations
+ */
 @Composable
 fun QuestScreen(
         navController: NavHostController,

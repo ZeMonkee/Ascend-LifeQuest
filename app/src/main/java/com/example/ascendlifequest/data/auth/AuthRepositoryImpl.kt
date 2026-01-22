@@ -4,14 +4,23 @@ import android.content.Intent
 import com.example.ascendlifequest.data.remote.AuthService
 import com.google.firebase.auth.FirebaseUser
 
-class AuthRepositoryImpl(
-    private val authService: AuthService
-) : AuthRepository {
-    override suspend fun signInWithEmailPassword(email: String, password: String): Result<FirebaseUser> {
+/**
+ * Implementation of [AuthRepository] that delegates to [AuthService].
+ *
+ * @property authService Service handling Firebase authentication operations
+ */
+class AuthRepositoryImpl(private val authService: AuthService) : AuthRepository {
+    override suspend fun signInWithEmailPassword(
+            email: String,
+            password: String
+    ): Result<FirebaseUser> {
         return authService.signInWithEmailPassword(email, password)
     }
 
-    override suspend fun registerWithEmailPassword(email: String, password: String): Result<FirebaseUser> {
+    override suspend fun registerWithEmailPassword(
+            email: String,
+            password: String
+    ): Result<FirebaseUser> {
         return authService.registerWithEmailPassword(email, password)
     }
 
@@ -39,4 +48,3 @@ class AuthRepositoryImpl(
         return authService.getCurrentUser()
     }
 }
-

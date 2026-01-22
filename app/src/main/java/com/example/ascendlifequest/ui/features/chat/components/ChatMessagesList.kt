@@ -37,10 +37,10 @@ fun ChatMessagesList(messages: List<Message>, currentUserId: String) {
                     contentAlignment = Alignment.Center
             ) {
                 Text(
-                        text = "Aucun message\nCommencez la conversation ! 💬",
-                        color = AppColor.MinusTextColor,
-                        textAlign = TextAlign.Center,
-                        fontSize = 16.sp
+                    text = "Aucun message\nCommencez la conversation !",
+                    color = AppColor.MinusTextColor,
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp
                 )
             }
         } else {

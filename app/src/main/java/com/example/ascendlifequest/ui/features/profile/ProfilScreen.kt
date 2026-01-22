@@ -18,6 +18,13 @@ import com.example.ascendlifequest.ui.features.profile.components.LoadingContent
 import com.example.ascendlifequest.ui.features.profile.components.NotLoggedInContent
 import com.example.ascendlifequest.ui.features.profile.components.ProfileContent
 
+/**
+ * Profile screen displaying user information, stats, and level progress.
+ *
+ * @param navController Navigation controller for screen transitions
+ * @param userId Optional user ID for viewing other users' profiles
+ * @param viewModel ViewModel managing profile state
+ */
 @Composable
 fun ProfilScreen(
         navController: NavHostController,

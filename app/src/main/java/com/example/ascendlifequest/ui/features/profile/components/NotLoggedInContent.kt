@@ -19,7 +19,7 @@ fun NotLoggedInContent(onNavigateToLogin: () -> Unit) {
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.padding(32.dp)
         ) {
-            Text(text = "🔒", fontSize = 48.sp)
+            Text(text = "Connexion", fontSize = 48.sp)
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                     text = "Vous n'êtes pas connecté",

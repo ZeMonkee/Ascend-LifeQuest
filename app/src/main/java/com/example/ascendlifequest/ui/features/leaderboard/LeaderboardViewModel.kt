@@ -28,6 +28,14 @@ enum class LeaderboardFilter {
     FRIENDS
 }
 
+/**
+ * ViewModel for leaderboard display with global and friends-only filtering. Ranks users by XP and
+ * provides the current user's position.
+ *
+ * @property profileRepository Repository for profile and leaderboard data
+ * @property authRepository Repository for authentication state
+ * @property friendRepository Repository for friend list retrieval
+ */
 class LeaderboardViewModel(
         private val profileRepository: ProfileRepository =
                 ProfileRepositoryImpl(AuthRepositoryImpl(AuthService())),

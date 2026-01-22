@@ -68,8 +68,6 @@ fun PendingRequestsDialog(
                 if (pendingRequests.isEmpty() && notifications.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "📭", fontSize = 48.sp)
-                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                     text = "Aucune notification",
                                     color = AppColor.MinusTextColor,

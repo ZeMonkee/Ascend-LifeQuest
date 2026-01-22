@@ -7,10 +7,10 @@ import com.example.ascendlifequest.data.auth.AuthRepository
 import com.example.ascendlifequest.data.repository.ProfileRepository
 import com.example.ascendlifequest.data.repository.ProfileRepositoryImpl
 import com.google.firebase.auth.FirebaseUser
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 sealed class LoginUiState {
@@ -20,9 +20,15 @@ sealed class LoginUiState {
     data class Error(val message: String) : LoginUiState()
 }
 
+/**
+ * ViewModel handling user login with email/password and profile verification.
+ *
+ * @property authRepository Repository for authentication operations
+ * @property profileRepository Repository for profile operations
+ */
 class LoginViewModel(
-    private val authRepository: AuthRepository,
-    private val profileRepository: ProfileRepository = ProfileRepositoryImpl(authRepository)
+        private val authRepository: AuthRepository,
+        private val profileRepository: ProfileRepository = ProfileRepositoryImpl(authRepository)
 ) : ViewModel() {
 
     companion object {
@@ -32,7 +38,6 @@ class LoginViewModel(
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
     val uiState: StateFlow<LoginUiState> = _uiState
 
-    // One-shot events (navigation/messages)
     private val _events = MutableSharedFlow<String>()
     val events: SharedFlow<String> = _events
 
@@ -56,9 +61,7 @@ class LoginViewModel(
         }
     }
 
-    /**
-     * S'assure que le profil existe dans Firestore, le crée si nécessaire
-     */
+    /** S'assure que le profil existe dans Firestore, le crée si nécessaire */
     private suspend fun ensureProfileExists(user: FirebaseUser) {
         try {
             val existingProfile = profileRepository.getProfileById(user.uid).getOrNull()
@@ -87,7 +90,7 @@ class LoginViewModel(
         }
     }
 
-    // Vérifier rapidement si un utilisateur est déjà connecté (utilisé par la View pour navigation initiale)
+    /** Checks if a user is currently logged in. */
     fun isUserLoggedIn(): Boolean {
         return authRepository.isUserLoggedIn()
     }

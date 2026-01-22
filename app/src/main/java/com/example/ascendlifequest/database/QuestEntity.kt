@@ -5,6 +5,10 @@ import androidx.room.PrimaryKey
 import com.example.ascendlifequest.data.model.Quest
 import kotlin.time.Duration.Companion.minutes
 
+/**
+ * Room entity representing a quest stored in the local database. Provides conversion methods
+ * to/from the domain [Quest] model.
+ */
 @Entity(tableName = "quests")
 data class QuestEntity(
         @PrimaryKey val id: Int,

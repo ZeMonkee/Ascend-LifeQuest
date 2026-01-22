@@ -96,11 +96,11 @@ class FriendRepositoryImpl(
 
             Log.d(
                     TAG,
-                    "✅ Demande d'ami envoyée avec succès de $currentUserId à $friendId (docId: $docId)"
+                    "Demande d'ami envoyee avec succes de $currentUserId a $friendId (docId: $docId)"
             )
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Erreur lors de l'envoi de la demande d'ami", e)
+            Log.e(TAG, "Erreur lors de l'envoi de la demande d'ami", e)
             Result.failure(e)
         }
     }
@@ -192,7 +192,7 @@ class FriendRepositoryImpl(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Erreur lors du refus de la demande d'ami: ${e.message}", e)
+            Log.e(TAG, "Erreur lors du refus de la demande d'ami: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -251,13 +251,13 @@ class FriendRepositoryImpl(
                                 profile.uid = senderId
                             }
                             profiles.add(profile)
-                            Log.d(TAG, "  ✓ Profil trouvé: ${profile.pseudo}")
+                            Log.d(TAG, "  - Profil trouve: ${profile.pseudo}")
                         }
                     } else {
-                        Log.d(TAG, "  ✗ Profil non trouvé pour $senderId")
+                        Log.d(TAG, "  - Profil non trouve pour $senderId")
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "  ✗ Erreur récupération profil $senderId", e)
+                    Log.e(TAG, "  - Erreur recuperation profil $senderId", e)
                 }
             }
 
@@ -265,7 +265,7 @@ class FriendRepositoryImpl(
             Log.d(TAG, "========================================")
             Result.success(profiles)
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Erreur lors de la récupération des demandes d'amis: ${e.message}", e)
+            Log.e(TAG, "Erreur lors de la recuperation des demandes d'amis: ${e.message}", e)
             Result.failure(e)
         }
     }

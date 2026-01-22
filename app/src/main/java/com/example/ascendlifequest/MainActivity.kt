@@ -27,12 +27,12 @@ import com.google.firebase.FirebaseApp
 
 private const val TAG = "MainActivity"
 
+/** Main entry point for the application. Handles Firebase initialization and navigation setup. */
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialiser Firebase
         try {
             if (FirebaseApp.getApps(this).isEmpty()) {
                 FirebaseApp.initializeApp(this)
@@ -47,8 +47,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             AscendLifeQuestTheme {
                 val navController = rememberNavController()
-                // Request location permission once on app start (first launch will trigger
-                // permission prompt)
                 PermissionRequester()
                 NavHost(navController = navController, startDestination = "login_option") {
                     composable("login_option") { LoginOptionScreen(navController) }

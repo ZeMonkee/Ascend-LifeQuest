@@ -8,35 +8,31 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Data Access Object for quest operations in Room database. Provides CRUD operations and reactive
+ * data streams for quests.
+ */
 @Dao
 interface QuestDao {
-    @Query("SELECT * FROM quests")
-    suspend fun getAllQuests(): List<QuestEntity>
+    @Query("SELECT * FROM quests") suspend fun getAllQuests(): List<QuestEntity>
 
-    @Query("SELECT * FROM quests")
-    fun getAllQuestsFlow(): Flow<List<QuestEntity>>
+    @Query("SELECT * FROM quests") fun getAllQuestsFlow(): Flow<List<QuestEntity>>
 
-    @Query("SELECT * FROM quests WHERE id = :id")
-    suspend fun getQuestById(id: Int): QuestEntity?
+    @Query("SELECT * FROM quests WHERE id = :id") suspend fun getQuestById(id: Int): QuestEntity?
 
     @Query("SELECT * FROM quests WHERE categorie = :categorieId")
     suspend fun getQuestsByCategory(categorieId: Int): List<QuestEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertQuest(quest: QuestEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertQuest(quest: QuestEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertQuests(quests: List<QuestEntity>)
 
-    @Update
-    suspend fun updateQuest(quest: QuestEntity)
+    @Update suspend fun updateQuest(quest: QuestEntity)
 
-    @Delete
-    suspend fun deleteQuest(quest: QuestEntity)
+    @Delete suspend fun deleteQuest(quest: QuestEntity)
 
-    @Query("DELETE FROM quests")
-    suspend fun deleteAllQuests()
+    @Query("DELETE FROM quests") suspend fun deleteAllQuests()
 
-    @Query("SELECT MAX(id) FROM quests")
-    suspend fun getMaxId(): Int?
+    @Query("SELECT MAX(id) FROM quests") suspend fun getMaxId(): Int?
 }

@@ -21,6 +21,12 @@ sealed class ProfileUiState {
     object NotLoggedIn : ProfileUiState()
 }
 
+/**
+ * ViewModel managing user profile loading, creation, and rank retrieval.
+ *
+ * @property authRepository Repository for authentication state
+ * @property profileRepository Repository for profile operations
+ */
 class ProfileViewModel(
         private val authRepository: AuthRepository = AuthRepositoryImpl(AuthService()),
         private val profileRepository: ProfileRepository =
@@ -40,10 +46,7 @@ class ProfileViewModel(
         loadProfile()
     }
 
-    /** Charge le profil de l'utilisateur connecté */
-    /**
-     * Charge le profil d'un utilisateur
-     */
+    /** Loads profile for a specific user or the current logged-in user. */
     fun loadProfile(targetUserId: String? = null) {
         viewModelScope.launch {
             _uiState.value = ProfileUiState.Loading
@@ -124,5 +127,4 @@ class ProfileViewModel(
             }
         }
     }
-
 }

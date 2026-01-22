@@ -8,16 +8,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.edit
 
+/**
+ * Requests location permission on first app launch. Shows system permission dialog and persists the
+ * request state.
+ */
 @Composable
 fun PermissionRequester() {
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
     val firstLaunch = remember { prefs.getBoolean("first_launch", true) }
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        // store that we asked (so we don't ask again automatically)
-        prefs.edit { putBoolean("first_launch", false) }
-    }
+    val launcher =
+            rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted
+                ->
+                prefs.edit { putBoolean("first_launch", false) }
+                prefs.edit { putBoolean("first_launch", false) }
+            }
 
     LaunchedEffect(firstLaunch) {
         if (firstLaunch) {

@@ -7,11 +7,14 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    entities = [QuestEntity::class, QuestStateEntity::class, CategoryPreferenceEntity::class],
-    version = 2,
-    exportSchema = false
+        entities = [QuestEntity::class, QuestStateEntity::class, CategoryPreferenceEntity::class],
+        version = 2,
+        exportSchema = false
 )
 @TypeConverters(Converters::class)
+/**
+ * Room database for local data persistence. Stores quests, quest states, and category preferences.
+ */
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun questDao(): QuestDao
@@ -19,21 +22,22 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryPreferenceDao(): CategoryPreferenceDao
 
     companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
+        @Volatile private var INSTANCE: AppDatabase? = null
 
         fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "ascend_lifequest_database"
-                )
-                    .fallbackToDestructiveMigration(false)
-                    .build()
-                INSTANCE = instance
-                instance
-            }
+            return INSTANCE
+                    ?: synchronized(this) {
+                        val instance =
+                                Room.databaseBuilder(
+                                                context.applicationContext,
+                                                AppDatabase::class.java,
+                                                "ascend_lifequest_database"
+                                        )
+                                        .fallbackToDestructiveMigration(false)
+                                        .build()
+                        INSTANCE = instance
+                        instance
+                    }
         }
     }
 }

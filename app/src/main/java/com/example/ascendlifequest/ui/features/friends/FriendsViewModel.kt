@@ -34,6 +34,13 @@ sealed class SearchUiState {
     data class Error(val message: String) : SearchUiState()
 }
 
+/**
+ * ViewModel managing friend list, friend requests, and user search. Handles friend operations
+ * including adding, removing, and request management.
+ *
+ * @property authRepository Repository for authentication state
+ * @property friendRepository Repository for friend operations
+ */
 class FriendsViewModel(
         private val authRepository: AuthRepository = AuthRepositoryImpl(AuthService()),
         private val friendRepository: FriendRepository = FriendRepositoryImpl()
@@ -293,12 +300,12 @@ class FriendsViewModel(
                     onSuccess = {
                         Log.d(
                                 TAG,
-                                "✅ Demande refusée de: ${friend.pseudo} - Notification envoyée à ${friend.uid}"
+                                "Demande refusee de: ${friend.pseudo} - Notification envoyee a ${friend.uid}"
                         )
                         loadFriendsAndRequests()
                     },
                     onFailure = { error ->
-                        Log.e(TAG, "❌ Erreur refus demande: ${error.message}", error)
+                        Log.e(TAG, "Erreur refus demande: ${error.message}", error)
                     }
             )
         }

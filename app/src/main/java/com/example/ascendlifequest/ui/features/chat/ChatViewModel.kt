@@ -21,17 +21,25 @@ import kotlinx.coroutines.launch
 sealed class ChatUiState {
     object Loading : ChatUiState()
     data class Success(
-        val messages: List<Message>,
-        val conversation: Conversation,
-        val otherUser: UserProfile?
+            val messages: List<Message>,
+            val conversation: Conversation,
+            val otherUser: UserProfile?
     ) : ChatUiState()
     data class Error(val message: String) : ChatUiState()
 }
 
+/**
+ * ViewModel managing real-time chat between users. Handles message sending, receiving, and
+ * conversation state.
+ *
+ * @property authRepository Repository for authentication state
+ * @property messageRepository Repository for message operations
+ * @property friendRepository Repository for user profile retrieval
+ */
 class ChatViewModel(
-    private val authRepository: AuthRepository = AuthRepositoryImpl(AuthService()),
-    private val messageRepository: MessageRepository = MessageRepositoryImpl(),
-    private val friendRepository: FriendRepository = FriendRepositoryImpl()
+        private val authRepository: AuthRepository = AuthRepositoryImpl(AuthService()),
+        private val messageRepository: MessageRepository = MessageRepositoryImpl(),
+        private val friendRepository: FriendRepository = FriendRepositoryImpl()
 ) : ViewModel() {
 
     companion object {
@@ -74,38 +82,43 @@ class ChatViewModel(
             val conversationResult = messageRepository.getOrCreateConversation(userId, friendId)
 
             conversationResult.fold(
-                onSuccess = { conversation ->
-                    currentConversationId = conversation.id
+                    onSuccess = { conversation ->
+                        currentConversationId = conversation.id
 
-                    // Récupérer le profil de l'autre utilisateur
-                    val otherUserResult = friendRepository.getProfileById(friendId)
-                    val otherUser = otherUserResult.getOrNull()
+                        // Récupérer le profil de l'autre utilisateur
+                        val otherUserResult = friendRepository.getProfileById(friendId)
+                        val otherUser = otherUserResult.getOrNull()
 
-                    // Récupérer les messages
-                    val messagesResult = messageRepository.getMessages(conversation.id)
+                        // Récupérer les messages
+                        val messagesResult = messageRepository.getMessages(conversation.id)
 
-                    messagesResult.fold(
-                        onSuccess = { messages ->
-                            _uiState.value = ChatUiState.Success(
-                                messages = messages,
-                                conversation = conversation,
-                                otherUser = otherUser
-                            )
+                        messagesResult.fold(
+                                onSuccess = { messages ->
+                                    _uiState.value =
+                                            ChatUiState.Success(
+                                                    messages = messages,
+                                                    conversation = conversation,
+                                                    otherUser = otherUser
+                                            )
 
-                            // Marquer les messages comme lus
-                            messageRepository.markMessagesAsRead(conversation.id, userId)
-                        },
-                        onFailure = { error ->
-                            _uiState.value = ChatUiState.Error(error.message ?: "Erreur chargement messages")
-                        }
-                    )
+                                    // Marquer les messages comme lus
+                                    messageRepository.markMessagesAsRead(conversation.id, userId)
+                                },
+                                onFailure = { error ->
+                                    _uiState.value =
+                                            ChatUiState.Error(
+                                                    error.message ?: "Erreur chargement messages"
+                                            )
+                                }
+                        )
 
-                    // Observer les nouveaux messages en temps réel
-                    observeMessages(conversation.id)
-                },
-                onFailure = { error ->
-                    _uiState.value = ChatUiState.Error(error.message ?: "Erreur chargement conversation")
-                }
+                        // Observer les nouveaux messages en temps réel
+                        observeMessages(conversation.id)
+                    },
+                    onFailure = { error ->
+                        _uiState.value =
+                                ChatUiState.Error(error.message ?: "Erreur chargement conversation")
+                    }
             )
         }
     }
@@ -146,25 +159,23 @@ class ChatViewModel(
                 return@launch
             }
 
-            val result = messageRepository.sendMessage(
-                conversationId = currentConversationId,
-                senderId = userId,
-                receiverId = otherUserId,
-                content = content
-            )
+            val result =
+                    messageRepository.sendMessage(
+                            conversationId = currentConversationId,
+                            senderId = userId,
+                            receiverId = otherUserId,
+                            content = content
+                    )
 
             result.fold(
-                onSuccess = { message ->
-                    Log.d(TAG, "Message envoyé: ${message.id}")
-                    _messageText.value = ""
-                },
-                onFailure = { error ->
-                    Log.e(TAG, "Erreur envoi message", error)
-                }
+                    onSuccess = { message ->
+                        Log.d(TAG, "Message envoyé: ${message.id}")
+                        _messageText.value = ""
+                    },
+                    onFailure = { error -> Log.e(TAG, "Erreur envoi message", error) }
             )
 
             _isSending.value = false
         }
     }
 }
-

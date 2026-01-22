@@ -19,7 +19,7 @@ fun ErrorContent(message: String, onRetry: () -> Unit) {
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.padding(32.dp)
         ) {
-            Text(text = "😕", fontSize = 48.sp)
+            Text(text = "Erreur", fontSize = 48.sp)
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                     text = "Oups ! Une erreur est survenue",

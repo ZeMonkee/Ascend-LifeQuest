@@ -29,7 +29,6 @@ class QuestRepositoryImpl(private val context: Context) : QuestRepository {
         )
     }
 
-    // 🔥 LECTURE DEPUIS ROOM (local)
     override suspend fun getQuests(): List<Quest> {
         return try {
             val questEntities = questDao.getAllQuests()
@@ -40,22 +39,19 @@ class QuestRepositoryImpl(private val context: Context) : QuestRepository {
         }
     }
 
-    // Flow pour observer les changements en temps réel
     override fun getQuestsFlow(): Flow<List<Quest>> {
         return questDao.getAllQuestsFlow().map { entities -> entities.map { it.toQuest() } }
     }
 
-    // Sauvegarder une quête localement
     override suspend fun saveQuestLocally(quest: Quest) {
         try {
             questDao.insertQuest(QuestEntity.fromQuest(quest))
-            Log.d(TAG, "✅ Quête sauvegardée localement: ${quest.id}")
+            Log.d(TAG, "Quete sauvegardee localement: ${quest.id}")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Erreur sauvegarde locale", e)
+            Log.e(TAG, "Erreur sauvegarde locale", e)
         }
     }
 
-    // Récupérer le prochain ID disponible (depuis Room)
     override suspend fun getNextQuestId(): Int {
         return try {
             val maxId = questDao.getMaxId() ?: 999
@@ -66,13 +62,12 @@ class QuestRepositoryImpl(private val context: Context) : QuestRepository {
         }
     }
 
-    // Vider la base de données
     override suspend fun clearAllQuests() {
         try {
             questDao.deleteAllQuests()
-            Log.d(TAG, "✅ Toutes les quêtes ont été supprimées de Room")
+            Log.d(TAG, "Toutes les quetes ont ete supprimees de Room")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Erreur lors de la suppression des quêtes de Room", e)
+            Log.e(TAG, "Erreur lors de la suppression des quetes de Room", e)
         }
     }
 }

@@ -20,6 +20,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel managing quest operations including generation, completion tracking, and
+ * synchronization with Firebase profiles.
+ *
+ * @property questRepository Repository for local quest data
+ * @property questGeneratorRepository Repository for AI-powered quest generation
+ * @property profileRepository Optional repository for user profile updates
+ */
 class QuestViewModel(
         private val questRepository: QuestRepository,
         private val questGeneratorRepository: QuestGeneratorRepository,
@@ -300,14 +308,21 @@ class QuestViewModel(
                         // Appliquer la modification d'XP (xpAmount peut être négatif)
                         if (xpAmount != 0) {
                             profileRepository.updateXp(userId, xpAmount.toLong())
-                            Log.d("QuestViewModel", "XP modifiée au profil Firebase (annulation): $xpAmount")
+                            Log.d(
+                                    "QuestViewModel",
+                                    "XP modifiée au profil Firebase (annulation): $xpAmount"
+                            )
                         }
 
                         // Décrémenter le compteur de quêtes réalisées
                         profileRepository.decrementQuestsCompleted(userId)
                         Log.d("QuestViewModel", "Quêtes réalisées décrémentées dans Firebase")
                     } catch (e: Exception) {
-                        Log.e("QuestViewModel", "Erreur mise à jour profil Firebase lors de l'annulation", e)
+                        Log.e(
+                                "QuestViewModel",
+                                "Erreur mise à jour profil Firebase lors de l'annulation",
+                                e
+                        )
                     }
                 }
             }
