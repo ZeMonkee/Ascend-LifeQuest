@@ -1,0 +1,69 @@
+name: Feature Request
+description: Proposer une nouvelle fonctionnalité
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de proposer une amélioration pour Ascend LifeQuest !
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème à résoudre
+      description: Quel problème cette fonctionnalité résout-elle ?
+      placeholder: "En tant qu'utilisateur, je rencontre le problème suivant..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution proposée
+      description: Comment proposez-vous de résoudre ce problème ?
+      placeholder: "Je propose d'ajouter..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considérées
+      description: Avez-vous envisagé d'autres solutions ?
+      placeholder: "J'ai également pensé à..."
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups / Screenshots
+      description: Si vous avez des mockups ou screenshots, ajoutez-les ici
+      placeholder: Glissez-déposez vos images ici
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorité
+      description: Quelle est l'importance de cette fonctionnalité ?
+      options:
+        - Basse
+        - Moyenne
+        - Haute
+        - Critique
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Seriez-vous intéressé pour contribuer à cette fonctionnalité ?
+      options:
+        - label: Je suis prêt à travailler sur cette fonctionnalité
+        - label: Je peux aider à la tester
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Informations supplémentaires
+      description: Toute autre information pertinente
