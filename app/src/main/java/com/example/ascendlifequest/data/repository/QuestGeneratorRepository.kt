@@ -13,10 +13,15 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.minutes
 
-private const val API_KEY = "AIzaSyBFrxAVMfRJ0OuW64WFceVbuFMuA8VXQak"
-private const val MODEL = "gemini-2.5-flash"
+// Configuration Ollama
+// Pour serveur distant via tunnel SSH : ssh -L 11434:localhost:11434 p2300557@iutbg-skynet.iutbourg.univ-lyon1.fr
+// Puis utilisez "http://10.0.2.2:11434" (émulateur) ou "http://127.0.0.1:11434" (appareil physique avec adb reverse)
+// Pour appareil physique sans tunnel : utilisez directement l'IP du serveur si accessible
+private const val OLLAMA_BASE_URL = "http://10.0.2.2:11434"
+private const val OLLAMA_MODEL = "llama3.3:latest"  // Modèle Llama 3.3
 
 suspend fun getNextQuestIdFromRoom(context: Context): Int {
     return try {
@@ -41,45 +46,47 @@ suspend fun generateQuestForCategory(context: Context, category: Categorie): Que
             5️⃣ "oui" ou "non" (dépendance météo)
         """.trimIndent()
 
-        // Construction JSON
-        val textPart = JSONObject().put("text", promptText)
-        val partsArray = JSONArray().put(textPart)
-        val contentObj = JSONObject().put("parts", partsArray)
-        val contentsArray = JSONArray().put(contentObj)
-        val json = JSONObject().put("contents", contentsArray)
+        // Construction JSON pour Ollama
+        val json = JSONObject().apply {
+            put("model", OLLAMA_MODEL)
+            put("prompt", promptText)
+            put("stream", false)  // Désactiver le streaming pour obtenir la réponse complète
+        }
 
         val body = json.toString().toRequestBody("application/json".toMediaTypeOrNull())
 
         val request = Request.Builder()
-            .url("https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent?key=$API_KEY")
+            .url("$OLLAMA_BASE_URL/api/generate")
             .post(body)
             .build()
 
-        val client = OkHttpClient()
+        // Client avec timeout plus long pour Ollama (la génération locale peut prendre du temps)
+        val client = OkHttpClient.Builder()
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .build()
+
         val response = client.newCall(request).execute()
         val respBody = response.body?.string() ?: return@withContext null
 
-        Log.d("QuestRepository", "Gemini Response: $respBody")
+        Log.d("QuestRepository", "Ollama Response: $respBody")
 
         val respJson = JSONObject(respBody)
 
+        // Vérification d'erreur Ollama
         if (respJson.has("error")) {
-            Log.e("QuestRepository", "❌ Erreur API Gemini : ${respJson.getJSONObject("error")}")
+            Log.e("QuestRepository", "❌ Erreur API Ollama : ${respJson.getString("error")}")
             return@withContext null
         }
 
-        val candidates = respJson.optJSONArray("candidates")
-        if (candidates == null || candidates.length() == 0) {
-            Log.e("QuestRepository", "❌ Pas de candidat généré.")
+        // Extraction de la réponse Ollama
+        val text = respJson.optString("response", "")
+        if (text.isBlank()) {
+            Log.e("QuestRepository", "❌ Pas de réponse générée par Ollama.")
             return@withContext null
         }
 
-        val text = candidates
-            .getJSONObject(0)
-            .getJSONObject("content")
-            .getJSONArray("parts")
-            .getJSONObject(0)
-            .getString("text")
 
         val parts = text.trim().split("\n").filter { it.isNotBlank() }
 
