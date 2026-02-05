@@ -65,16 +65,20 @@ fun LoginScreen(navController: NavHostController) {
         viewModel.events.collect { ev ->
             when {
                 ev.startsWith("LOGIN_SUCCESS") -> {
+                    isLoading = false
                     Toast.makeText(context, "Connexion réussie", Toast.LENGTH_SHORT).show()
                     navController.navigate("quetes") { popUpTo("login") { inclusive = true } }
                 }
                 ev.startsWith("LOGIN_FAILED") -> {
+                    isLoading = false
                     Toast.makeText(context, ev.removePrefix("LOGIN_FAILED: "), Toast.LENGTH_SHORT).show()
                 }
                 ev.startsWith("RESET_EMAIL_SENT") -> {
+                    isLoading = false
                     Toast.makeText(context, "Instructions de réinitialisation envoyées à votre email", Toast.LENGTH_LONG).show()
                 }
                 ev.startsWith("RESET_FAILED") -> {
+                    isLoading = false
                     Toast.makeText(context, ev.removePrefix("RESET_FAILED: "), Toast.LENGTH_SHORT).show()
                 }
             }
@@ -162,6 +166,7 @@ fun LoginScreen(navController: NavHostController) {
                     .padding(end = 40.dp)
                     .clickable {
                         if (email.isNotEmpty()) {
+                            isLoading = true
                             viewModel.resetPassword(email)
                         } else {
                             Toast.makeText(context, "Veuillez saisir votre email", Toast.LENGTH_SHORT).show()
