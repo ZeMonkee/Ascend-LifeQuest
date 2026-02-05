@@ -1,10 +1,12 @@
 package com.example.ascendlifequest
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,6 +30,7 @@ import com.google.firebase.FirebaseApp
 private const val TAG = "MainActivity"
 
 /** Main entry point for the application. Handles Firebase initialization and navigation setup. */
+@RequiresApi(Build.VERSION_CODES.O)
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

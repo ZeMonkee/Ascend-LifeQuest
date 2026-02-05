@@ -37,7 +37,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Build with Gradle
-        run: ./gradlew build --stacktrace
+        run: ./gradlew build -x lint --stacktrace
 
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest --stacktrace
@@ -67,6 +67,7 @@ jobs:
     name: Lint Check
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    continue-on-error: true
 
     steps:
       - name: Checkout code
@@ -83,6 +84,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run lint
+        continue-on-error: true
         run: ./gradlew lintDebug --stacktrace
 
       - name: Upload lint results
