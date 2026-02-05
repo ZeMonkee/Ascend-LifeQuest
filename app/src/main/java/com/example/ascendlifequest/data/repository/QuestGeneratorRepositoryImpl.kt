@@ -12,15 +12,13 @@ import kotlinx.coroutines.withContext
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONArray
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 class QuestGeneratorRepositoryImpl(private val context: Context) : QuestGeneratorRepository {
 
     companion object {
         private const val TAG = "QuestGeneratorRepository"
-        private const val API_KEY = "AIzaSyD7PDBAlC1T02tp3mMup6nBgsjRyVTCtEY"
-        private const val MODEL = "gemini-2.5-flash"
     }
 
     private val questDao by lazy { AppDatabase.getDatabase(context).questDao() }
@@ -49,49 +47,48 @@ class QuestGeneratorRepositoryImpl(private val context: Context) : QuestGenerato
                 [5] "oui" ou "non" (dépendance météo)
             """.trimIndent()
 
-                    // Construction JSON
-                    val textPart = JSONObject().put("text", promptText)
-                    val partsArray = JSONArray().put(textPart)
-                    val contentObj = JSONObject().put("parts", partsArray)
-                    val contentsArray = JSONArray().put(contentObj)
-                    val json = JSONObject().put("contents", contentsArray)
+                    // Construction JSON pour Ollama
+                    val json = JSONObject().apply {
+                        put("model", OLLAMA_MODEL)
+                        put("prompt", promptText)
+                        put("stream", false)  // Désactiver le streaming pour obtenir la réponse complète
+                    }
 
                     val body = json.toString().toRequestBody("application/json".toMediaTypeOrNull())
 
                     val request =
                             Request.Builder()
-                                    .url(
-                                            "https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent?key=$API_KEY"
-                                    )
+                                    .url("$OLLAMA_BASE_URL/api/generate")
                                     .post(body)
                                     .build()
 
-                    val client = OkHttpClient()
+                    // Client avec timeout plus long pour Ollama (la génération locale peut prendre du temps)
+                    val client = OkHttpClient.Builder()
+                            .connectTimeout(60, TimeUnit.SECONDS)
+                            .readTimeout(120, TimeUnit.SECONDS)
+                            .writeTimeout(60, TimeUnit.SECONDS)
+                            .build()
+
                     val response = client.newCall(request).execute()
                     val respBody = response.body?.string() ?: return@withContext null
 
-                    Log.d(TAG, "Gemini Response: $respBody")
+                    Log.d(TAG, "Ollama Response: $respBody")
 
                     val respJson = JSONObject(respBody)
 
+                    // Vérification d'erreur Ollama
                     if (respJson.has("error")) {
-                        Log.e(TAG, "Erreur API Gemini : ${respJson.getJSONObject("error")}")
+                        Log.e(TAG, "Erreur API Ollama : ${respJson.getString("error")}")
                         return@withContext null
                     }
 
-                    val candidates = respJson.optJSONArray("candidates")
-                    if (candidates == null || candidates.length() == 0) {
-                        Log.e(TAG, "Pas de candidat généré.")
+                    // Extraction de la réponse Ollama
+                    val text = respJson.optString("response", "")
+                    if (text.isBlank()) {
+                        Log.e(TAG, "Pas de réponse générée par Ollama.")
                         return@withContext null
                     }
 
-                    val text =
-                            candidates
-                                    .getJSONObject(0)
-                                    .getJSONObject("content")
-                                    .getJSONArray("parts")
-                                    .getJSONObject(0)
-                                    .getString("text")
 
                     val parts = text.trim().split("\n").filter { it.isNotBlank() }
 
