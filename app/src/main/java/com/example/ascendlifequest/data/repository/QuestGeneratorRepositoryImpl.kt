@@ -33,12 +33,22 @@ class QuestGeneratorRepositoryImpl(private val context: Context) : QuestGenerato
         }
     }
 
-    override suspend fun generateQuestForCategory(category: Categorie): Quest? =
+    override suspend fun generateQuestForCategory(category: Categorie, userPreference: Int): Quest? =
             withContext(Dispatchers.IO) {
                 try {
+                    val preferenceText = when (userPreference) {
+                        1 -> "L'utilisateur n'aime pas vraiment cette catégorie. Génère une quête simple et rapide."
+                        2 -> "L'utilisateur aime peu cette catégorie. Génère une quête assez simple."
+                        3 -> "L'utilisateur a un intérêt neutre pour cette catégorie. Génère une quête standard."
+                        4 -> "L'utilisateur aime cette catégorie. Génère une quête intéressante et engageante."
+                        5 -> "L'utilisateur adore cette catégorie. Génère une quête passionnante et stimulante."
+                        else -> "Génère une quête standard."
+                    }
+
                     val promptText =
                             """
                 Génère une quête pour la catégorie « ${category.nom} ». 
+                $preferenceText
                 Format de réponse obligatoire (ne mets rien d'autre que ces 5 lignes) :
                 [1] Nom de la quête (ça doit être court et contenir la tache et la quantité si il y en une)
                 [2] Description courte
