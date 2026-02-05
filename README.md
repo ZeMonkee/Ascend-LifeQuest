@@ -277,16 +277,6 @@ Le projet inclut une suite complète de tests unitaires et d'intégration :
 
 ---
 
-## 🙏 Remerciements
-
-- [Ollama](https://ollama.ai/) pour le framework LLM local
-- [Meta AI](https://ai.meta.com/) pour le modèle Llama 3.3
-- [Firebase](https://firebase.google.com/) pour les services backend
-- [OpenWeatherMap](https://openweathermap.org/) pour les données météo
-- La communauté Android et Jetpack Compose
-
----
-
 ## 📞 Support
 
 Pour toute question ou problème :
