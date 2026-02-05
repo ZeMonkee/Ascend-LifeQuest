@@ -6,7 +6,6 @@ import com.example.ascendlifequest.database.CategoryPreferenceEntity
 import kotlinx.coroutines.runBlocking
 
 object PreferencesHelper {
-    private const val PREFS_NAME = "user_preferences"
 
     const val KEY_SPORT = "sport_preference"
     const val KEY_CUISINE = "cuisine_preference"
@@ -55,11 +54,6 @@ object PreferencesHelper {
             )
         }
         return list.associate { it.categoryId to it.preference }
-    }
-
-    fun clearPreferences(context: Context, userId: String) {
-        val db = AppDatabase.getDatabase(context)
-        runBlocking { db.categoryPreferenceDao().clearPreferencesForUser(userId) }
     }
 
     /**
