@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.ascendlifequest.data.auth.AuthRepository
+import com.example.ascendlifequest.data.local.PreferencesHelper
 import com.example.ascendlifequest.data.model.Categorie
 import com.example.ascendlifequest.data.model.Quest
 import com.example.ascendlifequest.data.repository.ProfileRepository
@@ -197,8 +198,15 @@ class QuestViewModel(
                                 ?: break
 
                 try {
+                    val userPreference = PreferencesHelper.getPreferenceByCategoryId(
+                        context,
+                        userId,
+                        selectedCategory.id,
+                        3
+                    )
+
                     val newQuest =
-                            questGeneratorRepository.generateQuestForCategory(selectedCategory)
+                            questGeneratorRepository.generateQuestForCategory(selectedCategory, userPreference)
                     if (newQuest != null) {
                         // Réinitialiser le compteur d'échecs en cas de succès
                         consecutiveFailures = 0
@@ -259,8 +267,15 @@ class QuestViewModel(
                 val selectedCategory =
                         CategorySelector.selectWeightedCategory(context, userId, _categories.value)
                 if (selectedCategory != null) {
+                    val userPreference = PreferencesHelper.getPreferenceByCategoryId(
+                        context,
+                        userId,
+                        selectedCategory.id,
+                        3
+                    )
+
                     val newQuest =
-                            questGeneratorRepository.generateQuestForCategory(selectedCategory)
+                            questGeneratorRepository.generateQuestForCategory(selectedCategory, userPreference)
                     if (newQuest != null) {
                         QuestHelper.incrementQuestCounter(context)
                         _questCounter.value = QuestHelper.getQuestCounter(context)
