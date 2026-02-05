@@ -1,10 +1,9 @@
 package com.example.ascendlifequest.data.repository
 
+import android.content.Context
+import android.util.Log
 import com.example.ascendlifequest.data.model.Categorie
 import com.example.ascendlifequest.data.model.Quest
-
-interface QuestGeneratorRepository {
-
 import com.example.ascendlifequest.database.AppDatabase
 import com.example.ascendlifequest.database.QuestEntity
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +22,17 @@ import kotlin.time.Duration.Companion.minutes
 // Pour appareil physique sans tunnel : utilisez directement l'IP du serveur si accessible
 private const val OLLAMA_BASE_URL = "http://10.0.2.2:11434"
 private const val OLLAMA_MODEL = "llama3.3:latest"  // Modèle Llama 3.3
+
+suspend fun getNextQuestIdFromRoom(context: Context): Int {
+    return try {
+        val questDao = AppDatabase.getDatabase(context).questDao()
+        val maxId = questDao.getMaxId() ?: 999
+        maxId + 1
+    } catch (e: Exception) {
+        Log.e("QuestRepository", "Erreur lors de la récupération de l'ID depuis Room", e)
+        (System.currentTimeMillis() / 1000).toInt()
+    }
+}
 
 suspend fun generateQuestForCategory(context: Context, category: Categorie): Quest? = withContext(Dispatchers.IO) {
     try {
@@ -80,13 +90,13 @@ suspend fun generateQuestForCategory(context: Context, category: Categorie): Que
 
         val parts = text.trim().split("\n").filter { it.isNotBlank() }
 
-        val nomGenere = parts.getOrNull(0)?.replace("1️", "")?.trim() ?: "Quête ${category.nom}"
-        val descGenere = parts.getOrNull(1)?.replace("2️", "")?.trim() ?: "Description indisponible"
-        val tempsString = parts.getOrNull(2)?.replace("3️", "") ?: "10"
-        val xpString = parts.getOrNull(3)?.replace("4️", "") ?: "100"
+        val nomGenere = parts.getOrNull(0)?.replace("1️⃣", "")?.trim() ?: "Quête ${category.nom}"
+        val descGenere = parts.getOrNull(1)?.replace("2️⃣", "")?.trim() ?: "Description indisponible"
+        val tempsString = parts.getOrNull(2)?.replace("3️⃣", "") ?: "10"
+        val xpString = parts.getOrNull(3)?.replace("4️⃣", "") ?: "100"
         val meteoString = parts.getOrNull(4) ?: "non"
 
-        //RÉCUPÉRATION DE L'ID DEPUIS ROOM
+        //  RÉCUPÉRATION DE L'ID DEPUIS ROOM
         val newId = getNextQuestIdFromRoom(context)
 
         val quest = Quest(
@@ -100,7 +110,7 @@ suspend fun generateQuestForCategory(context: Context, category: Categorie): Que
             dependantMeteo = meteoString.contains("oui", ignoreCase = true)
         )
 
-        //SAUVEGARDE DANS ROOM (local - source principale)
+        //  SAUVEGARDE DANS ROOM (local - source principale)
         val questDao = AppDatabase.getDatabase(context).questDao()
         questDao.insertQuest(QuestEntity.fromQuest(quest))
         Log.d("QuestRepository", " Saved Quest in Room ID: ${quest.id}")
