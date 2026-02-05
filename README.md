@@ -6,7 +6,6 @@
 ![Kotlin](https://img.shields.io/badge/Language-Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Backend-Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
-![CI Status](https://img.shields.io/github/actions/workflow/status/your-repo/ci.yml?style=for-the-badge&label=CI)
 
 **Une application gamifiée de gestion de tâches quotidiennes propulsée par l'IA**
 
@@ -253,62 +252,23 @@ Le projet inclut une suite complète de tests unitaires et d'intégration :
 
 ---
 
-## 📋 Fonctionnalités à venir
-
-- [ ] Mode hors ligne complet
-- [ ] Synchronisation optimisée avec Firebase
-- [ ] Achievements et badges
-- [ ] Personnalisation avancée des avatars
-- [ ] Défis entre amis
-- [ ] Notifications push enrichies
-- [ ] Support multilingue
-- [ ] Mode sombre personnalisable
-- [ ] Widget Android pour l'écran d'accueil
-
----
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! Pour contribuer :
-
-1. Forkez le projet
-2. Créez une branche feature (`git checkout -b feature/AmazingFeature`)
-3. Committez vos changements (`git commit -m 'Add some AmazingFeature'`)
-4. Poussez vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrez une Pull Request
-
-### Guidelines
-- Suivez l'architecture MVVM existante
-- Écrivez des tests pour les nouvelles fonctionnalités
-- Respectez les conventions de code Kotlin
-- Documentez le code avec des KDoc professionnels
-- Assurez-vous que tous les tests passent avant de soumettre
-
----
-
-## 📄 License
-
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
-
----
-
 ## 👨‍💻 Développeurs
 
 <table>
   <tr>
     <td align="center">
-      <img src="https://github.com/identicons/leo.png" width="100px;" alt="Léo Periou"/>
+      <img src="https://github.com/identicons/ZeMonkee.png" width="100px;" alt="Léo Periou"/>
       <br />
       <sub><b>Léo Periou</b></sub>
       <br />
-      <a href="https://github.com/leoperiou" title="GitHub">🔗 GitHub</a>
+      <a href="https://github.com/ZeMonkee" title="GitHub">🔗 GitHub</a>
     </td>
     <td align="center">
-      <img src="https://github.com/identicons/corentin.png" width="100px;" alt="Corentin Gas"/>
+      <img src="https://github.com/identicons/ArcLeDepart.png" width="100px;" alt="Corentin Gas"/>
       <br />
       <sub><b>Corentin Gas</b></sub>
       <br />
-      <a href="https://github.com/corentingas" title="GitHub">🔗 GitHub</a>
+      <a href="https://github.com/ArcLeDepart" title="GitHub">🔗 GitHub</a>
     </td>
   </tr>
 </table>
