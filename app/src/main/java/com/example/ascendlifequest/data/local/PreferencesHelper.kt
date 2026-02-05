@@ -61,4 +61,20 @@ object PreferencesHelper {
         val db = AppDatabase.getDatabase(context)
         runBlocking { db.categoryPreferenceDao().clearPreferencesForUser(userId) }
     }
+
+    /**
+     * Récupère la préférence utilisateur pour une catégorie donnée par son ID
+     *
+     * @param context Le contexte Android
+     * @param userId L'ID de l'utilisateur
+     * @param categoryId L'ID de la catégorie (1=Sport, 2=Cuisine, 3=Jeux Vidéo, 4=Lecture)
+     * @param defaultValue La valeur par défaut si aucune préférence n'est trouvée
+     * @return Le niveau de préférence (1-5)
+     */
+    fun getPreferenceByCategoryId(context: Context, userId: String, categoryId: Int, defaultValue: Int = 3): Int {
+        val db = AppDatabase.getDatabase(context)
+        return runBlocking {
+            db.categoryPreferenceDao().getPreferenceForCategory(userId, categoryId) ?: defaultValue
+        }
+    }
 }
