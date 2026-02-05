@@ -76,6 +76,7 @@ dependencies {
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation(libs.androidx.compose.material3)
     implementation(libs.firebase.firestore)
@@ -86,6 +87,9 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1") // Changé de implementation à ksp
+
+    // WorkManager pour les notifications planifiées
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Testing
     testImplementation(libs.junit)
