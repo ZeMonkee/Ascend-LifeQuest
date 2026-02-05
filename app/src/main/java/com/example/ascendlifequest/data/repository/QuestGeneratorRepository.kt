@@ -11,5 +11,5 @@ const val OLLAMA_MODEL = "llama3.3:latest"  // Modèle Llama 3.3
 
 interface QuestGeneratorRepository {
     suspend fun getNextQuestIdFromRoom(): Int
-    suspend fun generateQuestForCategory(category: Categorie): Quest?
+    suspend fun generateQuestForCategory(category: Categorie, userPreference: Int = 3): Quest?
 }
