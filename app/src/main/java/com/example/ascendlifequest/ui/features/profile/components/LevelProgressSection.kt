@@ -10,22 +10,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 import java.util.Locale
 
 @Composable
 fun LevelProgressSection(level: Int, progress: Float, xpToNext: Long) {
+    val colors = themeColors()
+
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         // Badge de niveau
         Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = AppColor.LightBlueColor,
+                color = colors.lightAccent,
                 modifier = Modifier.padding(bottom = 8.dp)
         ) {
             Text(
                     text = "Niveau $level",
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                    color = AppColor.MainTextColor,
+                    color = colors.mainText,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
             )
@@ -35,8 +37,8 @@ fun LevelProgressSection(level: Int, progress: Float, xpToNext: Long) {
         LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                color = AppColor.LightBlueColor,
-                trackColor = AppColor.MinusTextColor.copy(alpha = 0.3f)
+                color = colors.lightAccent,
+                trackColor = colors.minusText.copy(alpha = 0.3f)
         )
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -45,7 +47,7 @@ fun LevelProgressSection(level: Int, progress: Float, xpToNext: Long) {
         Text(
                 text = "${formatXp(xpToNext)} XP pour le niveau ${level + 1}",
                 fontSize = 12.sp,
-                color = AppColor.MinusTextColor
+                color = colors.minusText
         )
     }
 }
