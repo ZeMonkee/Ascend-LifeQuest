@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.data.model.UserProfile
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -34,7 +34,8 @@ fun FriendItem(
         onClick: () -> Unit = {},
         onLongPress: () -> Unit = {}
 ) {
-        val backgroundColor = AppColor.DarkBlueColor
+        val colors = themeColors()
+        val backgroundColor = colors.darkBackground
 
         Card(
                 modifier =
@@ -65,19 +66,19 @@ fun FriendItem(
                                         text = user.pseudo,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = AppColor.MainTextColor
+                                        color = colors.mainText
                                 )
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
                                                 text = "${user.xp} XP",
                                                 fontSize = 14.sp,
-                                                color = AppColor.MinusTextColor
+                                                color = colors.minusText
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
                                                 text = "• Niveau ${user.calculateLevel()}",
                                                 fontSize = 14.sp,
-                                                color = AppColor.MinusTextColor
+                                                color = colors.minusText
                                         )
                                 }
                         }
@@ -87,7 +88,7 @@ fun FriendItem(
                                 Icon(
                                         imageVector = Icons.Default.Email,
                                         contentDescription = "Envoyer un message",
-                                        tint = AppColor.LightBlueColor,
+                                        tint = colors.lightAccent,
                                         modifier = Modifier.size(24.dp)
                                 )
                         }
@@ -98,19 +99,21 @@ fun FriendItem(
 /** Composant pour afficher une demande d'ami en attente (tuile grisée avec accepter/refuser) */
 @Composable
 fun FriendRequestItem(user: UserProfile, onAccept: () -> Unit, onDecline: () -> Unit) {
+        val colors = themeColors()
+
         Card(
                 modifier = Modifier.fillMaxWidth().height(80.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors =
                         CardDefaults.cardColors(
-                                containerColor = AppColor.DarkBlueColor.copy(alpha = 0.6f)
+                                containerColor = colors.darkBackground.copy(alpha = 0.6f)
                         )
         ) {
                 Row(
                         modifier =
                                 Modifier.fillMaxSize()
                                         .background(
-                                                color = AppColor.MinusTextColor.copy(alpha = 0.1f)
+                                                color = colors.minusText.copy(alpha = 0.1f)
                                         )
                                         .padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -131,17 +134,17 @@ fun FriendRequestItem(user: UserProfile, onAccept: () -> Unit, onDecline: () -> 
                                         text = user.pseudo,
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = AppColor.MainTextColor
+                                        color = colors.mainText
                                 )
                                 Text(
                                         text = "Veut devenir votre ami",
                                         fontSize = 12.sp,
-                                        color = AppColor.MinusTextColor
+                                        color = colors.minusText
                                 )
                                 Text(
                                         text = "${user.xp} XP • Niveau ${user.calculateLevel()}",
                                         fontSize = 11.sp,
-                                        color = AppColor.MinusTextColor.copy(alpha = 0.7f)
+                                        color = colors.minusText.copy(alpha = 0.7f)
                                 )
                         }
 
@@ -154,7 +157,7 @@ fun FriendRequestItem(user: UserProfile, onAccept: () -> Unit, onDecline: () -> 
                                                 Modifier.size(36.dp)
                                                         .clip(CircleShape)
                                                         .background(
-                                                                AppColor.SportColor.copy(
+                                                                colors.sport.copy(
                                                                         alpha = 0.8f
                                                                 )
                                                         )
@@ -174,7 +177,7 @@ fun FriendRequestItem(user: UserProfile, onAccept: () -> Unit, onDecline: () -> 
                                                 Modifier.size(36.dp)
                                                         .clip(CircleShape)
                                                         .background(
-                                                                AppColor.LectureColor.copy(
+                                                                colors.lecture.copy(
                                                                         alpha = 0.8f
                                                                 )
                                                         )
@@ -193,10 +196,12 @@ fun FriendRequestItem(user: UserProfile, onAccept: () -> Unit, onDecline: () -> 
 
 @Composable
 fun SearchUserItem(user: UserProfile, onAddClick: () -> Unit, isAdding: Boolean = false) {
+        val colors = themeColors()
+
         Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = AppColor.DarkBlueColor)
+                colors = CardDefaults.cardColors(containerColor = colors.darkBackground)
         ) {
                 Row(
                         modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -218,12 +223,12 @@ fun SearchUserItem(user: UserProfile, onAddClick: () -> Unit, isAdding: Boolean 
                                         text = user.pseudo,
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = AppColor.MainTextColor
+                                        color = colors.mainText
                                 )
                                 Text(
                                         text = "${user.xp} XP • Niveau ${user.calculateLevel()}",
                                         fontSize = 12.sp,
-                                        color = AppColor.MinusTextColor
+                                        color = colors.minusText
                                 )
                         }
 
@@ -233,16 +238,16 @@ fun SearchUserItem(user: UserProfile, onAddClick: () -> Unit, isAdding: Boolean 
                                 enabled = !isAdding,
                                 colors =
                                         ButtonDefaults.buttonColors(
-                                                containerColor = AppColor.LightBlueColor,
+                                                containerColor = colors.lightAccent,
                                                 disabledContainerColor =
-                                                        AppColor.LightBlueColor.copy(alpha = 0.5f)
+                                                        colors.lightAccent.copy(alpha = 0.5f)
                                         ),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                         ) {
                                 if (isAdding) {
                                         CircularProgressIndicator(
                                                 modifier = Modifier.size(16.dp),
-                                                color = AppColor.MainTextColor,
+                                                color = colors.mainText,
                                                 strokeWidth = 2.dp
                                         )
                                 } else {
@@ -256,18 +261,20 @@ fun SearchUserItem(user: UserProfile, onAddClick: () -> Unit, isAdding: Boolean 
 /** Composant pour afficher une notification (ex: demande d'ami refusée) */
 @Composable
 fun NotificationItem(message: String, onDismiss: () -> Unit) {
+        val colors = themeColors()
+
         Card(
                 modifier = Modifier.fillMaxWidth().height(70.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors =
                         CardDefaults.cardColors(
-                                containerColor = AppColor.DarkBlueColor.copy(alpha = 0.7f)
+                                containerColor = colors.darkBackground.copy(alpha = 0.7f)
                         )
         ) {
                 Row(
                         modifier =
                                 Modifier.fillMaxSize()
-                                        .background(color = AppColor.SportColor.copy(alpha = 0.1f))
+                                        .background(color = colors.sport.copy(alpha = 0.1f))
                                         .padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -276,13 +283,13 @@ fun NotificationItem(message: String, onDismiss: () -> Unit) {
                                 modifier =
                                         Modifier.size(40.dp)
                                                 .clip(CircleShape)
-                                                .background(AppColor.SportColor.copy(alpha = 0.3f)),
+                                                .background(colors.sport.copy(alpha = 0.3f)),
                                 contentAlignment = Alignment.Center
                         ) {
                                 Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = null,
-                                        tint = AppColor.MainTextColor,
+                                        tint = colors.mainText,
                                         modifier = Modifier.size(24.dp)
                                 )
                         }
@@ -294,7 +301,7 @@ fun NotificationItem(message: String, onDismiss: () -> Unit) {
                                 Text(
                                         text = message,
                                         fontSize = 14.sp,
-                                        color = AppColor.MainTextColor
+                                        color = colors.mainText
                                 )
                         }
 
@@ -303,7 +310,7 @@ fun NotificationItem(message: String, onDismiss: () -> Unit) {
                                 Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = "Fermer",
-                                        tint = AppColor.MinusTextColor,
+                                        tint = colors.minusText,
                                         modifier = Modifier.size(18.dp)
                                 )
                         }
