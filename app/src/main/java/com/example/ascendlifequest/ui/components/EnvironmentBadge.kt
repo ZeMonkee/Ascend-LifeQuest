@@ -72,6 +72,7 @@ private data class EnvironmentData(
     val fullLabel: String
 )
 
+@Suppress("KotlinConstantConditions")
 private fun getCurrentEnvironmentData(): EnvironmentData? {
     return when (BuildConfig.ENVIRONMENT_NAME) {
         "Development" -> EnvironmentData(

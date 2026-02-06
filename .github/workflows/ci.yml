@@ -23,7 +23,7 @@ jobs:
   # Build & Tests
   # ============================================
   build-and-test:
-    name: 🔨 Build & Test
+    name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -69,7 +69,7 @@ jobs:
   # Lint (optionnel, ne bloque pas)
   # ============================================
   lint:
-    name: 🔍 Lint
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
     continue-on-error: true

@@ -23,7 +23,7 @@ jobs:
   # Détection de la branche et configuration
   # ============================================
   setup:
-    name: 🔧 Setup Build Configuration
+    name: Setup Build Configuration
     runs-on: ubuntu-latest
     outputs:
       flavor: ${{ steps.config.outputs.flavor }}
@@ -63,7 +63,7 @@ jobs:
   # Tests unitaires
   # ============================================
   test:
-    name: 🧪 Run Tests
+    name: Run Tests
     runs-on: ubuntu-latest
     needs: setup
 
@@ -108,7 +108,7 @@ jobs:
   # Lint & Code Quality
   # ============================================
   lint:
-    name: 🔍 Lint Check
+    name: Lint Check
     runs-on: ubuntu-latest
     needs: setup
     continue-on-error: true
@@ -143,7 +143,7 @@ jobs:
   # Build APK
   # ============================================
   build:
-    name: 🏗️ Build APK
+    name: Build APK
     runs-on: ubuntu-latest
     needs: [setup, test]
 
@@ -235,7 +235,7 @@ jobs:
   # Notification de succès
   # ============================================
   notify:
-    name: 📢 Build Summary
+    name: Build Summary
     runs-on: ubuntu-latest
     needs: [setup, build]
     if: always()
@@ -243,7 +243,7 @@ jobs:
     steps:
       - name: Build Summary
         run: |
-          echo "## 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
@@ -255,6 +255,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ needs.setup.outputs.is_release }}" == "true" ]; then
-            echo "### 🎉 Production Release Build" >> $GITHUB_STEP_SUMMARY
+            echo "### Production Release Build" >> $GITHUB_STEP_SUMMARY
             echo "This build is ready for production deployment." >> $GITHUB_STEP_SUMMARY
           fi
