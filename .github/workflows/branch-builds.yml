@@ -2,9 +2,9 @@ name: Branch Builds CI/CD
 
 # ============================================
 # Workflow déclenché par les push sur les branches
-# dev → Build DEV Debug APK
-# preprod → Build PREPROD Debug APK
-# prod → Build PROD Release APK (signé)
+# dev → Build DEV Debug + Release APK
+# preprod → Build PREPROD Debug + Release APK
+# prod → Build PROD Release APK uniquement (signé)
 # ============================================
 
 on:
@@ -27,9 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       flavor: ${{ steps.config.outputs.flavor }}
-      build_type: ${{ steps.config.outputs.build_type }}
       artifact_name: ${{ steps.config.outputs.artifact_name }}
-      is_release: ${{ steps.config.outputs.is_release }}
+      is_prod: ${{ steps.config.outputs.is_prod }}
 
     steps:
       - name: Determine build configuration
@@ -41,21 +40,18 @@ jobs:
           case $BRANCH in
             dev)
               echo "flavor=dev" >> $GITHUB_OUTPUT
-              echo "build_type=Debug" >> $GITHUB_OUTPUT
               echo "artifact_name=ascend-lifequest-DEV" >> $GITHUB_OUTPUT
-              echo "is_release=false" >> $GITHUB_OUTPUT
+              echo "is_prod=false" >> $GITHUB_OUTPUT
               ;;
             preprod)
               echo "flavor=preprod" >> $GITHUB_OUTPUT
-              echo "build_type=Debug" >> $GITHUB_OUTPUT
               echo "artifact_name=ascend-lifequest-PREPROD" >> $GITHUB_OUTPUT
-              echo "is_release=false" >> $GITHUB_OUTPUT
+              echo "is_prod=false" >> $GITHUB_OUTPUT
               ;;
             prod)
               echo "flavor=prod" >> $GITHUB_OUTPUT
-              echo "build_type=Release" >> $GITHUB_OUTPUT
               echo "artifact_name=ascend-lifequest-PRODUCTION" >> $GITHUB_OUTPUT
-              echo "is_release=true" >> $GITHUB_OUTPUT
+              echo "is_prod=true" >> $GITHUB_OUTPUT
               ;;
           esac
 
@@ -92,7 +88,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Run unit tests
-        run: ./gradlew test${{ needs.setup.outputs.flavor }}${{ needs.setup.outputs.build_type }}UnitTest --stacktrace
+        run: ./gradlew test${{ needs.setup.outputs.flavor }}ReleaseUnitTest --stacktrace
 
       - name: Upload test results
         if: always()
@@ -128,7 +124,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run lint
-        run: ./gradlew lint${{ needs.setup.outputs.flavor }}${{ needs.setup.outputs.build_type }} --stacktrace
+        run: ./gradlew lint${{ needs.setup.outputs.flavor }}Release --stacktrace
         continue-on-error: true
 
       - name: Upload lint results
@@ -140,10 +136,10 @@ jobs:
           retention-days: 14
 
   # ============================================
-  # Build APK
+  # Build APKs
   # ============================================
   build:
-    name: Build APK
+    name: Build APKs
     runs-on: ubuntu-latest
     needs: [setup, test]
 
@@ -179,12 +175,18 @@ jobs:
         id: sha
         run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Build APK
-        run: ./gradlew assemble${{ needs.setup.outputs.flavor }}${{ needs.setup.outputs.build_type }} --stacktrace
+      # Build Debug APK (dev et preprod uniquement)
+      - name: Build Debug APK
+        if: needs.setup.outputs.is_prod == 'false'
+        run: ./gradlew assemble${{ needs.setup.outputs.flavor }}Debug --stacktrace
+
+      # Build Release APK (toutes les branches)
+      - name: Build Release APK
+        run: ./gradlew assemble${{ needs.setup.outputs.flavor }}Release --stacktrace
 
       # Signature pour la production uniquement
       - name: Sign Production APK
-        if: needs.setup.outputs.is_release == 'true'
+        if: needs.setup.outputs.is_prod == 'true'
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: app/build/outputs/apk/prod/release
@@ -196,35 +198,60 @@ jobs:
           BUILD_TOOLS_VERSION: "34.0.0"
         continue-on-error: true
 
-      - name: Rename APK with version info
+      # Renommer les APKs
+      - name: Rename APKs with version info
         run: |
           FLAVOR=${{ needs.setup.outputs.flavor }}
-          BUILD_TYPE=$(echo "${{ needs.setup.outputs.build_type }}" | tr '[:upper:]' '[:lower:]')
+          DATE=${{ steps.date.outputs.date }}
+          SHA=${{ steps.sha.outputs.sha }}
+          ARTIFACT_NAME=${{ needs.setup.outputs.artifact_name }}
           
-          APK_DIR="app/build/outputs/apk/${FLAVOR}/${BUILD_TYPE}"
+          # Rename Release APK
+          RELEASE_DIR="app/build/outputs/apk/${FLAVOR}/release"
+          if [ -d "$RELEASE_DIR" ]; then
+            for apk in ${RELEASE_DIR}/*.apk; do
+              if [ -f "$apk" ]; then
+                mv "$apk" "${RELEASE_DIR}/${ARTIFACT_NAME}-release-${DATE}-${SHA}.apk"
+                break
+              fi
+            done
+          fi
           
-          for apk in ${APK_DIR}/*.apk; do
-            if [ -f "$apk" ]; then
-              FILENAME=$(basename "$apk" .apk)
-              mv "$apk" "${APK_DIR}/${{ needs.setup.outputs.artifact_name }}-${{ steps.date.outputs.date }}-${{ steps.sha.outputs.sha }}.apk"
-              break
-            fi
-          done
+          # Rename Debug APK (if exists)
+          DEBUG_DIR="app/build/outputs/apk/${FLAVOR}/debug"
+          if [ -d "$DEBUG_DIR" ]; then
+            for apk in ${DEBUG_DIR}/*.apk; do
+              if [ -f "$apk" ]; then
+                mv "$apk" "${DEBUG_DIR}/${ARTIFACT_NAME}-debug-${DATE}-${SHA}.apk"
+                break
+              fi
+            done
+          fi
 
-      - name: Upload APK Artifact
+      # Upload Debug APK (dev et preprod uniquement)
+      - name: Upload Debug APK
+        if: needs.setup.outputs.is_prod == 'false'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ needs.setup.outputs.artifact_name }}-${{ steps.sha.outputs.sha }}
-          path: app/build/outputs/apk/**/*.apk
+          name: ${{ needs.setup.outputs.artifact_name }}-debug-${{ steps.sha.outputs.sha }}
+          path: app/build/outputs/apk/${{ needs.setup.outputs.flavor }}/debug/*.apk
+          retention-days: 30
+
+      # Upload Release APK (toutes les branches)
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact_name }}-release-${{ steps.sha.outputs.sha }}
+          path: app/build/outputs/apk/${{ needs.setup.outputs.flavor }}/release/*.apk
           retention-days: 30
 
       # Build AAB pour la production
       - name: Build Production AAB
-        if: needs.setup.outputs.is_release == 'true'
+        if: needs.setup.outputs.is_prod == 'true'
         run: ./gradlew bundleProdRelease --stacktrace
 
       - name: Upload AAB Artifact
-        if: needs.setup.outputs.is_release == 'true'
+        if: needs.setup.outputs.is_prod == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ needs.setup.outputs.artifact_name }}-AAB-${{ steps.sha.outputs.sha }}
@@ -249,12 +276,14 @@ jobs:
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| **Branch** | ${GITHUB_REF#refs/heads/} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Flavor** | ${{ needs.setup.outputs.flavor }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Build Type** | ${{ needs.setup.outputs.build_type }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Artifact** | ${{ needs.setup.outputs.artifact_name }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | ${GITHUB_SHA:0:7} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [ "${{ needs.setup.outputs.is_release }}" == "true" ]; then
+          if [ "${{ needs.setup.outputs.is_prod }}" == "true" ]; then
             echo "### Production Release Build" >> $GITHUB_STEP_SUMMARY
-            echo "This build is ready for production deployment." >> $GITHUB_STEP_SUMMARY
+            echo "APK Release + AAB generated." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Development Build" >> $GITHUB_STEP_SUMMARY
+            echo "APK Debug + Release generated." >> $GITHUB_STEP_SUMMARY
           fi
