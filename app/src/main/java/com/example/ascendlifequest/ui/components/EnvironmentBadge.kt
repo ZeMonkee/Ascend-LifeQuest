@@ -126,9 +126,9 @@ fun EnvironmentBadge(
                     .padding(top = 4.dp)
                     .shadow(
                         elevation = 8.dp,
-                        shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+                        shape = RoundedCornerShape(bottomEnd = 16.dp)
                     ),
-                shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                shape = RoundedCornerShape(bottomEnd = 16.dp),
                 color = Color.Transparent
             ) {
                 Box(
@@ -164,8 +164,10 @@ fun EnvironmentBadge(
 
 /**
  * Vérifie si les outils de debug doivent être affichés
+ * Retourne true uniquement en mode Debug (pas en Release)
  */
+@Suppress("KotlinConstantConditions")
 fun shouldShowDebugTools(): Boolean {
-    return true
+    return BuildConfig.SHOW_DEBUG_TOOLS
 }
 
