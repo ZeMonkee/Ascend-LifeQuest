@@ -14,10 +14,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ascendlifequest.data.model.Message
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
 fun ChatMessagesList(messages: List<Message>, currentUserId: String) {
+    val colors = themeColors()
     val listState = rememberLazyListState()
 
     // Scroll to bottom when new messages arrive
@@ -29,7 +30,7 @@ fun ChatMessagesList(messages: List<Message>, currentUserId: String) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Barre de séparation turquoise en haut
-        Box(modifier = Modifier.fillMaxWidth().height(2.dp).background(AppColor.DarkBlueColor))
+        Box(modifier = Modifier.fillMaxWidth().height(2.dp).background(colors.lightAccent))
 
         if (messages.isEmpty()) {
             Box(
@@ -38,7 +39,7 @@ fun ChatMessagesList(messages: List<Message>, currentUserId: String) {
             ) {
                 Text(
                     text = "Aucun message\nCommencez la conversation !",
-                    color = AppColor.MinusTextColor,
+                    color = colors.minusText,
                     textAlign = TextAlign.Center,
                     fontSize = 16.sp
                 )
@@ -60,6 +61,6 @@ fun ChatMessagesList(messages: List<Message>, currentUserId: String) {
         }
 
         // Barre de séparation turquoise en bas
-        Box(modifier = Modifier.fillMaxWidth().height(2.dp).background(AppColor.DarkBlueColor))
+        Box(modifier = Modifier.fillMaxWidth().height(2.dp).background(colors.lightAccent))
     }
 }
