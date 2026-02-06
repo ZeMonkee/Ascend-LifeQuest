@@ -46,7 +46,8 @@ private object EnvironmentConfig {
         colors = listOf(Color(0xFFFF7043), Color(0xFFFF5722), Color(0xFFE64A19))
     )
     val devIcon = Icons.Filled.Code
-    const val devLabel = "DEV"
+    const val
+            devLabel = "DEV"
     const val devFullLabel = "Development"
 
     // PREPROD - Violet/Magenta avec icône de science
@@ -166,8 +167,7 @@ fun EnvironmentBadge(
  * Vérifie si les outils de debug doivent être affichés
  * Retourne true uniquement en mode Debug (pas en Release)
  */
-@Suppress("KotlinConstantConditions")
 fun shouldShowDebugTools(): Boolean {
-    return BuildConfig.SHOW_DEBUG_TOOLS
+    return BuildConfig.DEBUG
 }
 
