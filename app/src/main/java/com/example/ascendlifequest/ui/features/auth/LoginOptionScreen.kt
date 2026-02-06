@@ -45,7 +45,7 @@ import com.example.ascendlifequest.R
 import com.example.ascendlifequest.ui.components.AppBackground
 import com.example.ascendlifequest.ui.features.auth.components.SocialLoginButton
 import com.example.ascendlifequest.data.remote.AuthService
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 import com.example.ascendlifequest.di.AppViewModelFactory
 import kotlinx.coroutines.launch
 
@@ -118,6 +118,8 @@ fun LoginOptionScreen(navController: NavHostController) {
     }
 
     AppBackground {
+        val colors = themeColors()
+
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -145,7 +147,7 @@ fun LoginOptionScreen(navController: NavHostController) {
                     "Se connecter",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AppColor.MainTextColor
+                    color = colors.mainText
                 )
             }
 
@@ -153,7 +155,7 @@ fun LoginOptionScreen(navController: NavHostController) {
 
             Text(
                 text = "Pas encore de compte ? S'inscrire",
-                color = AppColor.MinusTextColor,
+                color = colors.minusText,
                 fontSize = 15.sp,
                 modifier = Modifier.clickable { navController.navigate("register") }
             )
@@ -172,7 +174,7 @@ fun LoginOptionScreen(navController: NavHostController) {
                 Box(
                     modifier = Modifier
                         .size(50.dp)
-                        .background(AppColor.MainTextColor, shape = CircleShape)
+                        .background(colors.mainText, shape = CircleShape)
                         .clickable {
                             if (!isGoogleLoading) {
                                 isGoogleLoading = true
