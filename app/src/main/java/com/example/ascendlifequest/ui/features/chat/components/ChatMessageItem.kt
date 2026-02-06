@@ -10,12 +10,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ascendlifequest.data.model.Message
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun ChatMessageItem(message: Message, isFromCurrentUser: Boolean) {
+    val colors = themeColors()
     val dateFormat = SimpleDateFormat("HH:mm", Locale.FRANCE)
     val timeString = dateFormat.format(message.timestamp.toDate())
 
@@ -28,8 +29,8 @@ fun ChatMessageItem(message: Message, isFromCurrentUser: Boolean) {
                         Modifier.widthIn(max = 280.dp)
                                 .background(
                                         color =
-                                                if (isFromCurrentUser) AppColor.LightBlueColor
-                                                else AppColor.DarkBlueColor,
+                                                if (isFromCurrentUser) colors.lightAccent
+                                                else colors.darkBackground,
                                         shape =
                                                 RoundedCornerShape(
                                                         topStart = 16.dp,
@@ -43,13 +44,13 @@ fun ChatMessageItem(message: Message, isFromCurrentUser: Boolean) {
                                                 )
                                 )
                                 .padding(12.dp)
-        ) { Text(text = message.content, color = AppColor.MainTextColor, fontSize = 15.sp) }
+        ) { Text(text = message.content, color = colors.mainText, fontSize = 15.sp) }
 
         Spacer(modifier = Modifier.height(2.dp))
 
         Text(
                 text = timeString,
-                color = AppColor.MinusTextColor,
+                color = colors.minusText,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(horizontal = 4.dp)
         )
