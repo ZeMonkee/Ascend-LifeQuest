@@ -18,7 +18,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.ascendlifequest.data.model.Notification
 import com.example.ascendlifequest.data.model.UserProfile
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
 fun PendingRequestsDialog(
@@ -29,6 +29,7 @@ fun PendingRequestsDialog(
         onDeleteNotification: (String) -> Unit,
         onDismiss: () -> Unit
 ) {
+    val colors = themeColors()
     val totalCount = pendingRequests.size + notifications.size
 
     Dialog(
@@ -38,7 +39,7 @@ fun PendingRequestsDialog(
         Card(
                 modifier = Modifier.fillMaxWidth(0.95f).fillMaxHeight(0.6f),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = AppColor.DarkBlueColor)
+                colors = CardDefaults.cardColors(containerColor = colors.darkBackground)
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 // Header
@@ -51,13 +52,13 @@ fun PendingRequestsDialog(
                             text = "Notifications ($totalCount)",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AppColor.MainTextColor
+                            color = colors.mainText
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Fermer",
-                                tint = AppColor.MinusTextColor
+                                tint = colors.minusText
                         )
                     }
                 }
@@ -70,7 +71,7 @@ fun PendingRequestsDialog(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                     text = "Aucune notification",
-                                    color = AppColor.MinusTextColor,
+                                    color = colors.minusText,
                                     textAlign = TextAlign.Center,
                                     fontSize = 16.sp
                             )
@@ -85,7 +86,7 @@ fun PendingRequestsDialog(
                                         text = "Notifications",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = AppColor.MinusTextColor,
+                                        color = colors.minusText,
                                         modifier = Modifier.padding(vertical = 4.dp)
                                 )
                             }
@@ -104,7 +105,7 @@ fun PendingRequestsDialog(
                                         text = "Demandes d'amis",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = AppColor.MinusTextColor,
+                                        color = colors.minusText,
                                         modifier = Modifier.padding(vertical = 4.dp)
                                 )
                             }
