@@ -24,7 +24,11 @@ import com.example.ascendlifequest.ui.features.profile.ProfilScreen
 import com.example.ascendlifequest.ui.features.quest.QuestScreen
 import com.example.ascendlifequest.ui.features.settings.PreferenceScreen
 import com.example.ascendlifequest.ui.features.settings.SettingScreen
+import com.example.ascendlifequest.ui.features.settings.ThemeCreatorScreen
+import com.example.ascendlifequest.ui.features.settings.ThemeScreen
+import com.example.ascendlifequest.ui.theme.AppThemeProvider
 import com.example.ascendlifequest.ui.theme.AscendLifeQuestTheme
+import com.example.ascendlifequest.ui.theme.ThemeViewModel
 import com.google.firebase.FirebaseApp
 
 private const val TAG = "MainActivity"
@@ -48,34 +52,40 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
         setContent {
+            val themeViewModel = ThemeViewModel(this)
+
             AscendLifeQuestTheme {
-                val navController = rememberNavController()
-                PermissionRequester()
-                NavHost(navController = navController, startDestination = "login_option") {
-                    composable("login_option") { LoginOptionScreen(navController) }
-                    composable("login") { LoginScreen(navController) }
-                    composable("register") { RegisterScreen(navController) }
-                    composable("quetes") { QuestScreen(navController) }
-                    composable("classement") { ClassementScreen(navController) }
-                    composable("amis") { FriendScreen(navController) }
-                    composable("parametres") { SettingScreen(navController) }
-                    composable("account") { AccountScreen(navController) }
-                    composable("profil") { ProfilScreen(navController) }
-                    composable("preference") { PreferenceScreen(navController) }
-                    composable(
-                            route = "profil/{userId}",
-                            arguments = listOf(navArgument("userId") { type = NavType.StringType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getString("userId")
-                        ProfilScreen(navController = navController, userId = userId)
-                    }
-                    composable(
-                            route = "chat/{friendId}",
-                            arguments =
-                                    listOf(navArgument("friendId") { type = NavType.StringType })
-                    ) { backStackEntry ->
-                        val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
-                        ChatScreen(navController = navController, friendId = friendId)
+                AppThemeProvider(themeViewModel = themeViewModel) {
+                    val navController = rememberNavController()
+                    PermissionRequester()
+                    NavHost(navController = navController, startDestination = "login_option") {
+                        composable("login_option") { LoginOptionScreen(navController) }
+                        composable("login") { LoginScreen(navController) }
+                        composable("register") { RegisterScreen(navController) }
+                        composable("quetes") { QuestScreen(navController) }
+                        composable("classement") { ClassementScreen(navController) }
+                        composable("amis") { FriendScreen(navController) }
+                        composable("parametres") { SettingScreen(navController) }
+                        composable("account") { AccountScreen(navController) }
+                        composable("profil") { ProfilScreen(navController) }
+                        composable("preference") { PreferenceScreen(navController) }
+                        composable("theme") { ThemeScreen(navController, themeViewModel) }
+                        composable("theme_creator") { ThemeCreatorScreen(navController, themeViewModel) }
+                        composable(
+                                route = "profil/{userId}",
+                                arguments = listOf(navArgument("userId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getString("userId")
+                            ProfilScreen(navController = navController, userId = userId)
+                        }
+                        composable(
+                                route = "chat/{friendId}",
+                                arguments =
+                                        listOf(navArgument("friendId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val friendId = backStackEntry.arguments?.getString("friendId") ?: ""
+                            ChatScreen(navController = navController, friendId = friendId)
+                        }
                     }
                 }
             }
