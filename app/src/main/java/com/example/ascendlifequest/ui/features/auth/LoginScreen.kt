@@ -37,7 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.ui.components.AppBackground
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 import com.example.ascendlifequest.di.AppViewModelFactory
 
 @Composable
@@ -86,6 +86,8 @@ fun LoginScreen(navController: NavHostController) {
     }
 
     AppBackground {
+        val colors = themeColors()
+
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -159,7 +161,7 @@ fun LoginScreen(navController: NavHostController) {
 
             Text(
                 text = "Mot de passe oublié",
-                color = AppColor.MinusTextColor,
+                color = colors.minusText,
                 fontSize = 14.sp,
                 modifier = Modifier
                     .align(Alignment.End)
@@ -195,7 +197,7 @@ fun LoginScreen(navController: NavHostController) {
                 // UI loading state derived from viewModel.uiState could be used; for simplicity toggling local isLoading
                 if (isLoading) {
                     CircularProgressIndicator(
-                        color = AppColor.MainTextColor,
+                        color = colors.mainText,
                         modifier = Modifier.size(24.dp),
                         strokeWidth = 2.dp
                     )
@@ -204,7 +206,7 @@ fun LoginScreen(navController: NavHostController) {
                         "Se connecter",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = AppColor.MainTextColor
+                        color = colors.mainText
                     )
                 }
             }
@@ -213,7 +215,7 @@ fun LoginScreen(navController: NavHostController) {
 
             Text(
                 text = "Pas encore de compte ? S'inscrire",
-                color = AppColor.MinusTextColor,
+                color = colors.minusText,
                 fontSize = 15.sp,
                 modifier = Modifier.clickable { navController.navigate("register") }
             )
