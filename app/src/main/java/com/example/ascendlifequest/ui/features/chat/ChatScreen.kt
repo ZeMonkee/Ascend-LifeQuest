@@ -16,7 +16,7 @@ import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.features.chat.components.ChatInputBar
 import com.example.ascendlifequest.ui.features.chat.components.ChatMessagesList
 import com.example.ascendlifequest.ui.features.chat.components.ChatTopBar
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +29,7 @@ fun ChatScreen(
     val messageText by viewModel.messageText.collectAsState()
     val isSending by viewModel.isSending.collectAsState()
     val currentUserId by viewModel.currentUserId.collectAsState()
+    val colors = themeColors()
 
     LaunchedEffect(friendId) { viewModel.loadConversation(friendId) }
 
@@ -57,7 +58,7 @@ fun ChatScreen(
                         is ChatUiState.Loading -> {
                             CircularProgressIndicator(
                                     modifier = Modifier.align(Alignment.Center),
-                                    color = AppColor.LightBlueColor
+                                    color = colors.lightAccent
                             )
                         }
                         is ChatUiState.Success -> {
@@ -69,7 +70,7 @@ fun ChatScreen(
                         is ChatUiState.Error -> {
                             Text(
                                     text = state.message,
-                                    color = AppColor.MinusTextColor,
+                                    color = colors.minusText,
                                     modifier = Modifier.align(Alignment.Center).padding(16.dp),
                                     textAlign = TextAlign.Center
                             )
