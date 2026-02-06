@@ -24,7 +24,7 @@ import com.example.ascendlifequest.ui.features.friends.components.AddFriendDialo
 import com.example.ascendlifequest.ui.features.friends.components.DeleteFriendConfirmDialog
 import com.example.ascendlifequest.ui.features.friends.components.FriendsContent
 import com.example.ascendlifequest.ui.features.friends.components.PendingRequestsDialog
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
 fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel = viewModel()) {
@@ -90,14 +90,16 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
 
     AppBottomNavBar(navController, BottomNavItem.Amis) { innerPadding ->
         AppBackground {
+            val colors = themeColors()
+
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                 Column(modifier = Modifier.fillMaxSize()) {
                     // Indicateur de refresh en haut
                     if (isRefreshing && uiState is FriendsUiState.Success) {
                         LinearProgressIndicator(
                                 modifier = Modifier.fillMaxWidth(),
-                                color = AppColor.LightBlueColor,
-                                trackColor = AppColor.DarkBlueColor
+                                color = colors.lightAccent,
+                                trackColor = colors.darkBackground
                         )
                     }
 
@@ -110,9 +112,9 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
                         // Titre centré
                         Text(
                                 text = "AMIS",
-                                fontSize = 24.sp,
+                                fontSize = 26.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = AppColor.MainTextColor,
+                                color = colors.mainText,
                                 modifier = Modifier.align(Alignment.Center)
                         )
 
@@ -123,8 +125,8 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
                                         imageVector = Icons.Default.Notifications,
                                         contentDescription = "Demandes d'amis",
                                         tint =
-                                                if (pendingRequestsCount > 0) AppColor.CuisineColor
-                                                else AppColor.MinusTextColor,
+                                                if (pendingRequestsCount > 0) colors.cuisine
+                                                else colors.minusText,
                                         modifier = Modifier.size(28.dp)
                                 )
                             }
@@ -137,14 +139,14 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
                                                         .offset(x = (-4).dp, y = 4.dp)
                                                         .size(20.dp)
                                                         .clip(CircleShape)
-                                                        .background(AppColor.SportColor),
+                                                        .background(colors.sport),
                                         contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                             text =
                                                     if (pendingRequestsCount > 9) "9+"
                                                     else pendingRequestsCount.toString(),
-                                            color = AppColor.MainTextColor,
+                                            color = colors.mainText,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold
                                     )
@@ -158,7 +160,7 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
                             Box(
                                     modifier = Modifier.fillMaxSize(),
                                     contentAlignment = Alignment.Center
-                            ) { CircularProgressIndicator(color = AppColor.LightBlueColor) }
+                            ) { CircularProgressIndicator(color = colors.lightAccent) }
                         }
                         is FriendsUiState.Success -> {
                             FriendsContent(
@@ -174,7 +176,7 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
                             ) {
                                 Text(
                                         text = state.message,
-                                        color = AppColor.MinusTextColor,
+                                        color = colors.minusText,
                                         textAlign = TextAlign.Center
                                 )
                             }
@@ -186,8 +188,8 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
                 FloatingActionButton(
                         onClick = { viewModel.openAddFriendDialog() },
                         modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-                        containerColor = AppColor.LightBlueColor,
-                        contentColor = AppColor.MainTextColor,
+                        containerColor = colors.lightAccent,
+                        contentColor = colors.mainText,
                         shape = CircleShape
                 ) {
                     Icon(
