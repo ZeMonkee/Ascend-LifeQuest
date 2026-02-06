@@ -1,6 +1,7 @@
 package com.example.ascendlifequest.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -24,19 +26,39 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
-// Background
+// Background avec overlay du thème (comme Flutter)
 @Composable
 fun AppBackground(content: @Composable () -> Unit) {
-    Image(
-        painter = painterResource(R.drawable.background),
-        contentDescription = "Background",
-        contentScale = ContentScale.Crop,
-        modifier = Modifier.fillMaxSize()
-    )
+    val colors = themeColors()
 
-    content()
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Image de fond
+        Image(
+            painter = painterResource(R.drawable.background),
+            contentDescription = "Background",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Overlay avec le gradient du thème pour teinter l'image
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            colors.gradientStart.copy(alpha = 0.7f),
+                            colors.gradientEnd.copy(alpha = 0.9f)
+                        )
+                    )
+                )
+        )
+
+        // Contenu
+        content()
+    }
 }
 
 // Header
@@ -45,6 +67,7 @@ fun AppHeader(
     title: String,
     trailing: (@Composable () -> Unit)? = null
 ) {
+    val colors = themeColors()
     Spacer(modifier = Modifier.height(8.dp))
 
     Box(
@@ -56,7 +79,7 @@ fun AppHeader(
             text = title,
             fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
-            color = AppColor.MainTextColor,
+            color = colors.mainText,
             textAlign = TextAlign.Center,
             modifier = Modifier.align(Alignment.Center)
         )
@@ -109,9 +132,10 @@ fun InitNavItem(
     current: BottomNavItem = BottomNavItem.Quetes,
     onItemSelected: (BottomNavItem) -> Unit = {}
 ) {
+    val colors = themeColors()
     NavigationBar(
-        containerColor = AppColor.DarkBlueColor,
-        contentColor = AppColor.MainTextColor
+        containerColor = colors.darkBackground,
+        contentColor = colors.mainText
     ) {
         BottomNavItem.entries.forEach { item ->
             NavigationBarItem(
@@ -121,13 +145,13 @@ fun InitNavItem(
                     Icon(
                         painter = painterResource(item.icon),
                         contentDescription = item.label,
-                        tint = if (current == item) AppColor.LightBlueColor else AppColor.MainTextColor
+                        tint = if (current == item) colors.lightAccent else colors.mainText
                     )
                 },
                 label = {
                     Text(
                         item.label,
-                        color = if (current == item) AppColor.LightBlueColor else AppColor.MainTextColor,
+                        color = if (current == item) colors.lightAccent else colors.mainText,
                         fontSize = 11.sp,
                     )
                 }
