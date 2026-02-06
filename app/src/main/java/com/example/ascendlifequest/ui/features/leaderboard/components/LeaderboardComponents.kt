@@ -1,8 +1,9 @@
 package com.example.ascendlifequest.ui.features.leaderboard.components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,8 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,88 +30,113 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.data.model.UserProfile
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
 fun RankingItem(user: UserProfile, onClick: () -> Unit) {
-    val backgroundColor = AppColor.DarkBlueColor
+    val colors = themeColors()
+    val backgroundColor = colors.darkBackground
 
     val rankingColor =
             when (user.rang) {
-                1 -> AppColor.Or // Or
-                2 -> AppColor.Argent // Argent
-                3 -> AppColor.Bronze // Bronze
-                else -> AppColor.MainTextColor
-            }
-
-    val rankBackgroundColor =
-            when (user.rang) {
-                1 -> AppColor.Or // Or
-                2 -> AppColor.Argent // Argent
-                3 -> AppColor.Bronze // Bronze
-                else -> Color.Transparent
+                1 -> colors.or // Or
+                2 -> colors.argent // Argent
+                3 -> colors.bronze // Bronze
+                else -> colors.minusText
             }
 
     Card(
-            modifier = Modifier.fillMaxWidth().height(70.dp).clickable(onClick = onClick),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
         ) {
-            // Position number with special background for top 3
-            if (user.rang <= 3) {
-                Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(32.dp).background(rankBackgroundColor, CircleShape)
-                ) {
+            // Rang avec trophée pour top 3
+            Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .border(
+                            width = 2.dp,
+                            color = rankingColor,
+                            shape = CircleShape
+                        )
+            ) {
+                if (user.rang <= 3) {
+                    // Trophée pour le top 3
+                    Icon(
+                        imageVector = Icons.Filled.EmojiEvents,
+                        contentDescription = "Trophée rang ${user.rang}",
+                        tint = rankingColor,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else {
+                    // Numéro pour les autres rangs
                     Text(
                             text = user.rang.toString(),
-                            fontSize = 20.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AppColor.MainTextColor
+                            color = rankingColor
                     )
                 }
-            } else {
-
-                Text(
-                        text = user.rang.toString(),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = rankingColor,
-                        modifier = Modifier.width(32.dp),
-                        textAlign = TextAlign.Center
-                )
             }
 
-            // Spacer
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Avatar
+            Image(
+                    painter = painterResource(id = R.drawable.generic_pfp),
+                    contentDescription = "Avatar de ${user.pseudo}",
+                    modifier = Modifier
+                        .size(45.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
 
             // User info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                         text = user.pseudo.ifEmpty { "Utilisateur" },
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = AppColor.MainTextColor
+                        color = colors.mainText
                 )
-                Text(text = "${user.xp} XP", fontSize = 16.sp, color = AppColor.MinusTextColor)
+                Text(
+                    text = "Niveau ${user.calculateLevel()} • ${user.quetesRealisees} quêtes",
+                    fontSize = 12.sp,
+                    color = colors.minusText
+                )
             }
 
-            // Avatar - plus grand
-            Image(
-                    painter = painterResource(id = R.drawable.generic_pfp),
-                    contentDescription = "Avatar de ${user.pseudo}",
-                    modifier = Modifier.size(50.dp).clip(CircleShape),
-                    contentScale = ContentScale.Crop
-            )
+            // XP affiché à droite
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = "${user.xp}",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = rankingColor
+                )
+                Text(
+                    text = "XP",
+                    fontSize = 12.sp,
+                    color = colors.minusText
+                )
+            }
         }
     }
 }
