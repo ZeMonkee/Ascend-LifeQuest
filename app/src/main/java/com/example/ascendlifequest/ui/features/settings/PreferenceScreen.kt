@@ -14,7 +14,7 @@ import com.example.ascendlifequest.ui.components.AppHeader
 import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.features.settings.components.PreferenceQuestion
 import com.example.ascendlifequest.data.local.PreferencesHelper
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 import com.example.ascendlifequest.data.remote.AuthService
 
 @Composable
@@ -23,6 +23,7 @@ fun PreferenceScreen(navController: NavHostController) {
     val authService = remember { AuthService() }
     val userId = authService.getUserId()
     val prefsVm = remember { PreferencesViewModel(context, userId) }
+    val colors = themeColors()
 
     AppBottomNavBar(navController, BottomNavItem.Parametres) { innerPadding ->
         AppBackground {
@@ -41,7 +42,7 @@ fun PreferenceScreen(navController: NavHostController) {
                     val sport by prefsVm.getPreferenceFlow(PreferencesHelper.KEY_SPORT).collectAsState()
                     PreferenceQuestion(
                         question = "A quel point aimez-vous le sport ?",
-                        color = AppColor.SportColor,
+                        color = colors.sport,
                         selected = sport,
                         onSelectedChange = { prefsVm.savePreference(PreferencesHelper.KEY_SPORT, it) }
                     )
@@ -49,7 +50,7 @@ fun PreferenceScreen(navController: NavHostController) {
                     val cuisine by prefsVm.getPreferenceFlow(PreferencesHelper.KEY_CUISINE).collectAsState()
                     PreferenceQuestion(
                         question = "A quel point aimez-vous la cuisine ?",
-                        color = AppColor.CuisineColor,
+                        color = colors.cuisine,
                         selected = cuisine,
                         onSelectedChange = { prefsVm.savePreference(PreferencesHelper.KEY_CUISINE, it) }
                     )
@@ -57,7 +58,7 @@ fun PreferenceScreen(navController: NavHostController) {
                     val jeux by prefsVm.getPreferenceFlow(PreferencesHelper.KEY_JEUX_VIDEO).collectAsState()
                     PreferenceQuestion(
                         question = "A quel point aimez-vous les jeux vidéo ?",
-                        color = AppColor.JeuxVideoColor,
+                        color = colors.jeuxVideo,
                         selected = jeux,
                         onSelectedChange = { prefsVm.savePreference(PreferencesHelper.KEY_JEUX_VIDEO, it) }
                     )
@@ -65,7 +66,7 @@ fun PreferenceScreen(navController: NavHostController) {
                     val lecture by prefsVm.getPreferenceFlow(PreferencesHelper.KEY_LECTURE).collectAsState()
                     PreferenceQuestion(
                         question = "A quel point aimez-vous la lecture ?",
-                        color = AppColor.LectureColor,
+                        color = colors.lecture,
                         selected = lecture,
                         onSelectedChange = { prefsVm.savePreference(PreferencesHelper.KEY_LECTURE, it) }
                     )
