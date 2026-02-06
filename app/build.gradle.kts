@@ -23,9 +23,49 @@ android {
         }
     }
 
+    // Activation de BuildConfig
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    // Product Flavors pour les différents environnements
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            versionNameSuffix = "-dev"
+            buildConfigField("boolean", "IS_DEBUG_BUILD", "true")
+            buildConfigField("boolean", "SHOW_DEBUG_TOOLS", "true")
+            buildConfigField("String", "ENVIRONMENT_NAME", "\"Development\"")
+            resValue("string", "app_name", "Ascend LifeQuest DEV")
+        }
+        create("preprod") {
+            dimension = "environment"
+            versionNameSuffix = "-preprod"
+            buildConfigField("boolean", "IS_DEBUG_BUILD", "true")
+            buildConfigField("boolean", "SHOW_DEBUG_TOOLS", "false")
+            buildConfigField("String", "ENVIRONMENT_NAME", "\"Pre-Production\"")
+            resValue("string", "app_name", "Ascend LifeQuest PREPROD")
+        }
+        create("prod") {
+            dimension = "environment"
+            buildConfigField("boolean", "IS_DEBUG_BUILD", "false")
+            buildConfigField("boolean", "SHOW_DEBUG_TOOLS", "false")
+            buildConfigField("String", "ENVIRONMENT_NAME", "\"Production\"")
+            resValue("string", "app_name", "Ascend LifeQuest")
+        }
+    }
+
     buildTypes {
-        release {
+        debug {
+            isDebuggable = true
             isMinifyEnabled = false
+        }
+        release {
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -38,9 +78,6 @@ android {
     }
     kotlinOptions {
         jvmTarget = "1.8"
-    }
-    buildFeatures {
-        compose = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"

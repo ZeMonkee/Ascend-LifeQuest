@@ -1,0 +1,260 @@
+name: Branch Builds CI/CD
+
+# ============================================
+# Workflow déclenché par les push sur les branches
+# dev → Build DEV Debug APK
+# preprod → Build PREPROD Debug APK
+# prod → Build PROD Release APK (signé)
+# ============================================
+
+on:
+  push:
+    branches:
+      - dev
+      - preprod
+      - prod
+
+env:
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  # ============================================
+  # Détection de la branche et configuration
+  # ============================================
+  setup:
+    name: 🔧 Setup Build Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      flavor: ${{ steps.config.outputs.flavor }}
+      build_type: ${{ steps.config.outputs.build_type }}
+      artifact_name: ${{ steps.config.outputs.artifact_name }}
+      is_release: ${{ steps.config.outputs.is_release }}
+
+    steps:
+      - name: Determine build configuration
+        id: config
+        run: |
+          BRANCH=${GITHUB_REF#refs/heads/}
+          echo "Branch: $BRANCH"
+          
+          case $BRANCH in
+            dev)
+              echo "flavor=dev" >> $GITHUB_OUTPUT
+              echo "build_type=Debug" >> $GITHUB_OUTPUT
+              echo "artifact_name=ascend-lifequest-DEV" >> $GITHUB_OUTPUT
+              echo "is_release=false" >> $GITHUB_OUTPUT
+              ;;
+            preprod)
+              echo "flavor=preprod" >> $GITHUB_OUTPUT
+              echo "build_type=Debug" >> $GITHUB_OUTPUT
+              echo "artifact_name=ascend-lifequest-PREPROD" >> $GITHUB_OUTPUT
+              echo "is_release=false" >> $GITHUB_OUTPUT
+              ;;
+            prod)
+              echo "flavor=prod" >> $GITHUB_OUTPUT
+              echo "build_type=Release" >> $GITHUB_OUTPUT
+              echo "artifact_name=ascend-lifequest-PRODUCTION" >> $GITHUB_OUTPUT
+              echo "is_release=true" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  # ============================================
+  # Tests unitaires
+  # ============================================
+  test:
+    name: 🧪 Run Tests
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run unit tests
+        run: ./gradlew test${{ needs.setup.outputs.flavor }}${{ needs.setup.outputs.build_type }}UnitTest --stacktrace
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ needs.setup.outputs.flavor }}
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+          retention-days: 14
+
+  # ============================================
+  # Lint & Code Quality
+  # ============================================
+  lint:
+    name: 🔍 Lint Check
+    runs-on: ubuntu-latest
+    needs: setup
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run lint
+        run: ./gradlew lint${{ needs.setup.outputs.flavor }}${{ needs.setup.outputs.build_type }} --stacktrace
+        continue-on-error: true
+
+      - name: Upload lint results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results-${{ needs.setup.outputs.flavor }}
+          path: app/build/reports/lint*.html
+          retention-days: 14
+
+  # ============================================
+  # Build APK
+  # ============================================
+  build:
+    name: 🏗️ Build APK
+    runs-on: ubuntu-latest
+    needs: [setup, test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Get short SHA
+        id: sha
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build APK
+        run: ./gradlew assemble${{ needs.setup.outputs.flavor }}${{ needs.setup.outputs.build_type }} --stacktrace
+
+      # Signature pour la production uniquement
+      - name: Sign Production APK
+        if: needs.setup.outputs.is_release == 'true'
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: app/build/outputs/apk/prod/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
+        continue-on-error: true
+
+      - name: Rename APK with version info
+        run: |
+          FLAVOR=${{ needs.setup.outputs.flavor }}
+          BUILD_TYPE=$(echo "${{ needs.setup.outputs.build_type }}" | tr '[:upper:]' '[:lower:]')
+          
+          APK_DIR="app/build/outputs/apk/${FLAVOR}/${BUILD_TYPE}"
+          
+          for apk in ${APK_DIR}/*.apk; do
+            if [ -f "$apk" ]; then
+              FILENAME=$(basename "$apk" .apk)
+              mv "$apk" "${APK_DIR}/${{ needs.setup.outputs.artifact_name }}-${{ steps.date.outputs.date }}-${{ steps.sha.outputs.sha }}.apk"
+              break
+            fi
+          done
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact_name }}-${{ steps.sha.outputs.sha }}
+          path: app/build/outputs/apk/**/*.apk
+          retention-days: 30
+
+      # Build AAB pour la production
+      - name: Build Production AAB
+        if: needs.setup.outputs.is_release == 'true'
+        run: ./gradlew bundleProdRelease --stacktrace
+
+      - name: Upload AAB Artifact
+        if: needs.setup.outputs.is_release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ needs.setup.outputs.artifact_name }}-AAB-${{ steps.sha.outputs.sha }}
+          path: app/build/outputs/bundle/prodRelease/*.aab
+          retention-days: 30
+
+  # ============================================
+  # Notification de succès
+  # ============================================
+  notify:
+    name: 📢 Build Summary
+    runs-on: ubuntu-latest
+    needs: [setup, build]
+    if: always()
+
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## 🚀 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | ${GITHUB_REF#refs/heads/} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Flavor** | ${{ needs.setup.outputs.flavor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build Type** | ${{ needs.setup.outputs.build_type }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Artifact** | ${{ needs.setup.outputs.artifact_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | ${GITHUB_SHA:0:7} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.setup.outputs.is_release }}" == "true" ]; then
+            echo "### 🎉 Production Release Build" >> $GITHUB_STEP_SUMMARY
+            echo "This build is ready for production deployment." >> $GITHUB_STEP_SUMMARY
+          fi

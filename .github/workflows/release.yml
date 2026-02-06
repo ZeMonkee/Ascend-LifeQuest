@@ -3,12 +3,17 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*.*.*'           # Tags de production (ex: v1.0.0)
+      - 'v*.*.*-preprod*'  # Tags de pre-production (ex: v1.0.0-preprod.1)
 
 jobs:
-  release:
-    name: Create Release
+  # ============================================
+  # Build Production Release
+  # ============================================
+  release-prod:
+    name: Build Production Release
     runs-on: ubuntu-latest
+    if: "!contains(github.ref, 'preprod')"
 
     steps:
       - name: Checkout code
@@ -24,14 +29,34 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building production version: $VERSION"
+
+      - name: Build Production Release APK
+        run: ./gradlew assembleProdRelease --stacktrace
+
+      - name: Build Production Release Bundle (AAB)
+        run: ./gradlew bundleProdRelease --stacktrace
 
       - name: Sign APK
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: r0adkll/sign-android-release@v1
         with:
-          releaseDirectory: app/build/outputs/apk/release
+          releaseDirectory: app/build/outputs/apk/prod/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
+
+      - name: Sign AAB
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: app/build/outputs/bundle/prodRelease
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
@@ -43,32 +68,111 @@ jobs:
         id: release_notes
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
           
-          # Extract changelog for this version
           if [ -f CHANGELOG.md ]; then
             awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md | head -n -1 | tail -n +2 > release_notes.txt
           else
-            echo "Release $VERSION" > release_notes.txt
+            echo "# Release $VERSION" > release_notes.txt
+            echo "" >> release_notes.txt
+            echo "## Production Release" >> release_notes.txt
+            echo "This is a production release." >> release_notes.txt
           fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/prod/release/*.apk
+            app/build/outputs/bundle/prodRelease/*.aab
           body_path: release_notes.txt
           draft: false
           prerelease: false
+          name: "Production Release ${{ steps.version.outputs.version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload to Play Store
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+      - name: Upload to Play Store (Production)
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
           packageName: com.example.ascendlifequest
-          releaseFiles: app/build/outputs/apk/release/*.apk
+          releaseFiles: app/build/outputs/bundle/prodRelease/*.aab
+          track: production
+          status: completed
+        continue-on-error: true
+
+  # ============================================
+  # Build Pre-Production Release
+  # ============================================
+  release-preprod:
+    name: Build Pre-Production Release
+    runs-on: ubuntu-latest
+    if: contains(github.ref, 'preprod')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building pre-production version: $VERSION"
+
+      - name: Build Pre-Production Release APK
+        run: ./gradlew assemblePreprodRelease --stacktrace
+
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: app/build/outputs/apk/preprod/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
+
+      - name: Create Release Notes
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "# Pre-Production Release $VERSION" > release_notes.txt
+          echo "" >> release_notes.txt
+          echo "⚠️ **This is a PRE-PRODUCTION build for testing purposes.**" >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "## Changes" >> release_notes.txt
+          echo "See commits since last release for changes." >> release_notes.txt
+
+      - name: Create GitHub Pre-Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            app/build/outputs/apk/preprod/release/*.apk
+          body_path: release_notes.txt
+          draft: false
+          prerelease: true
+          name: "Pre-Production ${{ steps.version.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to Play Store (Internal Testing)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+          packageName: com.example.ascendlifequest.preprod
+          releaseFiles: app/build/outputs/apk/preprod/release/*.apk
           track: internal
           status: completed
+        continue-on-error: true
+

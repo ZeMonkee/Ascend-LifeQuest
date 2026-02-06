@@ -25,6 +25,7 @@ import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.components.WeatherWidget
 import com.example.ascendlifequest.ui.components.fetchWeather
 import com.example.ascendlifequest.ui.components.requestRealLocation
+import com.example.ascendlifequest.ui.components.shouldShowDebugTools
 import com.example.ascendlifequest.ui.features.quest.components.QuestCategory
 import com.example.ascendlifequest.ui.theme.AppColor
 import com.example.ascendlifequest.util.QuestHelper
@@ -184,16 +185,18 @@ fun QuestScreen(
                                     )
                     ) { Text("Créer une quête") }
 
-                    // BOUTON POUR VIDER LA BASE DE DONNÉES
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
-                            onClick = { viewModel.clearDatabase(context, userId) },
-                            enabled = !isGenerating,
-                            colors =
-                                    ButtonDefaults.outlinedButtonColors(
-                                            contentColor = AppColor.MinusTextColor
-                                    )
-                    ) { Text("Vider la BDD (Debug)") }
+                    // BOUTON POUR VIDER LA BASE DE DONNÉES (visible uniquement en mode DEV)
+                    if (shouldShowDebugTools()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                                onClick = { viewModel.clearDatabase(context, userId) },
+                                enabled = !isGenerating,
+                                colors =
+                                        ButtonDefaults.outlinedButtonColors(
+                                                contentColor = AppColor.MinusTextColor
+                                        )
+                        ) { Text("Vider la BDD (Debug)") }
+                    }
                 }
 
                 // Loader pendant la génération initiale
