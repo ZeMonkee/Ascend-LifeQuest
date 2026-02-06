@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ascendlifequest.data.model.Categorie
 import com.example.ascendlifequest.data.model.Quest
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 // Catégorie des quêtes
 @Composable
@@ -40,6 +40,8 @@ fun QuestCategory(
     isWeatherBad: Boolean = false,
     onQuestStateChanged: (questId: Int, isDone: Boolean, xpAmount: Int) -> Unit = { _, _, _ -> }
 ) {
+    val colors = themeColors()
+
     // État local pour les quêtes terminées
     val questDoneStates = remember {
         mutableStateMapOf<Int, Boolean>().apply {
@@ -61,7 +63,7 @@ fun QuestCategory(
             Modifier.fillMaxWidth()
                 .padding(top = 8.dp, bottom = 4.dp)
                 .background(
-                    AppColor.DarkBlueColor,
+                    colors.darkBackground,
                     shape =
                     RoundedCornerShape(
                         topStart = 30.dp,
@@ -124,7 +126,7 @@ fun QuestCategory(
                         onQuestStateChanged(quest.id, newState, xpDelta)
                     }
                     .background(
-                        AppColor.DarkBlueColor,
+                        colors.darkBackground,
                         shape = RoundedCornerShape(8.dp)
                     )
                     .padding(16.dp),
@@ -135,8 +137,8 @@ fun QuestCategory(
                     Text(
                         text = "» ${quest.nom}",
                         color =
-                        if (isDone) AppColor.MinusTextColor
-                        else AppColor.MainTextColor,
+                        if (isDone) colors.minusText
+                        else colors.mainText,
                         fontWeight =
                         if (isDone) FontWeight.Normal
                         else FontWeight.Medium,
@@ -148,7 +150,7 @@ fun QuestCategory(
                     if (quest.dependantMeteo && isWeatherBad) {
                         Text(
                             text = "Attention météo défavorable !",
-                            color = AppColor.Or,
+                            color = colors.or,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -158,8 +160,8 @@ fun QuestCategory(
                 Text(
                     text = "${quest.xpRapporte} XP",
                     color =
-                    if (isDone) AppColor.MinusTextColor
-                    else AppColor.MainTextColor,
+                    if (isDone) colors.minusText
+                    else colors.mainText,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 48.dp)
                 )

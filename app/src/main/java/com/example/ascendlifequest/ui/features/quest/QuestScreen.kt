@@ -26,7 +26,7 @@ import com.example.ascendlifequest.ui.components.WeatherWidget
 import com.example.ascendlifequest.ui.components.fetchWeather
 import com.example.ascendlifequest.ui.components.requestRealLocation
 import com.example.ascendlifequest.ui.features.quest.components.QuestCategory
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 import com.example.ascendlifequest.util.QuestHelper
 
 /**
@@ -66,6 +66,7 @@ fun QuestScreen(
     val showMaxQuestsDialog by viewModel.showMaxQuestsDialog.collectAsState()
 
     val maxQuests = QuestHelper.getMaxQuests()
+    val colors = themeColors()
 
     LaunchedEffect(Unit) {
         // Verifier si c'est un nouveau jour et nettoyer les quetes si necessaire
@@ -88,12 +89,12 @@ fun QuestScreen(
     if (showMaxQuestsDialog) {
         AlertDialog(
                 onDismissRequest = { viewModel.dismissDialog() },
-                title = { Text(text = "Limite atteinte", color = AppColor.MainTextColor) },
+                title = { Text(text = "Limite atteinte", color = colors.mainText) },
                 text = {
                     Text(
                             text =
                                     "Nombre maximum de quêtes atteint ($maxQuests/$maxQuests).\n\nVidez la base de données pour générer de nouvelles quêtes.",
-                            color = AppColor.MinusTextColor
+                            color = colors.minusText
                     )
                 },
                 confirmButton = {
@@ -101,12 +102,12 @@ fun QuestScreen(
                             onClick = { viewModel.dismissDialog() },
                             colors =
                                     ButtonDefaults.buttonColors(
-                                            containerColor = AppColor.LightBlueColor,
-                                            contentColor = AppColor.MainTextColor
+                                            containerColor = colors.lightAccent,
+                                            contentColor = colors.mainText
                                     )
                     ) { Text("OK") }
                 },
-                containerColor = AppColor.DarkBlueColor
+                containerColor = colors.darkBackground
         )
     }
 
@@ -157,15 +158,15 @@ fun QuestScreen(
                     LinearProgressIndicator(
                             progress = { completedQuestsCount.toFloat() / totalQuests },
                             modifier = Modifier.fillMaxWidth(),
-                            color = AppColor.LectureColor,
-                            trackColor = AppColor.MinusTextColor.copy(alpha = 0.3f),
+                            color = colors.lecture,
+                            trackColor = colors.minusText.copy(alpha = 0.3f),
                             strokeCap = StrokeCap.Round,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                             text = "$completedQuestsCount/${quests.size} quêtes terminées",
                             fontSize = 14.sp,
-                            color = AppColor.MinusTextColor
+                            color = colors.minusText
                     )
 
                     // BOUTON CRÉER UNE QUÊTE
@@ -175,12 +176,12 @@ fun QuestScreen(
                             enabled = !isGenerating,
                             colors =
                                     ButtonDefaults.buttonColors(
-                                            containerColor = AppColor.LightBlueColor,
-                                            contentColor = AppColor.MainTextColor,
+                                            containerColor = colors.lightAccent,
+                                            contentColor = colors.mainText,
                                             disabledContainerColor =
-                                                    AppColor.LightBlueColor.copy(alpha = 0.5f),
+                                                    colors.lightAccent.copy(alpha = 0.5f),
                                             disabledContentColor =
-                                                    AppColor.MainTextColor.copy(alpha = 0.5f)
+                                                    colors.mainText.copy(alpha = 0.5f)
                                     )
                     ) { Text("Créer une quête") }
 
@@ -191,7 +192,7 @@ fun QuestScreen(
                             enabled = !isGenerating,
                             colors =
                                     ButtonDefaults.outlinedButtonColors(
-                                            contentColor = AppColor.MinusTextColor
+                                            contentColor = colors.minusText
                                     )
                     ) { Text("Vider la BDD (Debug)") }
                 }
@@ -203,32 +204,32 @@ fun QuestScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                         ) {
-                            CircularProgressIndicator(color = AppColor.LightBlueColor)
+                            CircularProgressIndicator(color = colors.lightAccent)
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                     text = "Génération des quêtes...",
                                     fontSize = 18.sp,
-                                    color = AppColor.MainTextColor
+                                    color = colors.mainText
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                     text = "$generationProgress/$maxQuests",
                                     fontSize = 24.sp,
-                                    color = AppColor.LightBlueColor
+                                    color = colors.lightAccent
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             LinearProgressIndicator(
                                     progress = { generationProgress.toFloat() / maxQuests },
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 48.dp),
-                                    color = AppColor.LectureColor,
-                                    trackColor = AppColor.MinusTextColor.copy(alpha = 0.3f),
+                                    color = colors.lecture,
+                                    trackColor = colors.minusText.copy(alpha = 0.3f),
                                     strokeCap = StrokeCap.Round,
                             )
                         }
                     }
                 } else if (isLoading) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = AppColor.LightBlueColor)
+                        CircularProgressIndicator(color = colors.lightAccent)
                     }
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
