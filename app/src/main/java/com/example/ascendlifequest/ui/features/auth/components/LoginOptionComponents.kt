@@ -11,14 +11,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
 fun SocialLoginButton(iconRes: Int, onClick: () -> Unit = {}) {
+    val colors = themeColors()
+
     Box(
         modifier = Modifier
             .size(50.dp)
-            .background(AppColor.MainTextColor, shape = CircleShape)
+            .background(colors.mainText, shape = CircleShape)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {

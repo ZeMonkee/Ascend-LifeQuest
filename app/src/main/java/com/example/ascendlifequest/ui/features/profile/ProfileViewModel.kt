@@ -42,46 +42,71 @@ class ProfileViewModel(
 
     private val _isRefreshing = MutableStateFlow(false)
 
+    // Flag pour éviter les rechargements inutiles
+    private var _dataLoaded = false
+    private var _loadedUserId: String? = null
+
     init {
-        loadProfile()
+        // Ne pas charger automatiquement, laisser le LaunchedEffect le faire
     }
 
     /** Loads profile for a specific user or the current logged-in user. */
-    fun loadProfile(targetUserId: String? = null) {
+    fun loadProfile(targetUserId: String? = null, forceReload: Boolean = false) {
         viewModelScope.launch {
-            _uiState.value = ProfileUiState.Loading
+            val userIdToLoad = targetUserId ?: authRepository.getCurrentUserId()
+
+            // Si les données sont déjà chargées pour cet utilisateur et pas de force reload, on ne fait rien
+            if (_dataLoaded && !forceReload && _loadedUserId == userIdToLoad && _uiState.value is ProfileUiState.Success) {
+                Log.d(TAG, "Données déjà chargées pour $userIdToLoad, pas de rechargement")
+                return@launch
+            }
+
+            // Ne mettre en Loading que si on n'a pas déjà des données
+            if (_uiState.value !is ProfileUiState.Success) {
+                _uiState.value = ProfileUiState.Loading
+            }
 
             try {
-                // Vérifier si l'utilisateur est connecté
-                if (!authRepository.isUserLoggedIn()) {
-                    _uiState.value = ProfileUiState.NotLoggedIn
-                    return@launch
-                }
-
                 val currentUserId = authRepository.getCurrentUserId()
-                val userIdToLoad = targetUserId ?: currentUserId
 
+                // Si pas de userId, essayer de récupérer le profil en cache (mode hors ligne)
                 if (userIdToLoad.isEmpty()) {
-                    _uiState.value = ProfileUiState.NotLoggedIn
+                    Log.d(TAG, "Mode hors ligne détecté - tentative de chargement depuis le cache")
+                    val cachedResult = profileRepository.getCurrentUserProfile()
+                    cachedResult.fold(
+                        onSuccess = { profile ->
+                            if (profile != null) {
+                                _uiState.value = ProfileUiState.Success(profile, profile.rang)
+                                _dataLoaded = true
+                                _loadedUserId = profile.id
+                                Log.d(TAG, "Profil chargé depuis le cache: ${profile.pseudo}")
+                            } else {
+                                _uiState.value = ProfileUiState.NotLoggedIn
+                            }
+                        },
+                        onFailure = {
+                            _uiState.value = ProfileUiState.NotLoggedIn
+                        }
+                    )
                     return@launch
                 }
 
-                // Récupérer le profil
+                // Récupérer le profil (le repository gère le cache automatiquement)
                 val profileResult = profileRepository.getProfileById(userIdToLoad)
 
                 profileResult.fold(
                         onSuccess = { profile ->
                             if (profile != null) {
-                                // Récupérer le rang
                                 val rankResult = profileRepository.getUserRank(userIdToLoad)
                                 val rank = rankResult.getOrNull() ?: profile.rang
 
                                 _uiState.value = ProfileUiState.Success(profile, rank)
+                                _dataLoaded = true
+                                _loadedUserId = userIdToLoad
                                 Log.d(TAG, "Profil chargé avec succès: ${profile.pseudo}")
                             } else {
-                                // Si c'est l'utilisateur actuel et qu'il n'a pas de profil, on en
-                                // crée un
-                                if (userIdToLoad == currentUserId) {
+                                // Si c'est l'utilisateur actuel et qu'il n'a pas de profil
+                                if (userIdToLoad == currentUserId && authRepository.isUserLoggedIn()) {
                                     val user = authRepository.getCurrentUser()
                                     val email = user?.email ?: "user@unknown.com"
 
@@ -92,33 +117,27 @@ class ProfileViewModel(
                                             )
                                     createResult.fold(
                                             onSuccess = { newProfile ->
-                                                _uiState.value =
-                                                        ProfileUiState.Success(newProfile, 1)
-                                                Log.d(
-                                                        TAG,
-                                                        "Nouveau profil créé: ${newProfile.pseudo}"
-                                                )
+                                                _uiState.value = ProfileUiState.Success(newProfile, 1)
+                                                _dataLoaded = true
+                                                _loadedUserId = currentUserId
+                                                Log.d(TAG, "Nouveau profil créé: ${newProfile.pseudo}")
                                             },
                                             onFailure = { error ->
-                                                _uiState.value =
-                                                        ProfileUiState.Error(
-                                                                error.message
-                                                                        ?: "Erreur lors de la création du profil"
-                                                        )
+                                                _uiState.value = ProfileUiState.Error(
+                                                    error.message ?: "Erreur lors de la création du profil"
+                                                )
                                             }
                                     )
                                 } else {
-                                    _uiState.value =
-                                            ProfileUiState.Error("Profil utilisateur introuvable")
+                                    _uiState.value = ProfileUiState.Error("Profil utilisateur introuvable")
                                 }
                             }
                         },
                         onFailure = { error ->
                             Log.e(TAG, "Erreur lors du chargement du profil", error)
-                            _uiState.value =
-                                    ProfileUiState.Error(
-                                            error.message ?: "Erreur lors du chargement du profil"
-                                    )
+                            _uiState.value = ProfileUiState.Error(
+                                error.message ?: "Erreur lors du chargement du profil"
+                            )
                         }
                 )
             } catch (e: Exception) {

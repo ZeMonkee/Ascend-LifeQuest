@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.StrokeCap.Companion.Butt
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 // Item des questions de preferences (STATELESS)
 @Composable
@@ -36,11 +36,13 @@ fun PreferenceQuestion(
     selected: Int,
     onSelectedChange: (Int) -> Unit
 ) {
+    val colors = themeColors()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColor.DarkBlueColor),
+        colors = CardDefaults.cardColors(containerColor = colors.darkBackground),
         shape = RoundedCornerShape(12.dp)
     ) {
         Column(
@@ -50,7 +52,7 @@ fun PreferenceQuestion(
             Text(
                 text = question,
                 fontSize = 24.sp,
-                color = AppColor.MainTextColor,
+                color = colors.mainText,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(12.dp))
@@ -84,7 +86,7 @@ fun PreferenceQuestion(
                         ) {
                             Text(
                                 text = value.toString(),
-                                color = AppColor.MainTextColor,
+                                color = colors.mainText,
                                 fontSize = 24.sp,
                                 modifier = Modifier
                             )

@@ -12,10 +12,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
 fun AccountAvatar(resId: Int, size: Dp = 96.dp) {
+    val colors = themeColors()
+
     Image(
             painter = painterResource(id = resId),
             contentDescription = "Avatar",
@@ -23,10 +25,10 @@ fun AccountAvatar(resId: Int, size: Dp = 96.dp) {
             modifier =
                     Modifier.size(size)
                             .clip(CircleShape)
-                            .background(AppColor.MinusTextColor, CircleShape)
+                            .background(colors.minusText, CircleShape)
                             .border(
                                     width = 2.dp,
-                                    color = AppColor.LightBlueColor,
+                                    color = colors.lightAccent,
                                     shape = CircleShape
                             )
     )

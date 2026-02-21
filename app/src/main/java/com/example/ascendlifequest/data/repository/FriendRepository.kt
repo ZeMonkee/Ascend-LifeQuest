@@ -80,5 +80,9 @@ interface FriendRepository {
      * Supprime une notification
      */
     suspend fun deleteNotification(notificationId: String): Result<Unit>
-}
 
+    /**
+     * Récupère les amis depuis le cache local (mode hors ligne)
+     */
+    suspend fun getFriendsFromCache(): Result<List<UserProfile>>
+}

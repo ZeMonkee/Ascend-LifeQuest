@@ -19,7 +19,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.ascendlifequest.data.model.UserProfile
 import com.example.ascendlifequest.ui.features.friends.SearchUiState
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
 fun AddFriendDialog(
@@ -31,6 +31,8 @@ fun AddFriendDialog(
         onSendFriendRequest: (UserProfile) -> Unit,
         onDismiss: () -> Unit
 ) {
+    val colors = themeColors()
+
     Dialog(
             onDismissRequest = onDismiss,
             properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -38,7 +40,7 @@ fun AddFriendDialog(
         Card(
                 modifier = Modifier.fillMaxWidth(0.95f).fillMaxHeight(0.7f),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = AppColor.DarkBlueColor)
+                colors = CardDefaults.cardColors(containerColor = colors.darkBackground)
         ) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 // Header
@@ -51,13 +53,13 @@ fun AddFriendDialog(
                             text = "Ajouter un ami",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AppColor.MainTextColor
+                            color = colors.mainText
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Fermer",
-                                tint = AppColor.MinusTextColor
+                                tint = colors.minusText
                         )
                     }
                 }
@@ -70,23 +72,23 @@ fun AddFriendDialog(
                         onValueChange = onSearchQueryChange,
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = {
-                            Text(text = "Rechercher par pseudo...", color = AppColor.MinusTextColor)
+                            Text(text = "Rechercher par pseudo...", color = colors.minusText)
                         },
                         leadingIcon = {
                             Icon(
                                     imageVector = Icons.Default.Search,
                                     contentDescription = null,
-                                    tint = AppColor.MinusTextColor
+                                    tint = colors.minusText
                             )
                         },
                         colors =
                                 OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = AppColor.MainTextColor,
-                                        unfocusedTextColor = AppColor.MainTextColor,
-                                        focusedBorderColor = AppColor.LightBlueColor,
+                                        focusedTextColor = colors.mainText,
+                                        unfocusedTextColor = colors.mainText,
+                                        focusedBorderColor = colors.lightAccent,
                                         unfocusedBorderColor =
-                                                AppColor.MinusTextColor.copy(alpha = 0.5f),
-                                        cursorColor = AppColor.LightBlueColor
+                                                colors.minusText.copy(alpha = 0.5f),
+                                        cursorColor = colors.lightAccent
                                 ),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
@@ -98,8 +100,8 @@ fun AddFriendDialog(
                     Text(
                             text = message,
                             color =
-                                    if (message.startsWith("Demande")) AppColor.LectureColor
-                                    else AppColor.SportColor,
+                                    if (message.startsWith("Demande")) colors.lecture
+                                    else colors.sport,
                             fontSize = 14.sp,
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center
@@ -119,7 +121,7 @@ fun AddFriendDialog(
                                 ) {
                                     Text(
                                             text = "Entrez un pseudo pour rechercher",
-                                            color = AppColor.MinusTextColor,
+                                            color = colors.minusText,
                                             textAlign = TextAlign.Center
                                     )
                                 }
@@ -129,7 +131,7 @@ fun AddFriendDialog(
                             Box(
                                     modifier = Modifier.fillMaxSize(),
                                     contentAlignment = Alignment.Center
-                            ) { CircularProgressIndicator(color = AppColor.LightBlueColor) }
+                            ) { CircularProgressIndicator(color = colors.lightAccent) }
                         }
                         is SearchUiState.Success -> {
                             if (searchState.users.isEmpty()) {
@@ -139,7 +141,7 @@ fun AddFriendDialog(
                                 ) {
                                     Text(
                                             text = "Aucun utilisateur trouvé",
-                                            color = AppColor.MinusTextColor,
+                                            color = colors.minusText,
                                             textAlign = TextAlign.Center
                                     )
                                 }
@@ -162,7 +164,7 @@ fun AddFriendDialog(
                             ) {
                                 Text(
                                         text = searchState.message,
-                                        color = AppColor.MinusTextColor,
+                                        color = colors.minusText,
                                         textAlign = TextAlign.Center
                                 )
                             }

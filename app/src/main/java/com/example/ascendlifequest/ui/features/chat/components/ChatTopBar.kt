@@ -12,11 +12,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ascendlifequest.ui.features.chat.ChatUiState
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatTopBar(uiState: ChatUiState, onBackClick: () -> Unit) {
+    val colors = themeColors()
     val title =
             when (uiState) {
                 is ChatUiState.Success -> uiState.otherUser?.pseudo?.uppercase() ?: "CHAT"
@@ -32,7 +33,7 @@ fun ChatTopBar(uiState: ChatUiState, onBackClick: () -> Unit) {
                 Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Retour",
-                        tint = AppColor.MainTextColor
+                        tint = colors.mainText
                 )
             }
 
@@ -41,7 +42,7 @@ fun ChatTopBar(uiState: ChatUiState, onBackClick: () -> Unit) {
                     text = title,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AppColor.MainTextColor,
+                    color = colors.mainText,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.Center)
             )

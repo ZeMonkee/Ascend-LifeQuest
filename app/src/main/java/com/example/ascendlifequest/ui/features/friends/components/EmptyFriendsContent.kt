@@ -9,10 +9,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
-fun EmptyFriendsContent() {
+fun EmptyFriendsContent(isOffline: Boolean = false) {
+    val colors = themeColors()
+
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -20,15 +22,18 @@ fun EmptyFriendsContent() {
         ) {
             Text(
                     text = "Aucun ami pour le moment",
-                    color = AppColor.MainTextColor,
+                    color = colors.mainText,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                    text = "Appuyez sur + pour ajouter des amis",
-                    color = AppColor.MinusTextColor,
+                    text = if (isOffline)
+                        "Connectez-vous à Internet pour ajouter des amis"
+                    else
+                        "Appuyez sur + pour ajouter des amis",
+                    color = colors.minusText,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center
             )

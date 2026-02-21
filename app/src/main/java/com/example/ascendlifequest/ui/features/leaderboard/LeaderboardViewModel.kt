@@ -55,22 +55,36 @@ class LeaderboardViewModel(
 
     private val _isRefreshing = MutableStateFlow(false)
 
+    // Flag pour éviter les rechargements inutiles
+    private var _dataLoaded = false
+    private var _lastFilterMode: LeaderboardFilter? = null
+
     init {
-        loadLeaderboard()
+        // Ne pas charger automatiquement, laisser le LaunchedEffect le faire
     }
 
     fun setFilterMode(mode: LeaderboardFilter) {
-        _filterMode.value = mode
-        loadLeaderboard()
+        if (_filterMode.value != mode) {
+            _filterMode.value = mode
+            loadLeaderboard(forceReload = true)
+        }
     }
 
-    fun loadLeaderboard() {
+    fun loadLeaderboard(forceReload: Boolean = false) {
         viewModelScope.launch {
+            // Si les données sont déjà chargées pour ce filtre et pas de force reload, on ne fait rien
+            if (_dataLoaded && !forceReload && _lastFilterMode == _filterMode.value && _uiState.value is LeaderboardUiState.Success) {
+                Log.d(TAG, "Données déjà chargées pour ${_filterMode.value}, pas de rechargement")
+                return@launch
+            }
+
             if (_isRefreshing.value) return@launch
             _isRefreshing.value = true
 
-            // Set loading state
-            _uiState.value = LeaderboardUiState.Loading
+            // Ne mettre en Loading que si on n'a pas déjà des données
+            if (_uiState.value !is LeaderboardUiState.Success) {
+                _uiState.value = LeaderboardUiState.Loading
+            }
 
             val userId = authRepository.getCurrentUserId()
 
@@ -86,6 +100,8 @@ class LeaderboardViewModel(
                                 val currentUser = users.find { it.uid == userId }
                                 val rank = currentUser?.rang ?: 0
                                 _uiState.value = LeaderboardUiState.Success(users, rank)
+                                _dataLoaded = true
+                                _lastFilterMode = _filterMode.value
                             },
                             onFailure = { error ->
                                 Log.e(TAG, "Erreur chargement classement global", error)
@@ -120,6 +136,8 @@ class LeaderboardViewModel(
                     val myRank = allUsers.find { it.uid == userId }?.rang ?: 0
 
                     _uiState.value = LeaderboardUiState.Success(allUsers, myRank)
+                    _dataLoaded = true
+                    _lastFilterMode = _filterMode.value
                     Log.d(TAG, "Classement amis chargé: ${allUsers.size} utilisateurs")
                 }
             } catch (e: Exception) {

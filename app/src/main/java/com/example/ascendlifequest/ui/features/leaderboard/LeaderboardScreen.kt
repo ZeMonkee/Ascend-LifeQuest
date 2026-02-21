@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -25,7 +26,7 @@ import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.features.leaderboard.components.RankingItem
 import com.example.ascendlifequest.ui.features.profile.components.ErrorContent
 import com.example.ascendlifequest.ui.features.profile.components.LoadingContent
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
 fun ClassementScreen(
@@ -33,6 +34,12 @@ fun ClassementScreen(
         viewModel: LeaderboardViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val colors = themeColors()
+
+    // Charger les données au premier affichage
+    LaunchedEffect(Unit) {
+        viewModel.loadLeaderboard()
+    }
 
     AppBottomNavBar(navController, BottomNavItem.Classement) { innerPadding ->
         AppBackground {
@@ -52,7 +59,7 @@ fun ClassementScreen(
                                         .padding(horizontal = 16.dp)
                                         .height(45.dp)
                                         .background(
-                                                color = AppColor.DarkBlueColor,
+                                                color = colors.darkBackground,
                                                 shape = RoundedCornerShape(25.dp)
                                         )
                                         .padding(4.dp),
@@ -66,7 +73,7 @@ fun ClassementScreen(
                                             .background(
                                                     color =
                                                             if (filterMode == LeaderboardFilter.ALL)
-                                                                    AppColor.LightBlueColor
+                                                                    colors.lightAccent
                                                             else Color.Transparent,
                                                     shape = RoundedCornerShape(25.dp)
                                             )
@@ -79,8 +86,8 @@ fun ClassementScreen(
                                 text = "Tout le monde",
                                 color =
                                         if (filterMode == LeaderboardFilter.ALL)
-                                                AppColor.MainTextColor
-                                        else AppColor.MinusTextColor,
+                                                colors.mainText
+                                        else colors.minusText,
                                 fontWeight =
                                         if (filterMode == LeaderboardFilter.ALL) FontWeight.Bold
                                         else FontWeight.Normal,
@@ -99,7 +106,7 @@ fun ClassementScreen(
                                                                             LeaderboardFilter
                                                                                     .FRIENDS
                                                             )
-                                                                    AppColor.LightBlueColor
+                                                                    colors.lightAccent
                                                             else Color.Transparent,
                                                     shape = RoundedCornerShape(25.dp)
                                             )
@@ -112,8 +119,8 @@ fun ClassementScreen(
                                 text = "Mes amis",
                                 color =
                                         if (filterMode == LeaderboardFilter.FRIENDS)
-                                                AppColor.MainTextColor
-                                        else AppColor.MinusTextColor,
+                                                colors.mainText
+                                        else colors.minusText,
                                 fontWeight =
                                         if (filterMode == LeaderboardFilter.FRIENDS) FontWeight.Bold
                                         else FontWeight.Normal,

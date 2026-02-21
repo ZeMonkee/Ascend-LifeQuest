@@ -8,10 +8,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
 fun StatItem(value: String, label: String, modifier: Modifier = Modifier) {
+    val colors = themeColors()
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -20,12 +22,12 @@ fun StatItem(value: String, label: String, modifier: Modifier = Modifier) {
             text = value,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = AppColor.MainTextColor
+            color = colors.mainText
         )
         Text(
             text = label,
             fontSize = 16.sp,
-            color = AppColor.MinusTextColor,
+            color = colors.minusText,
             textAlign = TextAlign.Center
         )
     }

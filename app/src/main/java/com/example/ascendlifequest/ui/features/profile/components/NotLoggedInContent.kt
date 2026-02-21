@@ -9,10 +9,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
 fun NotLoggedInContent(onNavigateToLogin: () -> Unit) {
+    val colors = themeColors()
+
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -23,7 +25,7 @@ fun NotLoggedInContent(onNavigateToLogin: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                     text = "Vous n'êtes pas connecté",
-                    color = AppColor.MainTextColor,
+                    color = colors.mainText,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -31,14 +33,14 @@ fun NotLoggedInContent(onNavigateToLogin: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                     text = "Connectez-vous pour accéder à votre profil",
-                    color = AppColor.MinusTextColor,
+                    color = colors.minusText,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                     onClick = onNavigateToLogin,
-                    colors = ButtonDefaults.buttonColors(containerColor = AppColor.LightBlueColor)
+                    colors = ButtonDefaults.buttonColors(containerColor = colors.lightAccent)
             ) { Text("Se connecter") }
         }
     }

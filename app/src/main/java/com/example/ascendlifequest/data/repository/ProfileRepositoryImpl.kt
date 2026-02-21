@@ -1,18 +1,26 @@
 package com.example.ascendlifequest.data.repository
 
+import android.content.Context
 import android.util.Log
 import com.example.ascendlifequest.data.auth.AuthRepository
 import com.example.ascendlifequest.data.model.UserProfile
+import com.example.ascendlifequest.data.network.NetworkConnectivityManager
+import com.example.ascendlifequest.database.AppDatabase
+import com.example.ascendlifequest.database.entities.UserProfileEntity
+import com.example.ascendlifequest.di.AppContextProvider
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 class ProfileRepositoryImpl(
         private val authRepository: AuthRepository,
-        private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+        private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+        private val context: Context? = null
 ) : ProfileRepository {
 
     companion object {
@@ -22,22 +30,97 @@ class ProfileRepositoryImpl(
 
     private val profileCollection = firestore.collection(COLLECTION_PROFILE)
 
+    // Support hors ligne - utiliser AppContextProvider si context n'est pas fourni
+    private val effectiveContext: Context? by lazy {
+        context ?: AppContextProvider.getContextOrNull()
+    }
+    private val database by lazy { effectiveContext?.let { AppDatabase.getDatabase(it) } }
+    private val userProfileDao by lazy { database?.userProfileDao() }
+    private val networkManager by lazy { effectiveContext?.let { NetworkConnectivityManager.getInstance(it) } }
+
+    private fun isOnline(): Boolean = networkManager?.checkCurrentConnectivity() ?: true
+
+    /**
+     * Sauvegarde un profil dans le cache local
+     */
+    private suspend fun saveToLocalCache(profile: UserProfile, isCurrentUser: Boolean = false) {
+        userProfileDao?.let { dao ->
+            withContext(Dispatchers.IO) {
+                try {
+                    val entity = UserProfileEntity.fromUserProfile(profile, isCurrentUser)
+                    dao.insertProfile(entity)
+                    Log.d(TAG, "Profil sauvegardé en cache local: ${profile.pseudo}")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur sauvegarde cache local", e)
+                }
+            }
+        }
+    }
+
+    /**
+     * Récupère un profil depuis le cache local
+     */
+    private suspend fun getFromLocalCache(userId: String): UserProfile? {
+        return userProfileDao?.let { dao ->
+            withContext(Dispatchers.IO) {
+                try {
+                    dao.getProfileById(userId)?.toUserProfile()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur lecture cache local", e)
+                    null
+                }
+            }
+        }
+    }
+
     override suspend fun getCurrentUserProfile(): Result<UserProfile?> {
         return try {
             val userId = authRepository.getCurrentUserId()
-            if (userId.isEmpty()) {
-                Log.w(TAG, "Aucun utilisateur connecté")
-                return Result.failure(Exception("Utilisateur non connecté"))
+
+            // Si hors ligne ou pas d'utilisateur connecté, essayer le cache
+            if (userId.isEmpty() || !isOnline()) {
+                Log.d(TAG, "Mode hors ligne ou pas d'utilisateur - tentative cache local")
+                val cachedProfile = withContext(Dispatchers.IO) {
+                    userProfileDao?.getCurrentUserProfile()?.toUserProfile()
+                }
+                if (cachedProfile != null) {
+                    Log.d(TAG, "Profil récupéré depuis le cache: ${cachedProfile.pseudo}")
+                    return Result.success(cachedProfile)
+                }
+                if (userId.isEmpty()) {
+                    Log.w(TAG, "Aucun utilisateur connecté et pas de cache")
+                    return Result.failure(Exception("Utilisateur non connecté"))
+                }
             }
+
             getProfileById(userId)
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors de la récupération du profil", e)
+            // Dernière tentative avec le cache
+            val cachedProfile = withContext(Dispatchers.IO) {
+                userProfileDao?.getCurrentUserProfile()?.toUserProfile()
+            }
+            if (cachedProfile != null) {
+                Log.d(TAG, "Profil récupéré depuis le cache après erreur: ${cachedProfile.pseudo}")
+                return Result.success(cachedProfile)
+            }
             Result.failure(e)
         }
     }
 
     override suspend fun getProfileById(userId: String): Result<UserProfile?> {
         return try {
+            // Si hors ligne, utiliser le cache
+            if (!isOnline()) {
+                Log.d(TAG, "Mode hors ligne - utilisation du cache pour $userId")
+                val cached = getFromLocalCache(userId)
+                return if (cached != null) {
+                    Result.success(cached)
+                } else {
+                    Result.failure(Exception("Profil non disponible hors ligne"))
+                }
+            }
+
             val document = profileCollection.document(userId).get().await()
             if (document.exists()) {
                 val profile = document.toObject(UserProfile::class.java)
@@ -47,18 +130,28 @@ class ProfileRepositoryImpl(
                     Log.d(TAG, "Mise à jour du champ uid pour le profil: $userId")
                     profileCollection.document(userId).update("uid", userId).await()
                     profile.uid = userId
-                    Log.d(TAG, "Profil récupéré (uid mis à jour): $profile")
-                    Result.success(profile)
-                } else {
-                    Log.d(TAG, "Profil récupéré: $profile")
-                    Result.success(profile)
                 }
+
+                // Sauvegarder dans le cache local
+                if (profile != null) {
+                    val isCurrentUser = userId == authRepository.getCurrentUserId()
+                    saveToLocalCache(profile, isCurrentUser)
+                }
+
+                Log.d(TAG, "Profil récupéré: $profile")
+                Result.success(profile)
             } else {
                 Log.d(TAG, "Aucun profil trouvé pour l'utilisateur: $userId")
                 Result.success(null)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors de la récupération du profil pour $userId", e)
+            // Essayer le cache local en cas d'erreur
+            val cached = getFromLocalCache(userId)
+            if (cached != null) {
+                Log.d(TAG, "Utilisation du cache local suite à une erreur")
+                return Result.success(cached)
+            }
             Result.failure(e)
         }
     }
@@ -271,6 +364,22 @@ class ProfileRepositoryImpl(
 
     override suspend fun getLeaderboard(limit: Int): Result<List<UserProfile>> {
         return try {
+            // Si hors ligne, utiliser le cache
+            if (!isOnline()) {
+                Log.d(TAG, "Mode hors ligne - utilisation du cache pour le classement")
+                val cached = userProfileDao?.let { dao ->
+                    withContext(Dispatchers.IO) {
+                        dao.getLeaderboard(limit).map { it.toUserProfile() }
+                    }
+                } ?: emptyList()
+
+                return if (cached.isNotEmpty()) {
+                    Result.success(cached)
+                } else {
+                    Result.failure(Exception("Classement non disponible hors ligne"))
+                }
+            }
+
             val snapshot =
                     profileCollection
                             .orderBy("xp", com.google.firebase.firestore.Query.Direction.DESCENDING)
@@ -283,10 +392,38 @@ class ProfileRepositoryImpl(
             // Assigner le rang en fonction de la position dans la liste (1-indexed)
             topUsers.forEachIndexed { index, user -> user.rang = index + 1 }
 
+            // Sauvegarder dans le cache local
+            userProfileDao?.let { dao ->
+                withContext(Dispatchers.IO) {
+                    val currentUserId = authRepository.getCurrentUserId()
+                    val entities = topUsers.map { profile ->
+                        UserProfileEntity.fromUserProfile(
+                            profile,
+                            isCurrentUser = profile.id == currentUserId
+                        )
+                    }
+                    dao.insertProfiles(entities)
+                    Log.d(TAG, "Classement sauvegardé en cache: ${entities.size} profils")
+                }
+            }
+
             Log.d(TAG, "Classement récupéré: ${topUsers.size} utilisateurs")
             Result.success(topUsers)
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors de la récupération du classement", e)
+
+            // Essayer le cache local en cas d'erreur
+            val cached = userProfileDao?.let { dao ->
+                withContext(Dispatchers.IO) {
+                    dao.getLeaderboard(limit).map { it.toUserProfile() }
+                }
+            } ?: emptyList()
+
+            if (cached.isNotEmpty()) {
+                Log.d(TAG, "Utilisation du cache local suite à une erreur")
+                return Result.success(cached)
+            }
+
             Result.failure(e)
         }
     }

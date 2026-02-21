@@ -26,6 +26,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,8 +45,12 @@ import androidx.navigation.NavHostController
 import com.example.ascendlifequest.R
 import com.example.ascendlifequest.ui.components.AppBackground
 import com.example.ascendlifequest.ui.features.auth.components.SocialLoginButton
+import com.example.ascendlifequest.ui.features.offline.NoConnectionScreen
+import com.example.ascendlifequest.ui.features.offline.OfflineModeButton
+import com.example.ascendlifequest.ui.features.offline.OfflineModeViewModel
+import com.example.ascendlifequest.ui.features.offline.OfflineState
 import com.example.ascendlifequest.data.remote.AuthService
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 import com.example.ascendlifequest.di.AppViewModelFactory
 import kotlinx.coroutines.launch
 
@@ -60,6 +65,10 @@ fun LoginOptionScreen(navController: NavHostController) {
     val viewModel: LoginOptionViewModel = viewModel(factory = factory)
     val scope = rememberCoroutineScope()
     var isGoogleLoading by remember { mutableStateOf(false) }
+
+    // ViewModel pour le mode hors ligne
+    val offlineViewModel = remember { OfflineModeViewModel(context) }
+    val offlineState by offlineViewModel.offlineState.collectAsState()
 
     // Vérifier si l'utilisateur est déjà connecté
     LaunchedEffect(key1 = true) {
@@ -117,7 +126,84 @@ fun LoginOptionScreen(navController: NavHostController) {
         }
     }
 
+    // Gestion du mode hors ligne
+    when (val state = offlineState) {
+        is OfflineState.Checking -> {
+            // Afficher un loader pendant la vérification
+            AppBackground {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = themeColors().lightAccent)
+                }
+            }
+        }
+
+        is OfflineState.Offline -> {
+            if (!state.hasLocalData) {
+                // Pas de données locales, afficher l'écran "pas de connexion"
+                NoConnectionScreen(
+                    onRetry = { offlineViewModel.refreshConnectivity() }
+                )
+            } else {
+                // Afficher l'écran de connexion avec le bouton hors ligne
+                LoginOptionContent(
+                    navController = navController,
+                    viewModel = viewModel,
+                    authService = authService,
+                    isGoogleLoading = isGoogleLoading,
+                    onGoogleLoadingChange = { isGoogleLoading = it },
+                    googleSignInLauncher = googleSignInLauncher,
+                    scope = scope,
+                    showOfflineButton = true,
+                    offlinePseudo = state.lastUserPseudo,
+                    onOfflineClick = {
+                        // Naviguer vers les quêtes en mode hors ligne
+                        navController.navigate("quetes_offline") {
+                            popUpTo("login_option") { inclusive = true }
+                        }
+                    }
+                )
+            }
+        }
+
+        is OfflineState.Online -> {
+            // Mode en ligne normal
+            LoginOptionContent(
+                navController = navController,
+                viewModel = viewModel,
+                authService = authService,
+                isGoogleLoading = isGoogleLoading,
+                onGoogleLoadingChange = { isGoogleLoading = it },
+                googleSignInLauncher = googleSignInLauncher,
+                scope = scope,
+                showOfflineButton = false,
+                offlinePseudo = null,
+                onOfflineClick = {}
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoginOptionContent(
+    navController: NavHostController,
+    viewModel: LoginOptionViewModel,
+    authService: AuthService,
+    isGoogleLoading: Boolean,
+    onGoogleLoadingChange: (Boolean) -> Unit,
+    googleSignInLauncher: androidx.activity.result.ActivityResultLauncher<android.content.Intent>,
+    scope: kotlinx.coroutines.CoroutineScope,
+    showOfflineButton: Boolean,
+    offlinePseudo: String?,
+    onOfflineClick: () -> Unit
+) {
+    val context = LocalContext.current
+
     AppBackground {
+        val colors = themeColors()
+
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -145,7 +231,7 @@ fun LoginOptionScreen(navController: NavHostController) {
                     "Se connecter",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AppColor.MainTextColor
+                    color = colors.mainText
                 )
             }
 
@@ -153,7 +239,7 @@ fun LoginOptionScreen(navController: NavHostController) {
 
             Text(
                 text = "Pas encore de compte ? S'inscrire",
-                color = AppColor.MinusTextColor,
+                color = colors.minusText,
                 fontSize = 15.sp,
                 modifier = Modifier.clickable { navController.navigate("register") }
             )
@@ -172,32 +258,31 @@ fun LoginOptionScreen(navController: NavHostController) {
                 Box(
                     modifier = Modifier
                         .size(50.dp)
-                        .background(AppColor.MainTextColor, shape = CircleShape)
+                        .background(colors.mainText, shape = CircleShape)
                         .clickable {
                             if (!isGoogleLoading) {
-                                isGoogleLoading = true
+                                onGoogleLoadingChange(true)
                                 Log.d(TAG, "Bouton Google cliqué - lancement du processus de connexion")
                                 try {
                                     val activity = context as? ComponentActivity
                                     if (activity != null) {
-                                        // Launch the Google SignIn intent from AuthService (UI action) - AuthService provides getGoogleSignInIntent
                                         try {
                                             val intent = authService.getGoogleSignInIntent(activity)
                                             googleSignInLauncher.launch(intent)
                                         } catch (e: Exception) {
-                                            isGoogleLoading = false
+                                            onGoogleLoadingChange(false)
                                             Log.e(TAG, "Erreur création Intent Google Sign-In", e)
-                                            Toast.makeText(context, "Erreur: ${'$'}{e.message}", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
                                         }
                                     } else {
-                                        isGoogleLoading = false
+                                        onGoogleLoadingChange(false)
                                         Log.e(TAG, "Contexte invalide pour Google Sign-In")
                                         Toast.makeText(context, "Erreur: Contexte invalide", Toast.LENGTH_SHORT).show()
                                     }
                                  } catch (e: Exception) {
-                                     isGoogleLoading = false
+                                     onGoogleLoadingChange(false)
                                      Log.e(TAG, "Erreur lors du lancement de la connexion Google", e)
-                                     Toast.makeText(context, "Erreur: ${'$'}{e.message}", Toast.LENGTH_LONG).show()
+                                     Toast.makeText(context, "Erreur: ${e.message}", Toast.LENGTH_LONG).show()
                                  }
                              } else {
                                  Log.d(TAG, "Connexion Google déjà en cours, ignorer")
@@ -223,6 +308,14 @@ fun LoginOptionScreen(navController: NavHostController) {
                  SocialLoginButton(R.drawable.ic_apple) {
                      Toast.makeText(context, "Connexion Apple non implémentée", Toast.LENGTH_SHORT).show()
                  }
+             }
+
+             // Bouton mode hors ligne (affiché si disponible)
+             if (showOfflineButton) {
+                 OfflineModeButton(
+                     pseudo = offlinePseudo,
+                     onClick = onOfflineClick
+                 )
              }
          }
      }

@@ -20,7 +20,7 @@ import com.example.ascendlifequest.ui.components.AppHeader
 import com.example.ascendlifequest.ui.components.BottomNavItem
 import com.example.ascendlifequest.ui.features.profile.components.AccountAvatar
 import com.example.ascendlifequest.ui.features.profile.components.SuccessNotice
-import com.example.ascendlifequest.ui.theme.AppColor
+import com.example.ascendlifequest.ui.theme.themeColors
 import kotlinx.coroutines.delay
 
 @Composable
@@ -126,9 +126,11 @@ private fun AccountScreenContent(navController: NavHostController, modifier: Mod
         }
     }
 
+    val colors = themeColors()
+
     Card(
             modifier = modifier.fillMaxWidth().padding(16.dp),
-            colors = CardDefaults.cardColors(containerColor = AppColor.DarkBlueColor),
+            colors = CardDefaults.cardColors(containerColor = colors.darkBackground),
             shape = RoundedCornerShape(12.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
@@ -157,8 +159,8 @@ private fun AccountScreenContent(navController: NavHostController, modifier: Mod
             Text(
                     text = "Email: $displayEmailText",
                     color =
-                            if (displayEmail != null) AppColor.MainTextColor
-                            else AppColor.MinusTextColor,
+                            if (displayEmail != null) colors.mainText
+                            else colors.minusText,
                     fontWeight = if (displayEmail != null) FontWeight.Medium else FontWeight.Normal,
                     modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -252,7 +254,7 @@ private fun AccountScreenContent(navController: NavHostController, modifier: Mod
                 }
                 is AccountUiState.Loaded -> {}
                 is AccountUiState.Loading ->
-                        CircularProgressIndicator(color = AppColor.LightBlueColor)
+                        CircularProgressIndicator(color = colors.lightAccent)
                 is AccountUiState.Error -> {
                     val msg = (state as AccountUiState.Error).message
                     Text(
@@ -306,14 +308,14 @@ private fun AccountScreenContent(navController: NavHostController, modifier: Mod
                         onClick = { showEmailDialog = true },
                         colors =
                                 ButtonDefaults.buttonColors(
-                                        containerColor = AppColor.LightBlueColor
+                                        containerColor = colors.lightAccent
                                 ),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
                     Text(
                             text = "Modifier l'e-mail",
-                            color = AppColor.MainTextColor,
+                            color = colors.mainText,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                     )
@@ -325,14 +327,14 @@ private fun AccountScreenContent(navController: NavHostController, modifier: Mod
                         onClick = { showPasswordDialog = true },
                         colors =
                                 ButtonDefaults.buttonColors(
-                                        containerColor = AppColor.LightBlueColor
+                                        containerColor = colors.lightAccent
                                 ),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
                     Text(
                             text = "Modifier le mot de passe",
-                            color = AppColor.MainTextColor,
+                            color = colors.mainText,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                     )
@@ -349,14 +351,14 @@ private fun AccountScreenContent(navController: NavHostController, modifier: Mod
                         },
                         colors =
                                 ButtonDefaults.buttonColors(
-                                        containerColor = AppColor.DarkBlueColor
+                                        containerColor = colors.darkBackground
                                 ),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
                     Text(
                             text = "Se déconnecter",
-                            color = AppColor.MainTextColor,
+                            color = colors.mainText,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                     )
