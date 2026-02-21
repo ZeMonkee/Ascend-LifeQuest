@@ -13,10 +13,11 @@ import com.example.ascendlifequest.data.model.UserProfile
 fun FriendsContent(
         friends: List<UserProfile>,
         navController: NavHostController,
-        onDeleteFriend: (UserProfile) -> Unit
+        onDeleteFriend: (UserProfile) -> Unit,
+        isOffline: Boolean = false
 ) {
     if (friends.isEmpty()) {
-        EmptyFriendsContent()
+        EmptyFriendsContent(isOffline = isOffline)
     } else {
         LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
