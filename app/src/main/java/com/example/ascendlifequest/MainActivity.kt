@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelProvider
+import com.example.ascendlifequest.ui.components.EnvironmentBadge
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -60,11 +62,13 @@ class MainActivity : ComponentActivity() {
             Log.e(TAG, "Erreur lors de l'initialisation de Firebase", e)
         }
         enableEdgeToEdge()
-        setContent {
-            val themeViewModel = ThemeViewModel(this)
 
+        val themeViewModel = ViewModelProvider(this, ThemeViewModel.Factory(this))[ThemeViewModel::class.java]
+
+        setContent {
             AscendLifeQuestTheme {
                 AppThemeProvider(themeViewModel = themeViewModel) {
+                  Box(modifier = Modifier.fillMaxSize()) {
                     // Provider pour le mode hors ligne (accessible dans toute l'app)
                     OfflineModeProvider {
                         val navController = rememberNavController()
@@ -107,6 +111,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .align(Alignment.TopStart)
                     )
+                  }
                 }
             }
         }
