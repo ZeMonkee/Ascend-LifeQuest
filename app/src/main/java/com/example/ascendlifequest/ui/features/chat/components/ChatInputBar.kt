@@ -20,7 +20,8 @@ fun ChatInputBar(
         messageText: String,
         onMessageChange: (String) -> Unit,
         onSendClick: () -> Unit,
-        isSending: Boolean
+        isSending: Boolean,
+        enabled: Boolean = true
 ) {
     val colors = themeColors()
 
@@ -33,8 +34,9 @@ fun ChatInputBar(
                     value = messageText,
                     onValueChange = onMessageChange,
                     modifier = Modifier.weight(1f),
+                    enabled = enabled,
                     placeholder = {
-                        Text(text = "Écrire un message...", color = colors.minusText)
+                        Text(text = if (enabled) "Écrire un message..." else "Mode hors ligne", color = colors.minusText)
                     },
                     colors =
                             OutlinedTextFieldDefaults.colors(
@@ -55,12 +57,12 @@ fun ChatInputBar(
 
             IconButton(
                     onClick = onSendClick,
-                    enabled = messageText.isNotBlank() && !isSending,
+                    enabled = enabled && messageText.isNotBlank() && !isSending,
                     modifier =
                             Modifier.size(48.dp)
                                     .clip(CircleShape)
                                     .background(
-                                            if (messageText.isNotBlank()) colors.lightAccent
+                                            if (enabled && messageText.isNotBlank()) colors.lightAccent
                                             else colors.minusText.copy(alpha = 0.3f)
                                     )
             ) {
