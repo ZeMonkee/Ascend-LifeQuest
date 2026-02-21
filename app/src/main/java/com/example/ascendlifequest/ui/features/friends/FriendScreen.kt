@@ -11,12 +11,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.ascendlifequest.data.network.NetworkConnectivityManager
 import com.example.ascendlifequest.ui.components.AppBackground
 import com.example.ascendlifequest.ui.components.AppBottomNavBar
 import com.example.ascendlifequest.ui.components.BottomNavItem
@@ -24,6 +26,7 @@ import com.example.ascendlifequest.ui.features.friends.components.AddFriendDialo
 import com.example.ascendlifequest.ui.features.friends.components.DeleteFriendConfirmDialog
 import com.example.ascendlifequest.ui.features.friends.components.FriendsContent
 import com.example.ascendlifequest.ui.features.friends.components.PendingRequestsDialog
+import com.example.ascendlifequest.ui.features.offline.OfflineIndicatorBanner
 import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
@@ -39,16 +42,14 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
     val pendingRequestsCount by viewModel.pendingRequestsCount.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
 
-    // Compteur pour forcer le rechargement à chaque fois qu'on revient sur l'écran
-    var refreshKey by remember { mutableIntStateOf(0) }
+    // Détecter le mode hors ligne
+    val context = LocalContext.current
+    val networkManager = remember { NetworkConnectivityManager.getInstance(context) }
+    val isOnline by networkManager.isConnected.collectAsState()
 
-    // Recharger les données à chaque affichage de l'écran
-    LaunchedEffect(refreshKey) { viewModel.loadFriendsAndRequests() }
-
-    // Incrémenter le compteur quand l'écran devient visible
-    DisposableEffect(Unit) {
-        refreshKey++
-        onDispose {}
+    // Charger les données à chaque affichage de l'écran
+    LaunchedEffect(Unit) {
+        viewModel.loadFriendsAndRequests()
     }
 
     // Dialogue d'ajout d'ami
@@ -94,6 +95,11 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
 
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                 Column(modifier = Modifier.fillMaxSize()) {
+                    // Indicateur de mode hors ligne
+                    if (!isOnline) {
+                        OfflineIndicatorBanner()
+                    }
+
                     // Indicateur de refresh en haut
                     if (isRefreshing && uiState is FriendsUiState.Success) {
                         LinearProgressIndicator(
@@ -120,13 +126,16 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
 
                         // Bouton des demandes d'amis avec badge à droite
                         Box(modifier = Modifier.align(Alignment.CenterEnd)) {
-                            IconButton(onClick = { viewModel.openPendingRequestsDialog() }) {
+                            IconButton(
+                                onClick = { viewModel.openPendingRequestsDialog() },
+                                enabled = isOnline // Désactivé en mode hors ligne
+                            ) {
                                 Icon(
                                         imageVector = Icons.Default.Notifications,
                                         contentDescription = "Demandes d'amis",
-                                        tint =
-                                                if (pendingRequestsCount > 0) colors.cuisine
-                                                else colors.minusText,
+                                        tint = if (!isOnline) colors.minusText.copy(alpha = 0.5f)
+                                               else if (pendingRequestsCount > 0) colors.cuisine
+                                               else colors.minusText,
                                         modifier = Modifier.size(28.dp)
                                 )
                             }
@@ -166,7 +175,8 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
                             FriendsContent(
                                     friends = state.friends,
                                     navController = navController,
-                                    onDeleteFriend = { viewModel.showDeleteConfirmation(it) }
+                                    onDeleteFriend = { viewModel.showDeleteConfirmation(it) },
+                                    isOffline = !isOnline
                             )
                         }
                         is FriendsUiState.Error -> {
@@ -184,19 +194,21 @@ fun FriendScreen(navController: NavHostController, viewModel: FriendsViewModel =
                     }
                 }
 
-                // Bouton flottant pour ajouter un ami
-                FloatingActionButton(
-                        onClick = { viewModel.openAddFriendDialog() },
-                        modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-                        containerColor = colors.lightAccent,
-                        contentColor = colors.mainText,
-                        shape = CircleShape
-                ) {
-                    Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Ajouter un ami",
-                            modifier = Modifier.size(28.dp)
-                    )
+                // Bouton flottant pour ajouter un ami (désactivé en mode hors ligne)
+                if (isOnline) {
+                    FloatingActionButton(
+                            onClick = { viewModel.openAddFriendDialog() },
+                            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+                            containerColor = colors.lightAccent,
+                            contentColor = colors.mainText,
+                            shape = CircleShape
+                    ) {
+                        Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Ajouter un ami",
+                                modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
             }
         }
