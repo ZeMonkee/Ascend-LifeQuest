@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -34,6 +35,11 @@ fun ClassementScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val colors = themeColors()
+
+    // Charger les données au premier affichage
+    LaunchedEffect(Unit) {
+        viewModel.loadLeaderboard()
+    }
 
     AppBottomNavBar(navController, BottomNavItem.Classement) { innerPadding ->
         AppBackground {
