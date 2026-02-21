@@ -7,9 +7,11 @@ import com.example.ascendlifequest.data.auth.AuthRepository
 import com.example.ascendlifequest.data.auth.AuthRepositoryImpl
 import com.example.ascendlifequest.data.model.Notification
 import com.example.ascendlifequest.data.model.UserProfile
+import com.example.ascendlifequest.data.network.NetworkConnectivityManager
 import com.example.ascendlifequest.data.remote.AuthService
 import com.example.ascendlifequest.data.repository.FriendRepository
 import com.example.ascendlifequest.data.repository.FriendRepositoryImpl
+import com.example.ascendlifequest.di.AppContextProvider
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +53,13 @@ class FriendsViewModel(
         private const val SEARCH_DEBOUNCE_MS = 300L
     }
 
+    // Vérification de la connectivité réseau
+    private val networkManager by lazy {
+        AppContextProvider.getContextOrNull()?.let { NetworkConnectivityManager.getInstance(it) }
+    }
+
+    private fun isOnline(): Boolean = networkManager?.checkCurrentConnectivity() ?: true
+
     private val _uiState = MutableStateFlow<FriendsUiState>(FriendsUiState.Loading)
     val uiState: StateFlow<FriendsUiState> = _uiState.asStateFlow()
 
@@ -77,6 +86,9 @@ class FriendsViewModel(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    // Flag pour éviter les rechargements inutiles
+    private var _dataLoaded = false
+
     // ID de l'utilisateur en cours d'ajout (null si aucun)
     private val _addingFriendId = MutableStateFlow<String?>(null)
     val addingFriendId: StateFlow<String?> = _addingFriendId.asStateFlow()
@@ -96,9 +108,15 @@ class FriendsViewModel(
         // Ne pas charger automatiquement, laisser le LaunchedEffect le faire
     }
 
-    fun loadFriendsAndRequests() {
+    fun loadFriendsAndRequests(forceReload: Boolean = false) {
         viewModelScope.launch {
-            Log.d(TAG, "Début loadFriendsAndRequests")
+            Log.d(TAG, "Début loadFriendsAndRequests (forceReload=$forceReload, dataLoaded=$_dataLoaded)")
+
+            // Si les données sont déjà chargées et pas de force reload, on ne fait rien
+            if (_dataLoaded && !forceReload && _uiState.value is FriendsUiState.Success) {
+                Log.d(TAG, "Données déjà chargées, pas de rechargement")
+                return@launch
+            }
 
             // Si déjà en cours de chargement, on ne fait rien
             if (_isRefreshing.value) {
@@ -106,66 +124,91 @@ class FriendsViewModel(
                 return@launch
             }
 
-            _isRefreshing.value = true
-
-            // Ne mettre en Loading que si on n'a pas déjà des données
-            val currentState = _uiState.value
-            if (currentState !is FriendsUiState.Success) {
-                _uiState.value = FriendsUiState.Loading
-            }
-
-            val userId = authRepository.getCurrentUserId()
-            Log.d(TAG, "UserId connecté: $userId")
-
-            if (userId.isEmpty()) {
-                _uiState.value = FriendsUiState.Error("Utilisateur non connecté")
-                _isRefreshing.value = false
-                Log.d(TAG, "Aucun utilisateur connecté")
-                return@launch
-            }
-
-            _currentUserId.value = userId
-
             try {
-                // Charger les amis
+                _isRefreshing.value = true
+
+                // Ne mettre en Loading que si on n'a pas déjà des données
+                val currentState = _uiState.value
+                if (currentState !is FriendsUiState.Success) {
+                    _uiState.value = FriendsUiState.Loading
+                }
+
+                val online = isOnline()
+                Log.d(TAG, "Connectivité réseau: $online")
+
+                // Récupérer le userId (peut être vide en mode hors ligne)
+                var userId = authRepository.getCurrentUserId()
+                Log.d(TAG, "UserId depuis auth: $userId")
+
+                // Charger les amis - le repository gère le cache automatiquement
                 Log.d(TAG, "Chargement des amis...")
-                val friendsResult = friendRepository.getFriends(userId)
+                val friendsResult = if (userId.isNotEmpty()) {
+                    friendRepository.getFriends(userId)
+                } else {
+                    // Si pas de userId, essayer le cache directement
+                    friendRepository.getFriendsFromCache()
+                }
                 val friends = friendsResult.getOrNull() ?: emptyList()
                 Log.d(TAG, "Amis chargés: ${friends.size}")
 
-                // Charger les demandes en attente
-                Log.d(TAG, "Chargement des demandes en attente...")
-                val pendingResult = friendRepository.getPendingFriendRequests(userId)
-                val pendingRequests = pendingResult.getOrNull() ?: emptyList()
-                Log.d(TAG, "Demandes en attente: ${pendingRequests.size}")
+                // Les demandes et notifications ne sont disponibles qu'en ligne
+                var pendingRequests = emptyList<UserProfile>()
+                var notifications = emptyList<Notification>()
 
-                // Charger les notifications
-                Log.d(TAG, "Chargement des notifications...")
-                val notificationsResult = friendRepository.getNotifications(userId)
-                val notifications = notificationsResult.getOrNull() ?: emptyList()
-                Log.d(TAG, "Notifications: ${notifications.size}")
+                if (online && userId.isNotEmpty()) {
+                    Log.d(TAG, "Chargement des demandes en attente...")
+                    val pendingResult = friendRepository.getPendingFriendRequests(userId)
+                    pendingRequests = pendingResult.getOrNull() ?: emptyList()
+                    Log.d(TAG, "Demandes en attente: ${pendingRequests.size}")
 
-                // Charger le pseudo de l'utilisateur actuel (pour les notifications de refus)
-                val profileResult = friendRepository.getProfileById(userId)
-                val profile = profileResult.getOrNull()
-                _currentUserPseudo.value = profile?.pseudo ?: ""
+                    Log.d(TAG, "Chargement des notifications...")
+                    val notificationsResult = friendRepository.getNotifications(userId)
+                    notifications = notificationsResult.getOrNull() ?: emptyList()
+                    Log.d(TAG, "Notifications: ${notifications.size}")
+
+                    // Charger le pseudo de l'utilisateur actuel
+                    val profileResult = friendRepository.getProfileById(userId)
+                    val profile = profileResult.getOrNull()
+                    _currentUserPseudo.value = profile?.pseudo ?: ""
+                }
+
+                _currentUserId.value = userId
 
                 // Mettre à jour les compteurs
                 _pendingRequestsCount.value = pendingRequests.size + notifications.size
                 _notificationsCount.value = notifications.size
 
-                _uiState.value =
-                        FriendsUiState.Success(
-                                friends = friends,
-                                pendingRequests = pendingRequests,
-                                notifications = notifications
-                        )
-                Log.d(TAG, "État mis à jour avec succès")
+                _uiState.value = FriendsUiState.Success(
+                    friends = friends,
+                    pendingRequests = pendingRequests,
+                    notifications = notifications
+                )
+
+                _dataLoaded = true
+                Log.d(TAG, "État mis à jour avec succès - ${friends.size} amis")
             } catch (e: Exception) {
-                _uiState.value = FriendsUiState.Error(e.message ?: "Erreur inconnue")
                 Log.e(TAG, "Erreur lors du chargement: ${e.message}", e)
+                // En cas d'erreur, essayer le cache
+                try {
+                    val cachedFriends = friendRepository.getFriendsFromCache().getOrNull() ?: emptyList()
+                    Log.d(TAG, "Fallback cache: ${cachedFriends.size} amis")
+                    _uiState.value = FriendsUiState.Success(
+                        friends = cachedFriends,
+                        pendingRequests = emptyList(),
+                        notifications = emptyList()
+                    )
+                    _dataLoaded = true
+                } catch (cacheError: Exception) {
+                    Log.e(TAG, "Erreur cache aussi: ${cacheError.message}")
+                    _uiState.value = FriendsUiState.Success(
+                        friends = emptyList(),
+                        pendingRequests = emptyList(),
+                        notifications = emptyList()
+                    )
+                }
             } finally {
                 _isRefreshing.value = false
+                Log.d(TAG, "Fin loadFriendsAndRequests")
             }
         }
     }
