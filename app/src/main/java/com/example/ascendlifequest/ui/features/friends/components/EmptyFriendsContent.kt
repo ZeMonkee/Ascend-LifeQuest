@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.sp
 import com.example.ascendlifequest.ui.theme.themeColors
 
 @Composable
-fun EmptyFriendsContent() {
+fun EmptyFriendsContent(isOffline: Boolean = false) {
     val colors = themeColors()
 
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -29,7 +29,10 @@ fun EmptyFriendsContent() {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                    text = "Appuyez sur + pour ajouter des amis",
+                    text = if (isOffline)
+                        "Connectez-vous à Internet pour ajouter des amis"
+                    else
+                        "Appuyez sur + pour ajouter des amis",
                     color = colors.minusText,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center
